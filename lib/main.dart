@@ -13,7 +13,7 @@ class InningLogApp extends StatelessWidget {
     return const MaterialApp(
       title: 'InningLog',
       debugShowCheckedModeBanner: false,
-      home: MainNavigation(),  // ✅ 여기 수정!
+      home: MainNavigation(),  
     );
   }
 }
