@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-// 각 페이지 import
+import 'package:flutter_svg/flutter_svg.dart';
 import '../screens/home_page.dart';
 import '../screens/diary_page.dart';
 import '../screens/board_page.dart';
 import '../screens/my_page.dart';
 import '../screens/seat_page.dart';
 
-/// 메인 네비게이션 바를 담당하는 StatefulWidget
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 
@@ -14,52 +13,76 @@ class MainNavigation extends StatefulWidget {
   State<MainNavigation> createState() => _MainNavigationState();
 }
 
-/// 상태를 관리하는 State 클래스
 class _MainNavigationState extends State<MainNavigation> {
-  int _currentIndex = 0; // 현재 선택된 탭 인덱스
+  int _currentIndex = 0;
 
-  // 각 탭에서 보여줄 페이지 리스트
   final List<Widget> _pages = const [
-    HomePage(),   // 야구 홈
-    DiaryPage(),  // 일지
-    BoardPage(),  // 게시판
-    SeatPage(),   // 좌석
-    MyPage(),     // 마이페이지
+    HomePage(),
+    DiaryPage(),
+    BoardPage(),
+    SeatPage(),
+    MyPage(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 현재 선택된 페이지 보여주기
       body: _pages[_currentIndex],
+      bottomNavigationBar: Container(
+        height: 104,
+        padding: const EdgeInsets.fromLTRB(23, 18, 23, 34),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(15),
+            topRight: Radius.circular(15),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              offset: const Offset(0, -2),
+              blurRadius: 6.8,
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildTabItem(0, '홈', 'assets/icons/Home_black.svg', 'assets/icons/Home_gray.svg'),
+            _buildTabItem(1, '직관 기록', 'assets/icons/Diary_black.svg', 'assets/icons/Diary_gray.svg'),
+            _buildTabItem(2, '좌석', 'assets/icons/Seat_black.svg', 'assets/icons/Seat_gray.svg'),
+            _buildTabItem(3, '커뮤니티', 'assets/icons/Community_black.svg', 'assets/icons/Community_gray.svg'),
+            _buildTabItem(4, '마이페이지', 'assets/icons/Mypage_black.svg', 'assets/icons/Mypage_gray.svg'),
+          ],
+        ),
+      ),
+    );
+  }
 
-      // 하단 네비게이션 바
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex, // 현재 선택된 인덱스 지정
-        onTap: (index) => setState(() {
-          _currentIndex = index; // 탭 클릭 시 상태 변경 → 화면 전환
-        }),
-        type: BottomNavigationBarType.fixed, // 탭 개수가 4개 이상이면 이거 필수
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.sports_baseball),
-            label: '야구 홈',
+  Widget _buildTabItem(int index, String label, String selectedIcon, String unselectedIcon) {
+    final isSelected = _currentIndex == index;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _currentIndex = index;
+        });
+      },
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+
+        children: [
+          SvgPicture.asset(
+            isSelected ? selectedIcon : unselectedIcon,
+            width: 24,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.edit_note),
-            label: '일지',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.forum),
-            label: '게시판',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.event_seat),
-            label: '좌석',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: '마이페이지',
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 9,
+              color: isSelected ? const Color(0xFF272727) : const Color(0xFFD3D3D3),
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
