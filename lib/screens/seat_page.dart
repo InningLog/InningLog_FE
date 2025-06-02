@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
+import '../widgets/common_header.dart';
 
 class SeatPage extends StatelessWidget {
   const SeatPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text('좌석 화면'),
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: const [
+            CommonHeader(title: '좌석정보'),
+            // 여기에 캘린더나 탭바 등 추가
+          ],
+        ),
+      ),
     );
   }
 }
