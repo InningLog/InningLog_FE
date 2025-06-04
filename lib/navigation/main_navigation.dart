@@ -50,7 +50,7 @@ class _MainNavigationState extends State<MainNavigation> {
           children: [
             _buildTabItem(0, '홈', 'assets/icons/Home_black.svg', 'assets/icons/Home_gray.svg'),
             _buildTabItem(1, '직관 기록', 'assets/icons/Diary_black.svg', 'assets/icons/Diary_gray.svg'),
-            _buildTabItem(2, '좌석', 'assets/icons/Seat_black.svg', 'assets/icons/Seat_gray.svg'),
+            _buildTabItem(2, '좌석', 'assets/icons/field_black.svg', 'assets/icons/field_gray.svg'),
             _buildTabItem(3, '커뮤니티', 'assets/icons/Community_black.svg', 'assets/icons/Community_gray.svg'),
             _buildTabItem(4, '마이페이지', 'assets/icons/Mypage_black.svg', 'assets/icons/Mypage_gray.svg'),
           ],

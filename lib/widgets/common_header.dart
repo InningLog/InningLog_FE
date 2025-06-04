@@ -23,9 +23,10 @@ class CommonHeader extends StatelessWidget {
             title,
             style: const TextStyle(
               fontSize: 26,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w400,
               letterSpacing: -0.26,
               color: Color(0xFF272727),
+              fontFamily: 'MBC1961GulimOTF',
               textBaseline: TextBaseline.alphabetic,
             ),
           ),

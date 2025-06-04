@@ -31,3 +31,12 @@ flutter:
 
   assets:
     - assets/icons/
+  fonts:
+    - family: MBC1961GulimOTF
+      fonts:
+        - asset: assets/fonts/MBC1961GulimOTF.ttf
+
+    - family: Pretendard
+      fonts:
+         - asset: assets/fonts/Pretendard-Regular.ttf
+         - asset: assets/fonts/Pretendard-Bold.ttf
