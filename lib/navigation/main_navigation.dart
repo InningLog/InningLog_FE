@@ -30,7 +30,7 @@ class _MainNavigationState extends State<MainNavigation> {
       body: _pages[_currentIndex],
       bottomNavigationBar: Container(
         height: 104,
-        padding: const EdgeInsets.fromLTRB(23, 18, 23, 34),
+        padding: const EdgeInsets.fromLTRB(23, 18, 23, 10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: const BorderRadius.only(
@@ -79,7 +79,7 @@ class _MainNavigationState extends State<MainNavigation> {
           Text(
             label,
             style: TextStyle(
-              fontSize: 9,
+              fontSize: 10,
               color: isSelected ? const Color(0xFF272727) : const Color(0xFFD3D3D3),
               fontWeight: FontWeight.w500,
             ),

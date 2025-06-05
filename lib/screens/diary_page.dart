@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import '../app_colors.dart';
 import '../widgets/common_header.dart';
 
@@ -35,7 +36,7 @@ class _DiaryPageState extends State<DiaryPage> {
               ), //승/패/무 필터 버튼
 
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 19),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 19),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -45,7 +46,18 @@ class _DiaryPageState extends State<DiaryPage> {
                   ],
                 ),
               ),
-              ],
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildMonthHeader(),
+                ],
+              ),
+            ),
+
+
+          ],
             ),
       ),
     );
@@ -72,7 +84,7 @@ class _DiaryPageState extends State<DiaryPage> {
           color: isSelected ? AppColors.primary200 : Colors.transparent,
           border: Border(
             bottom: BorderSide(
-              color: isSelected ? AppColors.primary700 : const Color(0xFFE0E0E0),
+              color: isSelected ? AppColors.primary700 : const Color(0xFFFAFAFA),
               width: isSelected ? 2.0 : 1.0,
             ),
           ),
@@ -120,3 +132,30 @@ class _DiaryPageState extends State<DiaryPage> {
           ),
         );
       }
+        Widget _buildMonthHeader() {
+          final now = DateTime.now();
+          final currentMonth = '${now.month}월';
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Text(
+                  currentMonth,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF272727),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                SvgPicture.asset(
+                  'assets/icons/Home_black.svg',
+                  width: 6,
+                  height: 11
+                ),
+
+              ],
+            ),
+          );
+        }

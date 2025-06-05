@@ -38,5 +38,7 @@ flutter:
 
     - family: Pretendard
       fonts:
-         - asset: assets/fonts/Pretendard-Regular.ttf
-         - asset: assets/fonts/Pretendard-Bold.ttf
+         - asset: assets/fonts/Pretendard-Regular.otf
+         - asset: assets/fonts/Pretendard-Bold.otf
+
+
