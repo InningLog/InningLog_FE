@@ -13,6 +13,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   table_calendar: ^3.0.9
 
@@ -42,5 +44,9 @@ flutter:
       fonts:
          - asset: assets/fonts/Pretendard-Regular.otf
          - asset: assets/fonts/Pretendard-Bold.otf
+
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/InterRegular.ttf
 
 

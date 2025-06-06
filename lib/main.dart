@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'; // 추가!
 import 'package:inninglog/navigation/main_navigation.dart';
 
 void main() {
@@ -10,10 +11,18 @@ class InningLogApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       title: 'InningLog',
       debugShowCheckedModeBanner: false,
-      home: MainNavigation(),
+      localizationsDelegates: [ // 추가
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: [ // 추가
+        const Locale('ko', 'KR'),
+      ],
+      home: const MainNavigation(),
     );
   }
 }

@@ -4,7 +4,6 @@ import '../app_colors.dart';
 import '../widgets/common_header.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-
 class DiaryPage extends StatefulWidget {
   const DiaryPage({super.key});
 
@@ -14,8 +13,21 @@ class DiaryPage extends StatefulWidget {
 
 class _DiaryPageState extends State<DiaryPage> {
   int _selectedIndex = 0;
-  String? selectedFilter; // 선택된 버튼 저장 (처음에는 null → 선택 없음)
 
+  String? selectedFilterCalendar;    // 캘린더 화면용 필터
+  String? selectedFilterCollection;  // 모아보기 화면용 필터
+
+  //연동 후 삭제할거
+  final Map<DateTime, String> gameResults = {
+    DateTime.utc(2025, 6, 6): '승리',
+    DateTime.utc(2025, 6, 11): '무승부',
+    DateTime.utc(2025, 6, 13): '승리',
+    DateTime.utc(2025, 6, 14): '패배',
+    DateTime.utc(2025, 6, 23): '승리',
+    DateTime.utc(2025, 6, 25): '패배',
+  };
+
+  //상단탭바
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,7 +36,7 @@ class _DiaryPageState extends State<DiaryPage> {
           children: [
             const CommonHeader(title: '직관 기록'),
 
-            //캘린더,모아보기 탭바
+            // 탭바
             Container(
               height: 42,
               padding: const EdgeInsets.symmetric(horizontal: 0),
@@ -36,53 +48,163 @@ class _DiaryPageState extends State<DiaryPage> {
               ),
             ),
 
-            //승/패/무 필터 버튼
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 19),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // 화면 영역
+            Expanded(
+              child: IndexedStack(
+                index: _selectedIndex,
                 children: [
-                  _buildFilterButton('승리'),
-                  _buildFilterButton('패배'),
-                  _buildFilterButton('무승부'),
-                ],
-              ),
-            ),
+                  // 캘린더 화면 전체 구성
+                  Column(
+                    children: [
+                      // 승리 패배 무승부 버튼
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 19),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildFilterButton(
+                              '승리',
+                              selectedFilterCalendar,
+                                  (value) {
+                                setState(() {
+                                  selectedFilterCalendar = value;
+                                });
+                              },
+                            ),
+                            _buildFilterButton(
+                              '패배',
+                              selectedFilterCalendar,
+                                  (value) {
+                                setState(() {
+                                  selectedFilterCalendar = value;
+                                });
+                              },
+                            ),
+                            _buildFilterButton(
+                              '무승부',
+                              selectedFilterCalendar,
+                                  (value) {
+                                setState(() {
+                                  selectedFilterCalendar = value;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      // 월 헤더 -> 현재 월 나오게
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 1),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 0),
+                            _buildMonthHeader(),
+                            const SizedBox(height: 26),
+                          ],
+                        ),
+                      ),
 
-            // 월 헤더
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 1),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 0),
-                  _buildMonthHeader(),
-                  const SizedBox(height: 28.5),
-                  TableCalendar(
-                    firstDay: DateTime.utc(2020, 1, 1),
-                    lastDay: DateTime.utc(2030, 12, 31),
-                    focusedDay: DateTime.now(),
-                    calendarStyle: CalendarStyle(
-                      todayDecoration: BoxDecoration(
-                        color: AppColors.primary200,
-                        shape: BoxShape.circle,
+                      // 달력
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: TableCalendar(
+                            locale: 'ko_KR',
+                            firstDay: DateTime.utc(2020, 1, 1),
+                            lastDay: DateTime.utc(2030, 12, 31),
+                            focusedDay: DateTime.now(),
+                            daysOfWeekHeight: 27.5,
+                            calendarStyle: CalendarStyle(
+                              todayDecoration: const BoxDecoration(),
+                              todayTextStyle: const TextStyle(),
+                              defaultTextStyle: const TextStyle(
+                                color: Color(0xFF333333),
+                                fontFamily: 'Inter',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              outsideTextStyle: const TextStyle(
+                                color: Colors.transparent,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              cellMargin: const EdgeInsets.symmetric(horizontal: 12),
+                            ),
+                            headerVisible: false,
+                            calendarBuilders: CalendarBuilders(
+                              defaultBuilder: (context, date, focusedDay) {
+                                return _buildDayCell(date);
+                              },
+                              todayBuilder: (context, date, focusedDay) {
+                                return _buildDayCell(date);
+                              },
+                            ),
+                          ),
+                        ),
                       ),
-                      selectedDecoration: BoxDecoration(
-                        color: AppColors.primary700,
-                        shape: BoxShape.circle,
-                      ),
-                      selectedTextStyle: TextStyle(
-                        color: Colors.white,
-                        fontFamily: 'Pretendard',
-                      ),
-                      todayTextStyle: TextStyle(
-                        color: AppColors.primary800,
-                        fontFamily: 'Pretendard',
-                      ),
-                    ),
-                    headerVisible: false, // 너는 위에 "5월 ⌄" 따로 구현했으니 header 숨기면 됨
-                  )
+                    ],
+                  ),
 
+
+
+                  // 모아보기 화면 전체 구성
+                  Column(
+                    children: [
+                      // 필터 버튼
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 19),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildFilterButton(
+                              '승리',
+                              selectedFilterCollection,
+                                  (value) {
+                                setState(() {
+                                  selectedFilterCollection = value;
+                                });
+                              },
+                            ),
+                            _buildFilterButton(
+                              '패배',
+                              selectedFilterCollection,
+                                  (value) {
+                                setState(() {
+                                  selectedFilterCollection = value;
+                                });
+                              },
+                            ),
+                            _buildFilterButton(
+                              '무승부',
+                              selectedFilterCollection,
+                                  (value) {
+                                setState(() {
+                                  selectedFilterCollection = value;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      // 모아보기 화면 내용
+                      Expanded(
+                        child: Container(
+                          child: Center(
+                            child: Text(
+                              '모아보기 화면',
+                              style: TextStyle(
+                                fontFamily: 'Pretendard',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF333333),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -92,6 +214,53 @@ class _DiaryPageState extends State<DiaryPage> {
     );
   }
 
+  // 날짜 셀 커스텀 빌더
+  Widget? _buildDayCell(DateTime date) {
+    final result = gameResults[DateTime.utc(date.year, date.month, date.day)];
+
+    // 필터가 선택됐으면 → 해당 결과만 표시
+    if (selectedFilterCalendar != null && result != selectedFilterCalendar) {
+      return null;
+    }
+
+    // 결과가 없으면 기본 표시
+    if (result == null) {
+      return null;
+    }
+
+    // 색상 지정
+    Color circleColor;
+    if (result == '승리') {
+      circleColor = AppColors.primary300;
+    } else if (result == '패배') {
+      circleColor = AppColors.red300;
+    } else {
+      circleColor = AppColors.gray300;
+    }
+
+    return Center(
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: circleColor,
+          shape: BoxShape.circle,
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          '${date.day}',
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF333333),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 상단 탭바 버튼
   Widget _buildTabButton({required int index, required String label}) {
     final isSelected = _selectedIndex == index;
     return GestureDetector(
@@ -129,7 +298,8 @@ class _DiaryPageState extends State<DiaryPage> {
     );
   }
 
-  Widget _buildFilterButton(String label) {
+  // 승/패/무 필터 버튼 (파라미터로 필터 상태 받도록 수정)
+  Widget _buildFilterButton(String label, String? selectedFilter, Function(String?) onFilterChanged) {
     final isSelected = selectedFilter == label;
 
     // 버튼별 색 지정
@@ -147,7 +317,7 @@ class _DiaryPageState extends State<DiaryPage> {
         borderColor = AppColors.red700;
         textColor = AppColors.red700;
       } else if (label == '무승부') {
-        backgroundColor = AppColors.gray200; // 나중에 무승부 색 변경 가능
+        backgroundColor = AppColors.gray200;
         borderColor = AppColors.gray700;
         textColor = AppColors.gray700;
       }
@@ -155,15 +325,7 @@ class _DiaryPageState extends State<DiaryPage> {
 
     return GestureDetector(
       onTap: () {
-        setState(() {
-          if (selectedFilter == label) {
-            // 이미 선택된 버튼을 다시 누르면 해제
-            selectedFilter = null;
-          } else {
-            // 새로운 버튼 선택
-            selectedFilter = label;
-          }
-        });
+        onFilterChanged(isSelected ? null : label);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 44),
@@ -190,6 +352,7 @@ class _DiaryPageState extends State<DiaryPage> {
     );
   }
 
+  // 월 헤더
   Widget _buildMonthHeader() {
     final now = DateTime.now();
     final currentMonth = '${now.month}월';
