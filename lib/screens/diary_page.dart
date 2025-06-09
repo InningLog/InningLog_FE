@@ -17,17 +17,49 @@ class _DiaryPageState extends State<DiaryPage> {
   String? selectedFilterCalendar;    // 캘린더 화면용 필터
   String? selectedFilterCollection;  // 모아보기 화면용 필터
 
-  //연동 후 삭제할거
-  final Map<DateTime, String> gameResults = {
-    DateTime.utc(2025, 6, 6): '승리',
-    DateTime.utc(2025, 6, 11): '무승부',
-    DateTime.utc(2025, 6, 13): '승리',
-    DateTime.utc(2025, 6, 14): '패배',
-    DateTime.utc(2025, 6, 23): '승리',
-    DateTime.utc(2025, 6, 25): '패배',
-  };
+  // 경기 데이터 샘플
+  final List<Map<String, dynamic>> gameList = [
+    {
+      'date': DateTime.utc(2025, 6, 6),
+      'homeScore': 6,
+      'awayScore': 4,
+      'opponent': 'NC 다이노스',
+      'location': '삼성 종합운동장',
+    },
+    {
+      'date': DateTime.utc(2025, 6, 12),
+      'homeScore': 3,
+      'awayScore': 3,
+      'opponent': '키움 히어로즈',
+      'location': '고척 스카이돔',
+    },
+    {
+      'date': DateTime.utc(2025, 6, 13),
+      'homeScore': 2,
+      'awayScore': 1,
+      'opponent': '두산 베어스',
+      'location': '잠실 야구장',
+    },
+    {
+      'date': DateTime.utc(2025, 6, 14),
+      'homeScore': 0,
+      'awayScore': 5,
+      'opponent': '롯데 자이언츠',
+      'location': '사직 야구장',
+    },
+  ];
 
-  //상단탭바
+  // 승/패/무 판단 함수
+  String getGameResult(int homeScore, int awayScore) {
+    if (homeScore > awayScore) {
+      return '승리';
+    } else if (homeScore == awayScore) {
+      return '무승부';
+    } else {
+      return '패배';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,10 +85,10 @@ class _DiaryPageState extends State<DiaryPage> {
               child: IndexedStack(
                 index: _selectedIndex,
                 children: [
-                  // 캘린더 화면 전체 구성
+                  // 캘린더 화면
                   Column(
                     children: [
-                      // 승리 패배 무승부 버튼
+                      // 승/패/무 필터 버튼 (고정)
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 19),
                         child: Row(
@@ -92,63 +124,197 @@ class _DiaryPageState extends State<DiaryPage> {
                           ],
                         ),
                       ),
-                      // 월 헤더 -> 현재 월 나오게
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 1),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 0),
-                            _buildMonthHeader(),
-                            const SizedBox(height: 26),
-                          ],
-                        ),
-                      ),
 
-                      // 달력
+                      // 나머지 전체 스크롤 영역
                       Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: TableCalendar(
-                            locale: 'ko_KR',
-                            firstDay: DateTime.utc(2020, 1, 1),
-                            lastDay: DateTime.utc(2030, 12, 31),
-                            focusedDay: DateTime.now(),
-                            daysOfWeekHeight: 27.5,
-                            calendarStyle: CalendarStyle(
-                              todayDecoration: const BoxDecoration(),
-                              todayTextStyle: const TextStyle(),
-                              defaultTextStyle: const TextStyle(
-                                color: Color(0xFF333333),
-                                fontFamily: 'Inter',
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 월 헤더
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 1),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 0),
+                                    _buildMonthHeader(),
+                                    const SizedBox(height: 26),
+                                  ],
+                                ),
                               ),
-                              outsideTextStyle: const TextStyle(
-                                color: Colors.transparent,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
+
+                              // 달력
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: TableCalendar(
+                                  locale: 'ko_KR',
+                                  firstDay: DateTime.utc(2020, 1, 1),
+                                  lastDay: DateTime.utc(2030, 12, 31),
+                                  focusedDay: DateTime.now(),
+                                  daysOfWeekHeight: 27.5,
+                                  calendarStyle: CalendarStyle(
+                                    todayDecoration: const BoxDecoration(),
+                                    todayTextStyle: const TextStyle(),
+                                    defaultTextStyle: const TextStyle(
+                                      color: Color(0xFF333333),
+                                      fontFamily: 'Inter',
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                    outsideTextStyle: const TextStyle(
+                                      color: Colors.transparent,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                    cellMargin: const EdgeInsets.symmetric(horizontal: 12),
+                                  ),
+                                  headerVisible: false,
+                                  calendarBuilders: CalendarBuilders(
+                                    defaultBuilder: (context, date, focusedDay) {
+                                      return _buildDayCell(date);
+                                    },
+                                    todayBuilder: (context, date, focusedDay) {
+                                      return _buildDayCell(date);
+                                    },
+                                  ),
+                                ),
                               ),
-                              cellMargin: const EdgeInsets.symmetric(horizontal: 12),
-                            ),
-                            headerVisible: false,
-                            calendarBuilders: CalendarBuilders(
-                              defaultBuilder: (context, date, focusedDay) {
-                                return _buildDayCell(date);
-                              },
-                              todayBuilder: (context, date, focusedDay) {
-                                return _buildDayCell(date);
-                              },
-                            ),
+
+                              // 하단 경기 기록
+                              Padding(
+                                padding: const EdgeInsets.only(top: 16),
+                                child: Column(
+                                  children: gameList
+                                      .where((game) {
+                                    final result = getGameResult(game['homeScore'], game['awayScore']);
+                                    if (selectedFilterCalendar != null && result != selectedFilterCalendar) {
+                                      return false;
+                                    }
+                                    return true;
+                                  })
+                                      .map((game) {
+                                    final result = getGameResult(game['homeScore'], game['awayScore']);
+                                    return Container(
+                                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                                      padding: const EdgeInsets.all(14),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: AppColors.gray500),
+                                        color: AppColors.gray50,
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '${game['date'].month}월 ${game['date'].day}일 (${_getWeekday(game['date'])})',
+                                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Pretendard-Black'),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text('@${game['location']}',
+                                              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w500, fontFamily: 'Pretendard-Black')),
+
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              // 점수 영역
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    width: 29,
+                                                    height: 29,
+                                                    decoration: BoxDecoration(
+                                                      shape: BoxShape.circle,
+                                                      border: Border.all(
+                                                        color: result == '승리'
+                                                            ? AppColors.win
+                                                            : result == '패배'
+                                                            ? AppColors.lose
+                                                            : AppColors.gray600,
+                                                        width: 1,
+                                                      ),
+                                                      color: Colors.transparent,
+                                                    ),
+                                                    alignment: Alignment.center,
+                                                    child: Transform.translate(
+                                                      offset: const Offset(0, -2),
+                                                      child: Text(
+                                                        '${game['homeScore']}',
+                                                        style: const TextStyle(
+                                                          fontSize: 22,
+                                                          fontWeight: FontWeight.w400,
+                                                          color: Color(0xFF000000),
+                                                          fontFamily: 'MBC1961GulimOTF',
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  const Text(
+                                                    ':',
+                                                    style: TextStyle(
+                                                      fontSize: 22,
+                                                      fontWeight: FontWeight.w400,
+                                                      fontFamily: 'MBC1961GulimOTF',
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    '${game['awayScore']}',
+                                                    style: const TextStyle(
+                                                      fontSize: 22,
+                                                      fontWeight: FontWeight.w400,
+                                                      color: Color(0xFF000000),
+                                                      fontFamily: 'MBC1961GulimOTF',
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+
+                                              // 승/패/무 + 상대팀
+                                              Column(
+                                                crossAxisAlignment: CrossAxisAlignment.end,
+                                                children: [
+                                                  Text(
+                                                    result,
+                                                    style: TextStyle(
+                                                      fontSize: 22,
+                                                      fontWeight: FontWeight.w400,
+                                                      color: result == '승리'
+                                                          ? AppColors.win
+                                                          : result == '패배'
+                                                          ? AppColors.lose
+                                                          : AppColors.gray600,
+                                                      fontFamily: 'MBC1961GulimOTF',
+                                                    ),
+                                                  ),
+                                                  Text('vs ${game['opponent']}',
+                                                    style: const TextStyle(
+                                                      fontFamily: 'Pretendard-Black',
+                                                      fontSize: 14,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  })
+                                      .toList(),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ],
                   ),
 
-
-
-                  // 모아보기 화면 전체 구성
+                  // 모아보기 화면 (기존 그대로 유지 — 필요시 동일하게 구성하면 됨)
                   Column(
                     children: [
                       // 필터 버튼
@@ -187,22 +353,7 @@ class _DiaryPageState extends State<DiaryPage> {
                           ],
                         ),
                       ),
-                      // 모아보기 화면 내용
-                      Expanded(
-                        child: Container(
-                          child: Center(
-                            child: Text(
-                              '모아보기 화면',
-                              style: TextStyle(
-                                fontFamily: 'Pretendard',
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF333333),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                      // 모아보기 화면 내용 (여기에 원하면 동일하게 구성 가능)
                     ],
                   ),
                 ],
@@ -216,19 +367,21 @@ class _DiaryPageState extends State<DiaryPage> {
 
   // 날짜 셀 커스텀 빌더
   Widget? _buildDayCell(DateTime date) {
-    final result = gameResults[DateTime.utc(date.year, date.month, date.day)];
+    final game = gameList.firstWhere(
+          (g) => DateTime.utc(g['date'].year, g['date'].month, g['date'].day) == DateTime.utc(date.year, date.month, date.day),
+      orElse: () => {},
+    );
 
-    // 필터가 선택됐으면 → 해당 결과만 표시
+    if (game.isEmpty) {
+      return null;
+    }
+
+    final result = getGameResult(game['homeScore'], game['awayScore']);
+
     if (selectedFilterCalendar != null && result != selectedFilterCalendar) {
       return null;
     }
 
-    // 결과가 없으면 기본 표시
-    if (result == null) {
-      return null;
-    }
-
-    // 색상 지정
     Color circleColor;
     if (result == '승리') {
       circleColor = AppColors.primary300;
@@ -260,49 +413,10 @@ class _DiaryPageState extends State<DiaryPage> {
     );
   }
 
-  // 상단 탭바 버튼
-  Widget _buildTabButton({required int index, required String label}) {
-    final isSelected = _selectedIndex == index;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedIndex = index;
-        });
-      },
-      child: Container(
-        width: 195,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(vertical: 0),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary200 : Colors.transparent,
-          border: Border(
-            bottom: BorderSide(
-              color: isSelected ? AppColors.primary700 : const Color(0xFFFAFAFA),
-              width: isSelected ? 2.0 : 1.0,
-            ),
-          ),
-          borderRadius: BorderRadius.circular(0),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontSize: 12,
-            letterSpacing: -0.26,
-            height: 1.5,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            color: isSelected ? AppColors.primary800 : AppColors.gray700,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // 승/패/무 필터 버튼 (파라미터로 필터 상태 받도록 수정)
+  // 필터 버튼
   Widget _buildFilterButton(String label, String? selectedFilter, Function(String?) onFilterChanged) {
     final isSelected = selectedFilter == label;
 
-    // 버튼별 색 지정
     Color backgroundColor = AppColors.gray50;
     Color borderColor = AppColors.gray600;
     Color textColor = AppColors.gray700;
@@ -352,6 +466,44 @@ class _DiaryPageState extends State<DiaryPage> {
     );
   }
 
+  // 탭바 버튼
+  Widget _buildTabButton({required int index, required String label}) {
+    final isSelected = _selectedIndex == index;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedIndex = index;
+        });
+      },
+      child: Container(
+        width: 195,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(vertical: 0),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary200 : Colors.transparent,
+          border: Border(
+            bottom: BorderSide(
+              color: isSelected ? AppColors.primary700 : const Color(0xFFFAFAFA),
+              width: isSelected ? 2.0 : 1.0,
+            ),
+          ),
+          borderRadius: BorderRadius.circular(0),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontSize: 12,
+            letterSpacing: -0.26,
+            height: 1.5,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            color: isSelected ? AppColors.primary800 : AppColors.gray700,
+          ),
+        ),
+      ),
+    );
+  }
+
   // 월 헤더
   Widget _buildMonthHeader() {
     final now = DateTime.now();
@@ -381,5 +533,11 @@ class _DiaryPageState extends State<DiaryPage> {
         ],
       ),
     );
+  }
+
+  // 요일 표시용 함수
+  String _getWeekday(DateTime date) {
+    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+    return weekdays[date.weekday % 7];
   }
 }
