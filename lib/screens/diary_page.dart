@@ -16,6 +16,8 @@ class _DiaryPageState extends State<DiaryPage> {
 
   String? selectedFilterCalendar;    // 캘린더 화면용 필터
   String? selectedFilterCollection;  // 모아보기 화면용 필터
+  DateTime? selectedDate; //날짜 선택
+
 
   // 경기 데이터 샘플
   final List<Map<String, dynamic>> gameList = [
@@ -152,8 +154,22 @@ class _DiaryPageState extends State<DiaryPage> {
                                   firstDay: DateTime.utc(2020, 1, 1),
                                   lastDay: DateTime.utc(2030, 12, 31),
                                   focusedDay: DateTime.now(),
+                                  selectedDayPredicate: (day) {
+                                    return selectedDate != null &&
+                                        DateTime.utc(day.year, day.month, day.day) ==
+                                            DateTime.utc(selectedDate!.year, selectedDate!.month, selectedDate!.day);
+                                  },
+
                                   daysOfWeekHeight: 27.5,
                                   calendarStyle: CalendarStyle(
+                                    selectedDecoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.transparent, // 원래 배경 없게
+                                      border: Border.all( // 테두리만 표시
+                                        color: AppColors.primary700, // 원하는 색깔
+                                        width: 2,
+                                      ),
+                                    ),
                                     todayDecoration: const BoxDecoration(),
                                     todayTextStyle: const TextStyle(),
                                     defaultTextStyle: const TextStyle(
@@ -171,14 +187,78 @@ class _DiaryPageState extends State<DiaryPage> {
                                   ),
                                   headerVisible: false,
                                   calendarBuilders: CalendarBuilders(
-                                    defaultBuilder: (context, date, focusedDay) {
-                                      return _buildDayCell(date);
+                                    selectedBuilder: (context, date, focusedDay) {
+                                      final game = gameList.firstWhere(
+                                            (g) => DateTime.utc(g['date'].year, g['date'].month, g['date'].day) ==
+                                            DateTime.utc(date.year, date.month, date.day),
+                                        orElse: () => {},
+
+
+                                      );
+
+                                      // 기본 색
+                                      Color borderColor = AppColors.gray900;
+
+                                      if (game['homeScore'] != null && game['awayScore'] != null) {
+                                        final result = getGameResult(game['homeScore'], game['awayScore']);
+                                        if (result == '승리') {
+                                          borderColor = Color(0xFFAFD956);
+                                        } else if (result == '패배') {
+                                          borderColor = Color(0xFFE48F89);
+                                        } else if (result == '무승부') {
+                                          borderColor = AppColors.gray700;
+                                        }else
+                                          borderColor = AppColors.gray900;
+                                      }
+
+                                      return Stack(
+                                        alignment: Alignment.center,
+                                        children: [
+                                          if (game['homeScore'] != null && game['awayScore'] != null)
+                                            _buildDayCell(date)
+                                          else
+                                          // 경기 없는 날은 그냥 날짜 숫자만 표시
+                                            Center(
+                                              child: Text(
+                                                '${date.day}',
+                                                style: const TextStyle(
+                                                  fontFamily: 'Pretendard',
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Color(0xFF333333),
+                                                ),
+                                              ),
+                                            ),
+
+                                          // 추가 테두리 원
+                                          Container(
+                                            width: 36,
+                                            height: 36,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: borderColor,
+                                                width: 2,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+
                                     },
-                                    todayBuilder: (context, date, focusedDay) {
-                                      return _buildDayCell(date);
-                                    },
+
+                                    defaultBuilder: (context, date, _) => _buildDayCell(date),
+                                    todayBuilder: (context, date, _) => _buildDayCell(date),
                                   ),
+
+                                  onDaySelected: (selectedDay, focusedDay) {
+                                    setState(() {
+                                      selectedDate = selectedDay; //날짜 선택 가능
+                                    });
+                                  },
+
                                 ),
+
                               ),
 
                               // 하단 경기 기록
@@ -188,11 +268,22 @@ class _DiaryPageState extends State<DiaryPage> {
                                   children: gameList
                                       .where((game) {
                                     final result = getGameResult(game['homeScore'], game['awayScore']);
+                                    // 승패무 필터
                                     if (selectedFilterCalendar != null && result != selectedFilterCalendar) {
                                       return false;
                                     }
+                                    // 날짜 필터 적용
+                                    if (selectedDate != null) {
+                                      final gameDate = DateTime.utc(game['date'].year, game['date'].month, game['date'].day);
+                                      final selected = DateTime.utc(selectedDate!.year, selectedDate!.month, selectedDate!.day);
+                                      if (gameDate != selected) {
+                                        return false;
+                                      }
+                                    }
+
                                     return true;
                                   })
+
                                       .map((game) {
                                     final result = getGameResult(game['homeScore'], game['awayScore']);
                                     return Container(
