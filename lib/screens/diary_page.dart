@@ -3,6 +3,8 @@ import 'package:flutter_svg/svg.dart';
 import '../app_colors.dart';
 import '../widgets/common_header.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'add_diary_page.dart';
+
 
 class DiaryPage extends StatefulWidget {
   const DiaryPage({super.key});
@@ -127,6 +129,7 @@ class _DiaryPageState extends State<DiaryPage> {
                         ),
                       ),
 
+
                       // 나머지 전체 스크롤 영역
                       Expanded(
                         child: SingleChildScrollView(
@@ -145,6 +148,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                   ],
                                 ),
                               ),
+
 
                               // 달력
                               Padding(
@@ -192,8 +196,6 @@ class _DiaryPageState extends State<DiaryPage> {
                                             (g) => DateTime.utc(g['date'].year, g['date'].month, g['date'].day) ==
                                             DateTime.utc(date.year, date.month, date.day),
                                         orElse: () => {},
-
-
                                       );
 
                                       // 기본 색
@@ -207,30 +209,29 @@ class _DiaryPageState extends State<DiaryPage> {
                                           borderColor = Color(0xFFE48F89);
                                         } else if (result == '무승부') {
                                           borderColor = AppColors.gray700;
-                                        }else
-                                          borderColor = AppColors.gray900;
+                                        }
+                                      } else {
+                                        // 경기 없는 날 → 검정색 테두리
+                                        borderColor = AppColors.gray900;
                                       }
 
                                       return Stack(
                                         alignment: Alignment.center,
                                         children: [
-                                          if (game['homeScore'] != null && game['awayScore'] != null)
-                                            _buildDayCell(date)
-                                          else
-                                          // 경기 없는 날은 그냥 날짜 숫자만 표시
-                                            Center(
-                                              child: Text(
-                                                '${date.day}',
-                                                style: const TextStyle(
-                                                  fontFamily: 'Pretendard',
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: Color(0xFF333333),
-                                                ),
+                                          // 날짜 숫자 항상 표시
+                                          Center(
+                                            child: Text(
+                                              '${date.day}',
+                                              style: const TextStyle(
+                                                fontFamily: 'Pretendard',
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                                color: Color(0xFF333333),
                                               ),
                                             ),
+                                          ),
 
-                                          // 추가 테두리 원
+                                          // 추가 테두리 원 (항상 표시)
                                           Container(
                                             width: 36,
                                             height: 36,
@@ -244,8 +245,8 @@ class _DiaryPageState extends State<DiaryPage> {
                                           ),
                                         ],
                                       );
-
                                     },
+
 
                                     defaultBuilder: (context, date, _) => _buildDayCell(date),
                                     todayBuilder: (context, date, _) => _buildDayCell(date),
@@ -253,9 +254,17 @@ class _DiaryPageState extends State<DiaryPage> {
 
                                   onDaySelected: (selectedDay, focusedDay) {
                                     setState(() {
-                                      selectedDate = selectedDay; //날짜 선택 가능
+                                      // 같은 날짜를 다시 클릭하면 취소
+                                      if (selectedDate != null &&
+                                          DateTime.utc(selectedDate!.year, selectedDate!.month, selectedDate!.day) ==
+                                              DateTime.utc(selectedDay.year, selectedDay.month, selectedDay.day)) {
+                                        selectedDate = null; // 선택 해제
+                                      } else {
+                                        selectedDate = selectedDay; // 새로 선택
+                                      }
                                     });
                                   },
+
 
                                 ),
 
@@ -399,6 +408,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                 ),
                               ),
                             ],
+
                           ),
                         ),
                       ),
@@ -441,6 +451,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                 });
                               },
                             ),
+
                           ],
                         ),
                       ),
@@ -449,11 +460,31 @@ class _DiaryPageState extends State<DiaryPage> {
                   ),
                 ],
               ),
+
             ),
+
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AddDiaryPage()),
+          );
+        },
+        backgroundColor: AppColors.primary700,
+        shape: const CircleBorder(),  // <- 명시적으로 원형 지정
+        child: SvgPicture.asset(
+          'assets/icons/add_diary.svg',
+          width: 56,
+          height: 56,
+          fit: BoxFit.scaleDown,
+        ),
+      ),
+
     );
+
   }
 
   // 날짜 셀 커스텀 빌더
