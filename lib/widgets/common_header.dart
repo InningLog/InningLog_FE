@@ -4,11 +4,14 @@ import 'package:flutter_svg/svg.dart';
 class CommonHeader extends StatelessWidget {
   final String title;
   final VoidCallback? onAlarmPressed;
+  final Widget? leading;   // 추가!
+
 
   const CommonHeader({
     super.key,
     required this.title,
     this.onAlarmPressed,
+    this.leading,          // 추가!
   });
 
   @override
@@ -19,6 +22,8 @@ class CommonHeader extends StatelessWidget {
       alignment: Alignment.center,
       child: Row(
         children: [
+          if (leading != null) leading!,
+          if (leading != null) const SizedBox(width: 8),
           Text(
             title,
             style: const TextStyle(
@@ -34,7 +39,7 @@ class CommonHeader extends StatelessWidget {
           IconButton(
             icon: SvgPicture.asset(
               'assets/icons/Alarm.svg',
-              width: 24,
+              width: 18.05,
             ),
             onPressed: onAlarmPressed ?? () {},
           ),
