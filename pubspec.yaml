@@ -35,6 +35,12 @@ flutter:
 
   assets:
     - assets/icons/
+    - assets/images/KakaoTalk_20250611_184301449.jpg
+    - assets/images/KakaoTalk_20250611_184301449_01.jpg
+    - assets/images/KakaoTalk_20250611_184301449_03.jpg
+    - assets/images/KakaoTalk_20250611_184301449_04.jpg
+    - assets/images/KakaoTalk_20250611_184301449_05.jpg
+    - assets/images/KakaoTalk_20250611_184301449_06.jpg
   fonts:
     - family: MBC1961GulimOTF
       fonts:

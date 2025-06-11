@@ -29,6 +29,7 @@ class _DiaryPageState extends State<DiaryPage> {
       'awayScore': 4,
       'opponent': 'NC 다이노스',
       'location': '삼성 종합운동장',
+      'photo': 'assets/images/KakaoTalk_20250611_184301449_04.jpg',
     },
     {
       'date': DateTime.utc(2025, 6, 12),
@@ -36,6 +37,7 @@ class _DiaryPageState extends State<DiaryPage> {
       'awayScore': 3,
       'opponent': '키움 히어로즈',
       'location': '고척 스카이돔',
+      'photo': 'assets/images/KakaoTalk_20250611_184301449.jpg',
     },
     {
       'date': DateTime.utc(2025, 6, 13),
@@ -43,6 +45,7 @@ class _DiaryPageState extends State<DiaryPage> {
       'awayScore': 1,
       'opponent': '두산 베어스',
       'location': '잠실 야구장',
+      'photo': 'assets/images/KakaoTalk_20250611_184301449_01.jpg',
     },
     {
       'date': DateTime.utc(2025, 6, 14),
@@ -50,6 +53,23 @@ class _DiaryPageState extends State<DiaryPage> {
       'awayScore': 5,
       'opponent': '롯데 자이언츠',
       'location': '사직 야구장',
+      'photo': 'assets/images/KakaoTalk_20250611_184301449_03.jpg',
+    },
+    {
+      'date': DateTime.utc(2025, 6, 17),
+      'homeScore': 9,
+      'awayScore': 5,
+      'opponent': '두산 베어스',
+      'location': '잠실 야구장',
+      'photo': 'assets/images/KakaoTalk_20250611_184301449_05.jpg',
+    },
+    {
+      'date': DateTime.utc(2025, 6, 28),
+      'homeScore': 5,
+      'awayScore': 5,
+      'opponent': '엘지 트윈스',
+      'location': '한화생명볼파크',
+      'photo': 'assets/images/KakaoTalk_20250611_184301449_06.jpg',
     },
   ];
 
@@ -63,6 +83,15 @@ class _DiaryPageState extends State<DiaryPage> {
       return '패배';
     }
   }
+
+  String _shortenResult(String result) {
+    if (result == '승리') return '승';
+    if (result == '패배') return '패';
+    if (result == '무승부') return '무';
+    return '';  // 혹시라도 잘못된 값 들어올 때 빈 문자열 처리
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -415,7 +444,7 @@ class _DiaryPageState extends State<DiaryPage> {
                     ],
                   ),
 
-                  // 모아보기 화면 (기존 그대로 유지 — 필요시 동일하게 구성하면 됨)
+                  // 모아보기 화면
                   Column(
                     children: [
                       // 필터 버튼
@@ -455,6 +484,123 @@ class _DiaryPageState extends State<DiaryPage> {
                           ],
                         ),
                       ),
+
+
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16), // Figma처럼 좌우 여백 주기
+
+                          child: GridView.builder(
+                            itemCount: gameList.where((game) {
+                              if (selectedFilterCollection == null) {
+                                return true; // 전체 보여주기
+                              }
+                              final result = getGameResult(game['homeScore'], game['awayScore']);
+                              return result == selectedFilterCollection;
+                            }).length,
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2, // 2개씩 보여주기 (Figma처럼)
+                              crossAxisSpacing: 22,
+                              mainAxisSpacing: 22,
+                              childAspectRatio: 0.75, // 카드 비율 (필요 시 조절)
+                            ),
+                            itemBuilder: (context, index) {
+                              final filteredGames = gameList.where((game) {
+                                if (selectedFilterCollection == null) {
+                                  return true;
+                                }
+                                final result = getGameResult(game['homeScore'], game['awayScore']);
+                                return result == selectedFilterCollection;
+                              }).toList();
+                              final game = filteredGames[index];
+                              return Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    // 카드 둥근 모서리
+                                    child: Image.asset(
+                                      game['photo'],
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
+
+                                    ),
+
+                                  ),
+                                  Positioned(
+                                    top: 8,
+                                    left: 8,
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 3, vertical: 129),//자동패딩 8
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        _shortenResult(getGameResult(game['homeScore'], game['awayScore'])),
+                                        style: TextStyle(
+                                          color: AppColors.gray50,
+                                          fontSize: 26,
+                                          fontWeight: FontWeight.w400,
+                                          fontFamily: 'MBC1961GulimOTF',
+                                        ),
+                                      ),
+
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 165,
+                                    bottom: 19,
+                                    left: 11,
+                                    right: 8,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        SizedBox(height: 5),
+
+                                        Text(
+
+                                          '${game['date'].month}/${game['date'].day}(${_getWeekday(game['date'])})',
+                                          style: TextStyle(
+                                            color: AppColors.gray50,
+                                            fontSize: 9,
+                                            fontFamily: 'Pretendard_Black',
+                                            fontWeight: FontWeight.w700,
+                                            height: 1.1,
+
+                                          ),
+                                        ),
+                                        Text(
+                                          'vs ${game['opponent']}',
+                                          style: TextStyle(
+                                            color: AppColors.gray50,
+                                            fontSize: 9,
+                                            fontFamily: 'Pretendard_Black',
+                                            fontWeight: FontWeight.w700,
+                                            height: 1.1,
+                                          ),
+                                        ),
+                                        Text(
+                                          '@${game['location']}',
+                                          style: TextStyle(
+                                            color: AppColors.gray50,
+                                            fontSize: 9,
+                                            fontFamily: 'Pretendard_Black',
+                                            fontWeight: FontWeight.w700,
+
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+
                       // 모아보기 화면 내용 (여기에 원하면 동일하게 구성 가능)
                     ],
                   ),

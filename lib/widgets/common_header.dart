@@ -18,7 +18,7 @@ class CommonHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16,vertical: 9),
       alignment: Alignment.center,
       child: Row(
         children: [
