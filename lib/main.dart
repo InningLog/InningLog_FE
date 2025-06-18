@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'; // 추가!
 import 'package:inninglog/navigation/main_navigation.dart';
 import 'package:inninglog/screens/splash_screen.dart';
+import 'package:inninglog/screens/onboarding_screen.dart';
 
 
 void main() {

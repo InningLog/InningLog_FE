@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:inninglog/navigation/main_navigation.dart';
+import 'package:inninglog/screens/onboarding_screen.dart';
 import 'package:inninglog/app_colors.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -17,27 +19,38 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
+    _startSplashLogic();
+  }
 
-    // 1.5초 후 배경 + 아이콘 + 글씨 전환
-    Timer(const Duration(milliseconds: 1500), () {
+  void _startSplashLogic() async {
+    await Future.delayed(const Duration(milliseconds: 1500));
+    if (mounted) {
       setState(() {
         _switched = true;
       });
+    }
+
+    await Future.delayed(const Duration(milliseconds: 1500));
+
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
+    print('[Splash] 이동 직전 hasSeenOnboarding = $hasSeenOnboarding');
+
+
+    if (!mounted) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+          hasSeenOnboarding ? const MainNavigation() : const OnboardingScreen(),
+        ),
+      );
     });
 
-    // 3초 후 메인 화면으로 이동
-    Timer(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            transitionDuration: const Duration(milliseconds: 500),
-            pageBuilder: (_, __, ___) => const MainNavigation(),
-          ),
-        );
-      }
-    });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +61,6 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 로고
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 600),
               child: _switched
@@ -63,17 +75,14 @@ class _SplashScreenState extends State<SplashScreen> {
                 width: 162,
               ),
             ),
-
-            const SizedBox(height: 20.38),
-
-            // 텍스트
+            const SizedBox(height: 20),
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 600),
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w400,
                 fontFamily: 'MBC1961GulimOTF',
-                color: _switched ? AppColors.primary700 : Color(0xFF1A1A1A), // 반대로하기
+                color: _switched ? AppColors.primary700 : const Color(0xFF1A1A1A),
               ),
               child: const Text('이닝로그'),
             ),
