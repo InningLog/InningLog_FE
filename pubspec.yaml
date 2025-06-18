@@ -31,6 +31,7 @@ dev_dependencies:
 
 
 flutter:
+
   uses-material-design: true
 
   assets:
@@ -41,6 +42,9 @@ flutter:
     - assets/images/KakaoTalk_20250611_184301449_04.jpg
     - assets/images/KakaoTalk_20250611_184301449_05.jpg
     - assets/images/KakaoTalk_20250611_184301449_06.jpg
+    - assets/icons/splash_green.svg
+    - assets/icons/splash_white.svg
+
   fonts:
     - family: MBC1961GulimOTF
       fonts:
