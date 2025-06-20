@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:inninglog/navigation/main_navigation.dart';
+import 'package:inninglog/screens/onboarding_page1.dart';
+import 'package:inninglog/screens/onboarding_page5.dart';
+import 'package:inninglog/screens/onboarding_content_page.dart';
 
 
 class OnboardingScreen extends StatefulWidget {
@@ -14,75 +17,96 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int _currentPage = 0;
 
-  final List<Widget> _pages = [
-    OnboardingPage(text: '1페이지 내용', color: Colors.red),
-    OnboardingPage(text: '2페이지 내용', color: Colors.orange),
-    OnboardingPage(text: '3페이지 내용', color: Colors.yellow),
-    OnboardingPage(text: '4페이지 내용', color: Colors.green),
-    OnboardingPage(text: '5페이지 내용', color: Colors.blue),
+  final List<Widget> _pages = const [
+    OnboardingPage1(),
+    OnboardingContentPage(
+      image: 'assets/images/onboard_2.svg',
+      title: '나의 직관 통계,\n직관 리포트',
+      desc: '직관 리포트 보기 이미지\n추후 추가 예정\n(사이즈는 사각형 만큼)',
+    ),
+    OnboardingContentPage(
+      image: 'assets/images/onboard_3.svg',
+      title: '직관의 추억을,\n일지 쓰기',
+      desc: '직관 일지 이미지\n추후 추가 예정\n(사이즈는 사각형 만큼)',
+    ),
+    OnboardingContentPage(
+      image: 'assets/images/onboard_4.svg',
+      title: '구장 별 좌석을\n보고 싶을 땐,\n구장 보기',
+      desc: '구장 표시 보기 이미지\n추후 추가 예정\n(사이즈는 사각형 만큼)',
+    ),
+    OnboardingPage5(),
   ];
 
-  void _nextPage() async {
-    if (_currentPage < _pages.length - 1) {
-      _controller.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.ease,
-      );
-    } else {
-      // ✅ 온보딩 완료 처리
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('hasSeenOnboarding', true);
 
-      if (!mounted) return;
+  void _nextPage() {
+    if (_currentPage < _pages.length - 1) {
+      _controller.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.ease);
+    } else {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const MainNavigation()),
+        MaterialPageRoute(builder: (context) => const MainNavigation()),
       );
     }
+  }
+
+
+
+  Widget _buildDots() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(
+        _pages.length,
+            (index) => Container(
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: _currentPage == index ? 12 : 8,
+          height: _currentPage == index ? 12 : 8,
+          decoration: BoxDecoration(
+            color: _currentPage == index ? Colors.green : Colors.grey[300],
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
+      body: Column(
         children: [
-          PageView(
-            controller: _controller,
-            onPageChanged: (index) {
-              setState(() {
-                _currentPage = index;
-              });
-            },
-            children: _pages,
+          Expanded(
+            child: PageView.builder(
+              controller: _controller,
+              itemCount: _pages.length,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentPage = index;
+                });
+              },
+              itemBuilder: (context, index) => _pages[index],
+
+            ),
           ),
-          Positioned(
-            bottom: 40,
-            right: 20,
+          _buildDots(),
+          const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: ElevatedButton(
               onPressed: _nextPage,
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size.fromHeight(50),
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.green,
+                side: const BorderSide(color: Colors.green),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+              ),
               child: Text(_currentPage == _pages.length - 1 ? '시작하기' : '다음'),
             ),
           ),
+          const SizedBox(height: 30),
         ],
-      ),
-    );
-  }
-}
-
-class OnboardingPage extends StatelessWidget {
-  final String text;
-  final Color color;
-
-  const OnboardingPage({super.key, required this.text, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: color,
-      alignment: Alignment.center,
-      child: Text(
-        text,
-        style: const TextStyle(fontSize: 24, color: Colors.white),
       ),
     );
   }

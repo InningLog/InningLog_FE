@@ -21,7 +21,7 @@ dependencies:
 
 
   cupertino_icons: ^1.0.8
-  flutter_svg: ^2.1.0
+  flutter_svg: ^2.0.7
 
 dev_dependencies:
   flutter_test:
@@ -45,6 +45,11 @@ flutter:
     - assets/images/KakaoTalk_20250611_184301449_06.jpg
     - assets/icons/splash_green.svg
     - assets/icons/splash_white.svg
+    - assets/icons/bori.svg
+    - assets/images/onboard_2.svg
+    - assets/images/onboard_3.svg
+    - assets/images/onboard_4.svg
+    - assets/images/onboard_5.svg
 
   fonts:
     - family: MBC1961GulimOTF

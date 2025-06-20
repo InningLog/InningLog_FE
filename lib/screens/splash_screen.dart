@@ -33,21 +33,26 @@ class _SplashScreenState extends State<SplashScreen> {
     await Future.delayed(const Duration(milliseconds: 1500));
 
     final prefs = await SharedPreferences.getInstance();
+
+// 개발용: 온보딩 계속 보이게 하기
+    await prefs.setBool('hasSeenOnboarding', false);
+
     final hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
-    print('[Splash] 이동 직전 hasSeenOnboarding = $hasSeenOnboarding');
+   //print('[Splash] 이동 직전 hasSeenOnboarding = $hasSeenOnboarding');
 
 
     if (!mounted) return;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-          hasSeenOnboarding ? const MainNavigation() : const OnboardingScreen(),
-        ),
-      );
-    });
+    //print('[Splash] 이동 준비중: hasSeenOnboarding = $hasSeenOnboarding');
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+        hasSeenOnboarding ? const MainNavigation() : const OnboardingScreen(),
+      ),
+    );
+
 
   }
 
