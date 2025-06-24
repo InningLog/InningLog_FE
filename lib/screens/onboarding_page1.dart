@@ -11,22 +11,27 @@ class OnboardingPage1 extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SvgPicture.asset('assets/icons/bori.svg', height: 180),
+          SvgPicture.asset('assets/icons/bori.svg', height: 139),
           const SizedBox(height: 24),
           const Text(
             '나만의 야구기록,\n이닝로그에 오신 걸\n환영합니다!',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
           ),
 
-          const SizedBox(height: 16),
-          Image.asset('assets/images/bori.jpg', height: 80),
-          const SizedBox(height: 16),
+          const SizedBox(height: 50),
+          Image.asset(
+            'assets/images/bori.png',
+            height: 112.5,
+            fit: BoxFit.contain,
+          ),
+
+          const SizedBox(height: 19.5),
 
           const Text(
             '이름: 보리\n* 직관 많이 다녀서 꼬질꼬질 해짐',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: Colors.grey),
+            style: TextStyle(fontSize: 20, color: Colors.black, fontFamily: 'omyu pretty.ttf'),
           ),
         ],
       ),

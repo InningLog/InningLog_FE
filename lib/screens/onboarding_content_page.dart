@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../app_colors.dart';
+
 class OnboardingContentPage extends StatelessWidget {
   final String image;
   final String title;
@@ -20,19 +22,29 @@ class OnboardingContentPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SvgPicture.asset(image, height: 200),
-          const SizedBox(height: 32),
+
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+            style: const TextStyle(fontSize: 24,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Pretendard'),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 6),
           Text(
             desc,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 14, color: Colors.grey),
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w400,
+              color: AppColors.primary700,
+              fontFamily: 'MBC1961GulimOTF',
+            ),
           ),
+          const SizedBox(height: 35),
+
+          SvgPicture.asset(image, height: 282),
+
         ],
       ),
     );

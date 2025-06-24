@@ -21,18 +21,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     OnboardingPage1(),
     OnboardingContentPage(
       image: 'assets/images/onboard_2.svg',
-      title: '나의 직관 통계,\n직관 리포트',
-      desc: '직관 리포트 보기 이미지\n추후 추가 예정\n(사이즈는 사각형 만큼)',
+      title: '나의 직관 통계,',
+      desc: '직관 리포트',
     ),
     OnboardingContentPage(
       image: 'assets/images/onboard_3.svg',
-      title: '직관의 추억을,\n일지 쓰기',
-      desc: '직관 일지 이미지\n추후 추가 예정\n(사이즈는 사각형 만큼)',
+      title: '직관의 추억을',
+      desc: '일지 쓰기',
     ),
     OnboardingContentPage(
       image: 'assets/images/onboard_4.svg',
-      title: '구장 별 좌석을\n보고 싶을 땐,\n구장 보기',
-      desc: '구장 표시 보기 이미지\n추후 추가 예정\n(사이즈는 사각형 만큼)',
+      title: '구장 별 좌석을 보고 싶을 땐,',
+      desc: '구장 보기',
     ),
     OnboardingPage5(),
   ];

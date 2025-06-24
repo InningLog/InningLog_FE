@@ -50,8 +50,8 @@ flutter:
     - assets/images/onboard_3.svg
     - assets/images/onboard_4.svg
     - assets/images/onboard_5.svg
-    - assets/images/bori.png
     - assets/images/bori.jpg
+    - assets/images/bori_onboard.jpg
 
   fonts:
     - family: MBC1961GulimOTF
@@ -66,5 +66,8 @@ flutter:
     - family: Inter
       fonts:
         - asset: assets/fonts/InterRegular.ttf
+    - family: omyu pretty
+      fonts:
+        - asset: assets/fonts/omyu pretty.ttf
 
 
