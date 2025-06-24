@@ -50,6 +50,8 @@ flutter:
     - assets/images/onboard_3.svg
     - assets/images/onboard_4.svg
     - assets/images/onboard_5.svg
+    - assets/images/bori.png
+    - assets/images/bori.jpg
 
   fonts:
     - family: MBC1961GulimOTF
