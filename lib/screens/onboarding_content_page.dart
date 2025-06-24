@@ -17,35 +17,39 @@ class OnboardingContentPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 24,
+    return ColoredBox(
+      color: AppColors.primary50,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start, // ✅ 중앙 정렬 → 상단 정렬
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(height: 77),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 24,
                 fontWeight: FontWeight.w600,
-                fontFamily: 'Pretendard'),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            desc,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w400,
-              color: AppColors.primary700,
-              fontFamily: 'MBC1961GulimOTF',
+                fontFamily: 'Pretendard',
+              ),
             ),
-          ),
-          const SizedBox(height: 35),
-
-          SvgPicture.asset(image, height: 282),
-
-        ],
+            const SizedBox(height: 6),
+            Text(
+              desc,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w400,
+                color: AppColors.primary700,
+                fontFamily: 'MBC1961GulimOTF',
+              ),
+            ),
+            const SizedBox(height: 35),
+            SvgPicture.asset(image, height: 282),
+          ],
+        ),
       ),
     );
   }

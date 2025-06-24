@@ -9,10 +9,10 @@ class OnboardingPage1 extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SvgPicture.asset('assets/icons/bori.svg', height: 139),
-          const SizedBox(height: 24),
+          const SizedBox(height: 139),
           const Text(
             '나만의 야구기록,\n이닝로그에 오신 걸\n환영합니다!',
             textAlign: TextAlign.center,
@@ -21,7 +21,7 @@ class OnboardingPage1 extends StatelessWidget {
 
           const SizedBox(height: 50),
           Image.asset(
-            'assets/images/bori.png',
+            'assets/images/bori_onboard.jpg',
             height: 112.5,
             fit: BoxFit.contain,
           ),

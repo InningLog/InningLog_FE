@@ -5,6 +5,8 @@ import 'package:inninglog/screens/onboarding_page1.dart';
 import 'package:inninglog/screens/onboarding_page5.dart';
 import 'package:inninglog/screens/onboarding_content_page.dart';
 
+import '../app_colors.dart';
+
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -40,7 +42,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _nextPage() {
     if (_currentPage < _pages.length - 1) {
-      _controller.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.ease);
+      _controller.nextPage(
+          duration: const Duration(milliseconds: 300), curve: Curves.ease);
     } else {
       Navigator.pushReplacement(
         context,
@@ -50,30 +53,61 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
 
-
   Widget _buildDots() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(
         _pages.length,
-            (index) => Container(
+            (index) => AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: _currentPage == index ? 12 : 8,
-          height: _currentPage == index ? 12 : 8,
+          width: _currentPage == index ? 36 : 15,
+          height: 15,
           decoration: BoxDecoration(
-            color: _currentPage == index ? Colors.green : Colors.grey[300],
-            shape: BoxShape.circle,
+            color: _currentPage == index
+                ? const Color(0xFF94C32C)  // 지금
+                : const Color(0xFFE5F2C8), // 지금아님
+            borderRadius: BorderRadius.circular(7.5),
+
           ),
         ),
       ),
     );
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.primary50,
       body: Column(
         children: [
+
+          const SizedBox(height: 67),
+
+          if (_currentPage > 0)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 16), // 여백 조절 가능
+                child: GestureDetector(
+                  onTap: () {
+                    _controller.previousPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.ease,
+                    );
+                  },
+                  child: SvgPicture.asset(
+                    'assets/icons/back_but.svg',
+                    height: 20,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ),
+
+
           Expanded(
             child: PageView.builder(
               controller: _controller,
@@ -88,23 +122,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
           _buildDots(),
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: ElevatedButton(
-              onPressed: _nextPage,
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(50),
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.green,
-                side: const BorderSide(color: Colors.green),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
+          const SizedBox(height: 121),
+          if (_currentPage != _pages.length - 1)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: ElevatedButton(
+                onPressed: _nextPage,
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(50),
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.green,
+                  side: const BorderSide(color: Colors.green),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
                 ),
+                child: const Text('다음'),
               ),
-              child: Text(_currentPage == _pages.length - 1 ? '시작하기' : '다음'),
             ),
-          ),
+
+          if (_currentPage == 4)
+            Positioned(
+              bottom: 60,
+              left: 24,
+              right: 24,
+              child: SvgPicture.asset(
+                'assets/icons/kakao_button.svg',
+                height: 54,
+              ),
+            ),
+
           const SizedBox(height: 30),
         ],
       ),
