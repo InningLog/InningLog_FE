@@ -4,6 +4,8 @@ import 'package:inninglog/navigation/main_navigation.dart';
 import 'package:inninglog/screens/onboarding_page1.dart';
 import 'package:inninglog/screens/onboarding_page5.dart';
 import 'package:inninglog/screens/onboarding_content_page.dart';
+import 'package:inninglog/screens/onboarding_page6.dart';
+
 
 import '../app_colors.dart';
 
@@ -47,7 +49,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     } else {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const MainNavigation()),
+        MaterialPageRoute(builder: (context) => const OnboardingPage6()),
       );
     }
   }
@@ -142,15 +144,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
 
           if (_currentPage == 4)
-            Positioned(
-              bottom: 60,
-              left: 24,
-              right: 24,
-              child: SvgPicture.asset(
-                'assets/icons/kakao_button.svg',
-                height: 54,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: GestureDetector(
+                onTap: _nextPage,
+                child: SvgPicture.asset(
+                  'assets/icons/kakao_button.svg',
+                  height: 54,
+                ),
               ),
             ),
+
 
           const SizedBox(height: 30),
         ],
