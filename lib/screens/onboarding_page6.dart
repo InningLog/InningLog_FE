@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../app_colors.dart';
+import '../navigation/main_navigation.dart';
 
 class OnboardingPage6 extends StatefulWidget {
   const OnboardingPage6({super.key});
@@ -10,7 +11,7 @@ class OnboardingPage6 extends StatefulWidget {
 
 class _OnboardingPage6State extends State<OnboardingPage6> {
   final TextEditingController _nicknameController = TextEditingController();
-  final FocusNode _focusNode = FocusNode(); // 👈 포커스 상태 확인용
+  final FocusNode _focusNode = FocusNode();
   final int _maxLength = 10;
   String? _selectedTeam;
 
@@ -20,7 +21,7 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
     '롯데 자이언츠',
     '삼성 라이온즈',
     '키움 히어로즈',
-    '한화 이글스',
+    '한화 이글즈',
     'KT 위즈',
     'LG 트윈스',
     'NC 다이노스',
@@ -30,7 +31,7 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
   @override
   void initState() {
     super.initState();
-    _focusNode.addListener(() => setState(() {})); // 포커스 변화 감지
+    _focusNode.addListener(() => setState(() {}));
   }
 
   @override
@@ -48,7 +49,7 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
         _focusNode.hasFocus || _nicknameController.text.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.primary50,
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
         child: Column(
@@ -114,18 +115,25 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
               '응원팀을 선택해주세요!',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                fontSize: 18,
+                fontSize: 24,
+                fontFamily: 'Pretendard',
               ),
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                childAspectRatio: 3.5,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                children: _teams.map((team) {
+              child: GridView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: _teams.length,
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 169,
+                  mainAxisExtent: 70,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 21,
+                ),
+                itemBuilder: (context, index) {
+                  final team = _teams[index];
                   final isSelected = _selectedTeam == team;
+
                   return OutlinedButton(
                     onPressed: () {
                       setState(() {
@@ -135,45 +143,61 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
                         color: isSelected
-                            ? AppColors.primary700
-                            : Colors.black26,
+                            ? AppColors.primary600
+                            : const Color(0xFFD3D3D3),
                       ),
-                      backgroundColor:
-                      isSelected ? AppColors.primary50 : Colors.white,
+                      backgroundColor: isSelected
+                          ? AppColors.primary100
+                          : AppColors.primary50,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                     child: Text(
                       team,
                       style: const TextStyle(
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 17,
+                        fontFamily: 'Pretendard',
                       ),
                     ),
                   );
-                }).toList(),
+                },
               ),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: isButtonEnabled
-                  ? () {
-                print(
-                    '닉네임: ${_nicknameController.text}, 팀: $_selectedTeam');
-              }
-                  : null,
+                onPressed: isButtonEnabled
+                    ? () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MainNavigation(),
+                    ),
+                  );
+                }
+                    : null,
+
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size.fromHeight(50),
                 backgroundColor: isButtonEnabled
                     ? AppColors.primary700
-                    : Colors.grey.shade300,
+                    : const Color(0xFFD3D3D3),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(36),
                 ),
               ),
-              child: const Text('이닝로그 시작하기'),
+              child: const Text(
+                '이닝로그 시작하기',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  fontFamily: 'Pretendard',
+                  color: Colors.white,
+                ),
+              ),
             ),
           ],
         ),

@@ -5,6 +5,8 @@ import '../screens/diary_page.dart';
 import '../screens/board_page.dart';
 import '../screens/my_page.dart';
 import '../screens/seat_page.dart';
+import 'package:inninglog/navigation/main_navigation.dart';
+
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
