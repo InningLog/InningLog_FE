@@ -96,6 +96,7 @@ class _DiaryPageState extends State<DiaryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
