@@ -210,13 +210,13 @@ class HomePage extends StatelessWidget {
 }
 String getImageForRate(double rate) {
   if (rate <= 0.3) {
-    return 'assets/images/bori_30.png';
+    return 'assets/images/bori30.jpg';
   } else if (rate <= 0.5) {
-    return 'assets/images/bori_50.png';
+    return 'assets/images/bori50.jpg';
   } else if (rate <= 0.7) {
-    return 'assets/images/bori_70.png';
+    return 'assets/images/bori70.jpg';
   } else {
-    return 'assets/images/bori_100.png';
+    return 'assets/images/bori100.jpg';
   }
 }
 
