@@ -1,21 +1,90 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
 import '../app_colors.dart';
 import '../widgets/common_header.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // TODO: 백엔드 연동 시 nickname은 API에서 가져오도록 변경
-    const String nickname = '망곰 14'; //  현재는 하드코딩됨
-    const double winningRateHalPoongRi = 0.332;
+  State<HomePage> createState() => _HomePageState();
+}
 
+class _HomePageState extends State<HomePage> {
+  DateTime currentDate = DateTime.now();
+
+  // 유저 정보 더미 데이터
+  final String nickname = '망곰 14';
+  final double winningRateHalPoongRi = 0.932;
+  final String teamShortCode = 'LG';
+
+  // 팀별 색상 정의
+  final Map<String, Color> teamColors = {
+    'WO': const Color(0xFF7E0022),
+    'HT': const Color(0xFFE10822),
+    'LG': const Color(0xFFC30136),
+    'LT': const Color(0xFFD10F31),
+    'SK': const Color(0xFFC81431),
+    'SS': const Color(0xFF0064B2),
+    'OB': const Color(0xFF010039),
+    'NC': const Color(0xFF1F477A),
+    'HH': const Color(0xFFFC4E00),
+    'KT': const Color(0xFF000000),
+  };
+
+  Future<void> openTicketUrl(String teamCode) async {
+    final Map<String, String> ticketUrls = {
+      'OB': 'https://ticket.interpark.com/Contents/Sports/GoodsInfo?SportsCode=07001&TeamCode=PB004', // 두산
+      'WO': 'https://ticket.interpark.com/Contents/Sports/GoodsInfo?SportsCode=07001&TeamCode=PB003', // 키움
+      'LG': 'https://www.ticketlink.co.kr/sports/137/59',
+      'HT': 'https://www.ticketlink.co.kr/sports/137/58',
+      'SS': 'https://www.ticketlink.co.kr/sports/137/57',
+      'KT': 'https://www.ticketlink.co.kr/sports/137/62',
+      'SK': 'https://www.ticketlink.co.kr/sports/137/476', // SSG
+      'HH': 'https://www.ticketlink.co.kr/sports/137/476', // 한화
+      'NC': 'https://www.ncdinos.com/auth/ticket.do',
+      'LT': 'https://ticket.giantsclub.com/loginForm.do',
+    };
+
+    final url = ticketUrls[teamCode];
+    if (url != null && await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } else {
+      // 예외 처리
+      print('URL을 열 수 없습니다');
+    }
+  }
+
+  void _goToPreviousDay() {
+    setState(() {
+      currentDate = currentDate.subtract(const Duration(days: 1));
+    });
+  }
+
+  void _goToNextDay() {
+    setState(() {
+      currentDate = currentDate.add(const Duration(days: 1));
+    });
+  }
+
+  String _formatDate(DateTime date) {
+    final today = DateTime.now();
+    final isToday = date.year == today.year &&
+        date.month == today.month &&
+        date.day == today.day;
+    if (isToday) return 'Today';
+    return DateFormat('MM.dd(E)', 'ko').format(date);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Color teamColor = teamColors[teamShortCode] ?? AppColors.primary800;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
+        child: SingleChildScrollView(
         child: Column(
           children: [
             const CommonHeader(title: '홈'),
@@ -34,77 +103,78 @@ class HomePage extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(height: 12),
-            // 직관 승률 카드
             Container(
               width: 359,
               height: 271,
-              padding:  EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.gray300),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.gray400),
               ),
               child: Column(
-                // 카드 내부
-                  children: [
-                    const SizedBox(height: 12),
-                    Image.asset(
-                      getImageForRate(winningRateHalPoongRi),
-                      width: 60,
-                      height: 60,
-                    ),
-
-                    const SizedBox(height: 12),
-                    Text(
-                      winningRateHalPoongRi.toStringAsFixed(3),
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary800,
-                        fontFamily: 'Pretendard',
-                      ),
-                    ),
+                children: [
                   const SizedBox(height: 12),
+                  Image.asset(
+                    getImageForRate(winningRateHalPoongRi),
+                    width: 88,
+                    height: 88,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    winningRateHalPoongRi.toStringAsFixed(3),
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: teamColor,
+                      fontFamily: 'Pretendard',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   OutlinedButton(
                     onPressed: () {},
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppColors.primary300),
+                      side: BorderSide(color: AppColors.primary600),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      backgroundColor: Colors.white,
+                      backgroundColor: const Color(0xFFF9FCF1),
                       minimumSize: const Size.fromHeight(40),
+                      fixedSize: const Size(301, 53),
                     ),
                     child: const Text(
                       '나의 직관 리포트',
                       style: TextStyle(
-                        color: AppColors.primary700,
+                        color: Colors.black,
                         fontWeight: FontWeight.w600,
                         fontFamily: 'Pretendard',
+                        fontSize: 16,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 32),
-
-            // 우리팀 경기 일정 제목
-            const Text(
-              '우리팀 경기 일정',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Pretendard',
+            const SizedBox(height: 26),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text(
+                  '우리팀 경기 일정',
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Pretendard',
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 16),
-
-            // 경기 일정 카드
+            const SizedBox(height: 12),
             Container(
-              padding:
-              const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+              width: 360,
+              height: 148,
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
               decoration: BoxDecoration(
                 border: Border.all(color: AppColors.gray300),
                 borderRadius: BorderRadius.circular(12),
@@ -113,33 +183,41 @@ class HomePage extends StatelessWidget {
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      Icon(Icons.chevron_left, color: AppColors.gray700),
+                    children: [
+                      IconButton(
+                        onPressed: _goToPreviousDay,
+                        icon: const Icon(Icons.chevron_left,
+                            color: AppColors.gray700),
+                      ),
                       Text(
-                        '06.26(목)',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                        _formatDate(currentDate),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
                           fontFamily: 'Pretendard',
                         ),
                       ),
-                      Icon(Icons.chevron_right, color: AppColors.gray700),
+                      IconButton(
+                        onPressed: _goToNextDay,
+                        icon: const Icon(Icons.chevron_right,
+                            color: AppColors.gray700),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 17),
                   const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         '두산',
                         style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w600),
+                            fontSize: 19, fontWeight: FontWeight.w800),
                       ),
                       SizedBox(width: 8),
                       Text(
                         'VS',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 19,
                           fontWeight: FontWeight.w700,
                           color: AppColors.primary700,
                         ),
@@ -148,53 +226,56 @@ class HomePage extends StatelessWidget {
                       Text(
                         'LG',
                         style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w600),
+                            fontSize: 19, fontWeight: FontWeight.w800),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   const Text(
                     '17:00',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                       fontFamily: 'Pretendard',
                     ),
                   ),
-                  const SizedBox(height: 2),
                   const Text(
                     '@ 잠실 종합운동장 잠실야구장',
                     style: TextStyle(
                       fontSize: 10,
-                      color: AppColors.gray600,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'Pretendard',
                     ),
                   ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 16),
-
-            // 예매 버튼
+            const SizedBox(height: 28),
             SizedBox(
-              width: double.infinity,
+              width: 360,
+              height: 57,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    openTicketUrl(teamShortCode); // 이 변수는 현재 'LG' 같은 코드로 정의돼 있음
+                  },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary700,
+                    backgroundColor: AppColors.primary50,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(8),
                     ),
+                    side: BorderSide(color: AppColors.gray400),
+
                     padding: const EdgeInsets.symmetric(vertical: 14),
+
                   ),
                   child: const Text(
                     '우리팀 예매처 바로가기',
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black,
                       fontFamily: 'Pretendard',
                     ),
                   ),
@@ -205,9 +286,11 @@ class HomePage extends StatelessWidget {
           ],
         ),
       ),
+      ),
     );
   }
 }
+
 String getImageForRate(double rate) {
   if (rate <= 0.3) {
     return 'assets/images/bori30.jpg';
@@ -219,5 +302,3 @@ String getImageForRate(double rate) {
     return 'assets/images/bori100.jpg';
   }
 }
-
-
