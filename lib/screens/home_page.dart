@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../app_colors.dart';
 import '../widgets/common_header.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'home_detail.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -33,6 +34,7 @@ class _HomePageState extends State<HomePage> {
     'KT': const Color(0xFF000000),
   };
 
+  //우리 예매처 바로가기 링크 모음
   Future<void> openTicketUrl(String teamCode) async {
     final Map<String, String> ticketUrls = {
       'OB': 'https://ticket.interpark.com/Contents/Sports/GoodsInfo?SportsCode=07001&TeamCode=PB004', // 두산
@@ -41,8 +43,8 @@ class _HomePageState extends State<HomePage> {
       'HT': 'https://www.ticketlink.co.kr/sports/137/58',
       'SS': 'https://www.ticketlink.co.kr/sports/137/57',
       'KT': 'https://www.ticketlink.co.kr/sports/137/62',
-      'SK': 'https://www.ticketlink.co.kr/sports/137/476', // SSG
-      'HH': 'https://www.ticketlink.co.kr/sports/137/476', // 한화
+      'SK': 'https://www.ticketlink.co.kr/sports/137/476',
+      'HH': 'https://www.ticketlink.co.kr/sports/137/476',
       'NC': 'https://www.ncdinos.com/auth/ticket.do',
       'LT': 'https://ticket.giantsclub.com/loginForm.do',
     };
@@ -132,7 +134,12 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 16),
                   OutlinedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => HomeDetailPage()),
+                      );
+                    },
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: AppColors.primary600),
                       shape: RoundedRectangleBorder(
@@ -152,6 +159,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ),
+
                 ],
               ),
             ),

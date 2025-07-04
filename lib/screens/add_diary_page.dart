@@ -44,6 +44,7 @@ class AddDiaryPage extends StatelessWidget {
                 icon: SvgPicture.asset(
                   'assets/icons/Alarm.svg',
                   width: 18.05,
+                  height: 23.829,
                 ),
                 onPressed: () {},
               ),

@@ -59,6 +59,7 @@ flutter:
     - assets/images/bori50.jpg
     - assets/images/bori70.jpg
     - assets/images/bori100.jpg
+    - assets/images/bori_no_report.jpg
 
   fonts:
     - family: MBC1961GulimOTF
