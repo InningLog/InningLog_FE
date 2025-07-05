@@ -60,6 +60,13 @@ flutter:
     - assets/images/bori70.jpg
     - assets/images/bori100.jpg
     - assets/images/bori_no_report.jpg
+    - assets/images/emotion_ohmy.jpg
+    - assets/images/emotion_satisfied.jpg
+    - assets/images/emotion_suffocated.jpg
+    - assets/images/emotion_thrilled.jpg
+    - assets/images/emotion_touched.jpg
+    - assets/images/emotion_angry.jpg
+
 
   fonts:
     - family: MBC1961GulimOTF

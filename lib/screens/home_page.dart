@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import '../app_colors.dart';
 import '../widgets/common_header.dart';
@@ -90,7 +91,6 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           children: [
             const CommonHeader(title: '홈'),
-            const SizedBox(height: 16),
             Align(
               alignment: Alignment.centerLeft,
               child: Padding(
@@ -182,7 +182,7 @@ class _HomePageState extends State<HomePage> {
             Container(
               width: 360,
               height: 148,
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+              padding: const EdgeInsets.only(top: 16, left: 19, right: 19),
               decoration: BoxDecoration(
                 border: Border.all(color: AppColors.gray300),
                 borderRadius: BorderRadius.circular(12),
@@ -194,8 +194,11 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       IconButton(
                         onPressed: _goToPreviousDay,
-                        icon: const Icon(Icons.chevron_left,
-                            color: AppColors.gray700),
+                        icon: SvgPicture.asset(
+                          'assets/icons/month_left.svg',
+                          width: 20, // 필요에 따라 조절
+                          height: 27,
+                        ),
                       ),
                       Text(
                         _formatDate(currentDate),
@@ -207,12 +210,15 @@ class _HomePageState extends State<HomePage> {
                       ),
                       IconButton(
                         onPressed: _goToNextDay,
-                        icon: const Icon(Icons.chevron_right,
-                            color: AppColors.gray700),
+                        icon: SvgPicture.asset(
+                          'assets/icons/month_right.svg',
+                          width: 20, // 필요에 따라 조절
+                          height: 27,
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 17),
+                  const SizedBox(height: 12),
                   const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -221,7 +227,7 @@ class _HomePageState extends State<HomePage> {
                         style: TextStyle(
                             fontSize: 19, fontWeight: FontWeight.w800),
                       ),
-                      SizedBox(width: 8),
+                      SizedBox(width: 66),
                       Text(
                         'VS',
                         style: TextStyle(
@@ -230,7 +236,7 @@ class _HomePageState extends State<HomePage> {
                           color: AppColors.primary700,
                         ),
                       ),
-                      SizedBox(width: 8),
+                      SizedBox(width: 66),
                       Text(
                         'LG',
                         style: TextStyle(
@@ -238,7 +244,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   const Text(
                     '17:00',
                     style: TextStyle(
@@ -258,12 +264,12 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 21),
             SizedBox(
               width: 360,
               height: 57,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                padding: const EdgeInsets.symmetric(horizontal:0),
                 child: ElevatedButton(
                   onPressed: () {
                     openTicketUrl(teamShortCode); // 이 변수는 현재 'LG' 같은 코드로 정의돼 있음

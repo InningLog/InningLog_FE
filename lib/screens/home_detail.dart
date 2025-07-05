@@ -103,10 +103,7 @@ class HomeDetailPage extends StatelessWidget {
 
   // 유저 정보 더미 데이터
   final String nickname = '디디';
-  final double winningRateHalPoongRi = 0.932;
   final String teamShortCode = 'NC';
-  final int totalVisitedGames = 10;
-  final int winGames = 8;
 
 
 
@@ -138,8 +135,48 @@ class HomeDetailPage extends StatelessWidget {
         body: SafeArea(
           child: Center(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
+                Container(
+                  height: 72,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  alignment: Alignment.center,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        icon: SvgPicture.asset(
+                          'assets/icons/back_but.svg',
+                          width: 10,
+                          height: 20,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const SizedBox(width: 0),
+                      const Text(
+                        '홈',
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: -0.26,
+                          color: Color(0xFF272727),
+                          fontFamily: 'MBC1961GulimOTF',
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        icon: SvgPicture.asset(
+                          'assets/icons/Alarm.svg',
+                          width: 18.05,
+                        ),
+                        onPressed: () {},
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 121),
                 Text(
                   '직관 기록이 부족해요!',
                   style: TextStyle(
@@ -183,7 +220,7 @@ class HomeDetailPage extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
                 Text(
-                  '현재:$totalVisitedGames회' ,
+                  '현재:${dummyReport.totalVisitedGames}회' ,
                   style: TextStyle(
                   color: AppColors.gray700,
                   fontWeight: FontWeight.w700,
@@ -297,13 +334,13 @@ class HomeDetailPage extends StatelessWidget {
                               Column(
                                 children: [
                                   Image.asset(
-                                    getImageForRate(winningRateHalPoongRi),
+                                    getImageForRate(dummyReport.winningRateHalPoongRi),
                                     width: 51,
                                     height: 51,
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    getCaptionForRate(winningRateHalPoongRi),
+                                    getCaptionForRate(dummyReport.winningRateHalPoongRi),
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       fontSize: 12,
@@ -320,7 +357,7 @@ class HomeDetailPage extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Text(
-                                    winningRateHalPoongRi.toStringAsFixed(3),
+                                    dummyReport.winningRateHalPoongRi.toStringAsFixed(3),
                                     style: TextStyle(
                                       fontSize: 26,
                                       fontWeight: FontWeight.w800,
@@ -330,7 +367,7 @@ class HomeDetailPage extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '2025 직관 횟수: $totalVisitedGames회',
+                                    '2025 직관 횟수: ${dummyReport.totalVisitedGames}회',
                                     style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w400,
@@ -338,7 +375,7 @@ class HomeDetailPage extends StatelessWidget {
                                     ),
                                   ),
                                   Text(
-                                    '$winGames승 7패 1무',
+                                    '${dummyReport.winGames}승 7패 1무',
                                     style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700,
@@ -380,7 +417,7 @@ class HomeDetailPage extends StatelessWidget {
                           ),
                           const SizedBox(height: 12),
                           _buildBar(label: '내 직관 승률',
-                              value: winningRateHalPoongRi,
+                              value: dummyReport.winningRateHalPoongRi,
                               color: AppColors.primary300),
                           const SizedBox(height: 10),
                           _buildBar(label: '팀 승률',
@@ -389,7 +426,7 @@ class HomeDetailPage extends StatelessWidget {
                           const SizedBox(height: 12),
                           Center(
                             child: Text(
-                              '$nickname님의 직관 승률이 팀 승률보다 $winningRateHalPoongRi 낮아요.',
+                              '$nickname님의 직관 승률이 팀 승률보다 $dummyReport.winningRateHalPoongRi 낮아요.',
                               //이거 나중에 꼭 수정 필요
                               style: TextStyle(
                                 fontSize: 12,
