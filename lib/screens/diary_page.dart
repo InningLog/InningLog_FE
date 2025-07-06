@@ -617,11 +617,13 @@ class _DiaryPageState extends State<DiaryPage> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => AddDiaryPage()),
+            MaterialPageRoute(
+              builder: (context) => AddDiaryPage(initialDate: selectedDate),
+            ),
           );
         },
         backgroundColor: AppColors.primary700,
-        shape: const CircleBorder(),  // <- 명시적으로 원형 지정
+        shape: const CircleBorder(),
         child: SvgPicture.asset(
           'assets/icons/add_diary.svg',
           width: 56,
@@ -629,6 +631,7 @@ class _DiaryPageState extends State<DiaryPage> {
           fit: BoxFit.scaleDown,
         ),
       ),
+
 
     );
 

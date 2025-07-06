@@ -1,10 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 import '../app_colors.dart';
+import 'dart:io';
+
+File? _pickedImage;
+//상태변수
+int reviewLength = 0;
+String ourScore = '';
+String opponentScore = '';
+
+
+
 
 class AddDiaryPage extends StatefulWidget {
-  const AddDiaryPage({super.key});
+  const AddDiaryPage({super.key, this.initialDate});
+
+  final DateTime? initialDate;
 
   @override
   State<AddDiaryPage> createState() => _AddDiaryPageState();
@@ -12,6 +25,13 @@ class AddDiaryPage extends StatefulWidget {
 
 class _AddDiaryPageState extends State<AddDiaryPage> {
   DateTime currentDate = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    currentDate = widget.initialDate ?? DateTime.now(); // 전달받은 날짜 or 오늘
+  }
+
 
   void _goToPreviousDay() {
     setState(() {
@@ -36,6 +56,11 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
 
   @override
   Widget build(BuildContext context) {
+
+    bool isFormValid =
+        ourScore?.isNotEmpty == true &&
+            opponentScore?.isNotEmpty == true &&
+            selectedEmotionIndex != -1;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -44,7 +69,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
             // ✅ 상단 고정 헤더
             Container(
               height: 72,
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+              padding: const EdgeInsets.symmetric(vertical: 10),
               alignment: Alignment.center,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -58,7 +83,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                     ),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 0),
                   const Text(
                     '직관 일지 작성',
                     style: TextStyle(
@@ -75,7 +100,6 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                     icon: SvgPicture.asset(
                       'assets/icons/Alarm.svg',
                       width: 18.05,
-                      height: 24,
                     ),
                     onPressed: () {},
                   ),
@@ -210,7 +234,14 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _scoreInputField(hintText: '우리팀 스코어'),
+                          _scoreInputField(
+                            hintText: '우리팀 스코어',
+                            onChanged: (value) {
+                              setState(() {
+                                ourScore = value;
+                              });
+                            },
+                          ),
                           const Text(
                             'VS',
                             style: TextStyle(
@@ -220,10 +251,16 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               fontFamily: 'Pretendard',
                             ),
                           ),
-                          _scoreInputField(hintText: '상대팀 스코어'),
+                          _scoreInputField(
+                            hintText: '상대팀 스코어',
+                            onChanged: (value) {
+                              setState(() {
+                                opponentScore = value;
+                              });
+                            },
+                          ),
                         ],
                       ),
-
                       const SizedBox(height: 26),
 
                       // 감정 선택
@@ -255,7 +292,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                           ),
                           const SizedBox(height: 8),
                           SizedBox(
-                            height: 191,
+                            height: 192,
                             width: 360,// 감정 아이콘 전체 높이 (아이콘 크기에 따라 조절)
                             child: GridView.count(
                               crossAxisCount: 3,
@@ -284,17 +321,12 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                       ),
                       const SizedBox(height: 8),
                       // 사진 업로드
-                      Container(
-                        width: double.infinity,
-                        height: 103,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey),
-                        ),
-                        child: const Center(child: Icon(Icons.camera_alt_outlined)),
-                      ),
+                      DiaryImagePicker(),
 
-                      const SizedBox(height: 24),
+
+                      const SizedBox(height: 26),
+
+
 
                       // 후기 작성
                       Column(
@@ -303,55 +335,139 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                           const Text(
                             '후기',
                             style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Pretendard',
+                            ),
                           ),
                           const SizedBox(height: 8),
+                          // 글자 수 표시
+
+                          // 텍스트필드
                           TextField(
-                            maxLines: 5,
-                            maxLength: 123,
+                            maxLines: 4,
+                            maxLength: 132,
+                            onChanged: (value) {
+                              setState(() {
+                                reviewLength = value.length;
+                              });
+                            },
                             decoration: InputDecoration(
                               hintText: '후기를 작성해주세요.',
+                              hintStyle: const TextStyle(
+                                fontFamily: 'Pretendard',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.gray700,
+                              ),
+                              filled: true,
+                              fillColor: AppColors.gray100,
+                              counterText: '', // ✅ 기본 카운터 숨김
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(color: AppColors.gray300),
                               ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(color: AppColors.gray300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(color: AppColors.gray700),
+                              ),
+                              contentPadding: const EdgeInsets.all(12),
                             ),
                           ),
                         ],
                       ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          children: [
+                            const Spacer(), // 왼쪽 빈 공간
+                            Text(
+                              '($reviewLength/132)',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.gray600,
+                                fontFamily: 'Pretendard',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
 
                       const SizedBox(height: 16),
+
+
 
                       // 버튼 2개
                       Column(
                         children: [
-                          ElevatedButton(
-                            onPressed: () {},
-                            style: ElevatedButton.styleFrom(
-                              minimumSize: const Size(double.infinity, 48),
-                              backgroundColor: Colors.grey[300],
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
+                          SizedBox(
+                            width: 360,
+                            height: 54,
+                            child: ElevatedButton(
+                              onPressed: isFormValid ? () {} : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                isFormValid ? AppColors.primary700 : AppColors.gray200,
+                                foregroundColor: Colors.black,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                  side: isFormValid
+                                      ? const BorderSide(color: AppColors.primary700)
+                                      : BorderSide.none,
+                                ),
                               ),
-                            ),
-                            child: const Text(
-                              '좌석 후기 작성하기',
-                              style: TextStyle(color: Colors.black),
+                              child: Text(
+                                '좌석 후기 작성하기',
+                                style: TextStyle(
+                                  color: isFormValid ? Colors.white : AppColors.gray700,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                ),
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          ElevatedButton(
-                            onPressed: () {},
-                            style: ElevatedButton.styleFrom(
-                              minimumSize: const Size(double.infinity, 48),
-                              backgroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
+
+                          const SizedBox(height: 12),
+
+                          // ✅ 아래 버튼도 SizedBox로 감싸기
+                          SizedBox(
+                            width: 360,
+                            height: 54,
+                            child: ElevatedButton(
+                              onPressed: isFormValid ? () {} : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                isFormValid ? Colors.white : AppColors.gray200,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                  side: BorderSide(
+                                    color: isFormValid
+                                        ? AppColors.primary700
+                                        : Colors.transparent,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                '작성 완료',
+                                style: TextStyle(
+                                  color:
+                                  isFormValid ? AppColors.primary700 : AppColors.gray700,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                ),
                               ),
                             ),
-                            child: const Text('작성 완료'),
                           ),
                         ],
                       ),
+
+
 
                       const SizedBox(height: 32),
                     ],
@@ -370,14 +486,14 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
   Widget _emotionIcon(int index) {
     final List<String> labels = ['짜릿함', '감동', '흐뭇', '답답함', '아쉬움', '분노'];
     final List<String> emojis = [
-      'assets/images/emotion_thrilled.jpg',
-      'assets/images/emotion_touched.jpg',
-      'assets/images/emotion_satisfied.jpg',
-      'assets/images/emotion_suffocated.jpg',
-      'assets/images/emotion_ohmy.jpg',
-      'assets/images/emotion_angry.jpg',
-
+      'assets/icons/emotion_thrilled.svg',
+      'assets/icons/emotion_touched.svg',
+      'assets/icons/emotion_satisfied.svg',
+      'assets/icons/emotion_suffocated.svg',
+      'assets/icons/emotion_ohmy.svg',
+      'assets/icons/emtion_angry.svg',
     ];
+
 
     final bool isSelected = selectedEmotionIndex == index;
 
@@ -400,11 +516,12 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(
+            SvgPicture.asset(
               emojis[index],
               width: 40,
               height: 40,
             ),
+
             const SizedBox(height: 4),
             Text(
               labels[index],
@@ -424,17 +541,22 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
   }
 
 
-Widget _scoreInputField({required String hintText}) {
+Widget _scoreInputField({
+  required String hintText,
+  required Function(String) onChanged,
+}) {
   return SizedBox(
     width: 140,
     height: 40,
     child: TextField(
+      onChanged: onChanged,
       textAlign: TextAlign.center,
       style: const TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w600,
         fontFamily: 'Pretendard',
       ),
+      keyboardType: TextInputType.number,
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: const TextStyle(
@@ -451,15 +573,76 @@ Widget _scoreInputField({required String hintText}) {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.gray300,),
+          borderSide: const BorderSide(color: AppColors.gray300),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: AppColors.primary700),
         ),
       ),
-      keyboardType: TextInputType.number,
     ),
   );
 }
+
+
+
+//사진 가져오기
+class DiaryImagePicker extends StatefulWidget {
+  const DiaryImagePicker({super.key}); // ← 여기서 const 빼는 것도 중요!
+
+  @override
+  State<DiaryImagePicker> createState() => _DiaryImagePickerState();
+}
+
+class _DiaryImagePickerState extends State<DiaryImagePicker> {
+  File? _pickedImage;
+
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image =
+    await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+
+    if (image != null) {
+      setState(() {
+        _pickedImage = File(image.path);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque, // ✅ 터치가 빈 공간에도 반응하도록 설정
+      onTap: _pickImage, // ✅ 이게 실행돼야 갤러리 열림
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFD9D9D9)),
+          color: const Color(0xFFF5F5F5),
+        ),
+        child: _pickedImage == null
+            ? Padding(
+          padding: const EdgeInsets.symmetric(vertical: 36),
+          child: Center(
+            child: SvgPicture.asset(
+              "assets/icons/camera_icon.svg",
+              width: 28.3,
+              height: 28.3,
+            ),
+          ),
+        )
+            : ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.file(
+            _pickedImage!,
+            fit: BoxFit.fitWidth,
+            width: double.infinity,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 
