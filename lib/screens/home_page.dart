@@ -107,8 +107,8 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 12),
             Container(
-              width: 359,
               height: 271,
+              width: 360,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
@@ -182,7 +182,7 @@ class _HomePageState extends State<HomePage> {
             Container(
               width: 360,
               height: 148,
-              padding: const EdgeInsets.only(top: 16, left: 19, right: 19),
+              padding: const EdgeInsets.only(left: 19, right: 19),
               decoration: BoxDecoration(
                 border: Border.all(color: AppColors.gray300),
                 borderRadius: BorderRadius.circular(12),
@@ -244,7 +244,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   const Text(
                     '17:00',
                     style: TextStyle(

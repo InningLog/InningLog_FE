@@ -44,7 +44,7 @@ class MyReportResponse {
   });
 }
 final dummyReport = MyReportResponse(
-  totalVisitedGames: 1,
+  totalVisitedGames: 10,
   winGames: 6,
   winningRateHalPoongRi: 0.600,
   topBatters: [
@@ -304,9 +304,8 @@ class HomeDetailPage extends StatelessWidget {
 
                     /// 승률 박스
                     Container(
-                      width: 360,
                       height: 176,
-                      padding: const EdgeInsets.all(22),
+                      padding: const EdgeInsets.symmetric(vertical: 15),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
                         color: AppColors.primary50,
@@ -396,9 +395,8 @@ class HomeDetailPage extends StatelessWidget {
 
                     /// 그래프 비교 박스
                 Container(
-                  width: 360,
                   height: 176,
-                  padding: const EdgeInsets.all(22),
+                  padding: const EdgeInsets.symmetric(vertical: 15),
                   decoration: BoxDecoration(
                     color: AppColors.primary50,
                     border: Border.all(color: AppColors.gray400),
@@ -426,7 +424,7 @@ class HomeDetailPage extends StatelessWidget {
                           const SizedBox(height: 12),
                           Center(
                             child: Text(
-                              '$nickname님의 직관 승률이 팀 승률보다 $dummyReport.winningRateHalPoongRi 낮아요.',
+                              '$nickname님의 직관 승률이 팀 승률보다 ${dummyReport.winningRateHalPoongRi} 낮아요.',
                               //이거 나중에 꼭 수정 필요
                               style: TextStyle(
                                 fontSize: 12,
@@ -457,28 +455,32 @@ class HomeDetailPage extends StatelessWidget {
                     const SizedBox(height: 24),
 
                     /// 공유 버튼
-                    SizedBox(
-                      width:340,
-                      height: 50,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary700,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(36),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 25), // 좌우 여백만 줌
+                      child: SizedBox(
+                        height: 50,
+                        width: 340,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary700,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(36),
+                            ),
                           ),
-                        ),
-                        onPressed: () {},
-                        child: const Text(
-                          '내 직관 리포트 공유하기',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            fontFamily: 'Pretendard',
+                          onPressed: () {},
+                          child: const Text(
+                            '내 직관 리포트 공유하기',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              fontFamily: 'Pretendard',
+                            ),
                           ),
                         ),
                       ),
                     ),
+
 
                     const SizedBox(height: 32),
                   ],

@@ -26,6 +26,8 @@ class InningLogApp extends StatelessWidget {
         const Locale('ko', 'KR'),
       ],
       home: const SplashScreen(),
+
     );
+
   }
 }

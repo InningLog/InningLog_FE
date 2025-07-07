@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import '../app_colors.dart';
 import 'dart:io';
+import 'add_seat_page.dart';
 
 File? _pickedImage;
 //상태변수
@@ -18,6 +19,8 @@ class AddDiaryPage extends StatefulWidget {
   const AddDiaryPage({super.key, this.initialDate});
 
   final DateTime? initialDate;
+
+
 
   @override
   State<AddDiaryPage> createState() => _AddDiaryPageState();
@@ -120,8 +123,8 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                       // 날짜 & 팀 매치 정보
                       Container(
                         width: double.infinity,
-                        height: 148,
-                        padding: const EdgeInsets.only(top: 16, left: 19, right: 19),
+                        height: 153,
+                        padding: const EdgeInsets.only(top: 8, left: 19, right: 19,bottom: 8),
                         decoration: BoxDecoration(
                           border: Border.all(color: AppColors.gray300),
                           borderRadius: BorderRadius.circular(12),
@@ -406,11 +409,19 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                       // 버튼 2개
                       Column(
                         children: [
-                          SizedBox(
+                          Center(
+                          child : SizedBox(
                             width: 360,
                             height: 54,
                             child: ElevatedButton(
-                              onPressed: isFormValid ? () {} : null,
+                              onPressed: isFormValid
+                                  ? () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const AddSeatPage()),
+                                );
+                              }
+                                  : null,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor:
                                 isFormValid ? AppColors.primary700 : AppColors.gray200,
@@ -431,6 +442,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                 ),
                               ),
                             ),
+                          ),
                           ),
 
                           const SizedBox(height: 12),
@@ -588,7 +600,7 @@ Widget _scoreInputField({
 
 //사진 가져오기
 class DiaryImagePicker extends StatefulWidget {
-  const DiaryImagePicker({super.key}); // ← 여기서 const 빼는 것도 중요!
+  const DiaryImagePicker({super.key});
 
   @override
   State<DiaryImagePicker> createState() => _DiaryImagePickerState();
@@ -608,6 +620,7 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
       });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
