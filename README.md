@@ -1,21 +1,61 @@
-<<<<<<< HEAD
-# inninglog
+# ⚾ 이닝로그 (InningLog)
 
-A new Flutter project.
+야구 팬들을 위한 직관 다이어리 앱  
+감정, 사진, 좌석 후기와 함께 경기장의 기억을 기록하는 공간  
+직관 히스토리를 승률과 함께 쌓아가는 즐거움
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 📱 주요 기능
 
-A few resources to get you started if this is your first Flutter project:
+- **🏠 홈**  
+  총 직관 경기 수, 승률, 팀별 통계 요약
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- **📅 다이어리**  
+  감정, 날씨, 장소, 사진을 담은 개인 직관 일지
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-=======
-# InningLog_FE
-이닝로그 프론트엔드 레포지토리
->>>>>>> 7a5b2fe1fe44e7588e2f6ccb1892b9e6e1ec4691
+- **🪑 좌석 후기**  
+  구장별 좌석 리뷰와 해시태그 기반 좌석 탐색 기능
+
+- **💬 게시판**  
+  팬들과의 소통 공간 및 직관 후기 공유
+
+---
+
+## 🛠 사용 기술
+
+- `Flutter`, `Dart`, `go_router`, `shared_preferences`, `flutter_svg`  
+- Figma 기반 디자인 시스템 적용  
+- GitHub 기반 협업 및 버전 관리  
+- (예정) Spring Boot 백엔드 API 연동
+
+---
+
+## 🚧 작업 현황
+
+- 온보딩, 홈, 다이어리, 좌석 후기 UI 구현 완료  
+- 더미 데이터 기반 기능 테스트 진행 중  
+- 게시판, 백엔드 연동 기능 순차 구현 예정
+
+---
+
+## 🧸 한마디
+
+> “직관의 순간을 기록하는 가장 귀여운 방법, 이닝로그”  
+> – 이닝로그 개발팀
+
+---
+
+## 🤝 Contribute
+
+이슈, 피드백, PR 모두 환영  
+야구와 기록을 사랑하는 개발자와의 협업 환영
+
+---
+
+## 📬 Contact
+
+- GitHub: [@kimryujee](https://github.com/kimryujee)  
+- Email: innlog.dev@gmail.com
+
+---
