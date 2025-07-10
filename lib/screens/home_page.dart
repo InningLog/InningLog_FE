@@ -2,12 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import '../app_colors.dart';
+import '../models/home_view.dart';
 import '../widgets/common_header.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'home_detail.dart';
+import '../service/api_service.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  //연동 -> api_service.dart에서 API 불러오기
+  static Future<HomeData?> fetchHomeData() async {
+    final url = Uri.parse('https://api.inninglog.shop/home/view');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonBody = json.decode(response.body);
+      return HomeData.fromJson(jsonBody['data']);
+    } else {
+      print('API 오류: ${response.statusCode}');
+      return null;
+    }
+  }
+
+
+
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -15,6 +37,23 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   DateTime currentDate = DateTime.now();
+
+  //HomePage에서 상태 변수 추가
+  HomeData? homeData;
+
+
+  @override
+  void initState() {
+    super.initState();
+    fetchData();
+  }
+
+  void fetchData() async {
+    final data = await ApiService.fetchHomeData();
+    setState(() {
+      homeData = data;
+    });
+  }
 
   // 유저 정보 더미 데이터
   final String nickname = '망곰 14';
@@ -83,6 +122,11 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final Color teamColor = teamColors[teamShortCode] ?? AppColors.primary800;
+
+    final schedule = homeData?.myTeamSchedule.first;
+
+
+
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -179,7 +223,14 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             const SizedBox(height: 12),
-            Container(
+
+
+            schedule == null
+                ? const SizedBox(
+              height: 148,
+              child: Center(child: CircularProgressIndicator()),
+            )
+                : Container(
               width: 360,
               height: 148,
               padding: const EdgeInsets.only(left: 19, right: 19),
@@ -194,11 +245,7 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       IconButton(
                         onPressed: _goToPreviousDay,
-                        icon: SvgPicture.asset(
-                          'assets/icons/month_left.svg',
-                          width: 20, // 필요에 따라 조절
-                          height: 27,
-                        ),
+                        icon: SvgPicture.asset('assets/icons/month_left.svg', width: 20, height: 27),
                       ),
                       Text(
                         _formatDate(currentDate),
@@ -210,25 +257,20 @@ class _HomePageState extends State<HomePage> {
                       ),
                       IconButton(
                         onPressed: _goToNextDay,
-                        icon: SvgPicture.asset(
-                          'assets/icons/month_right.svg',
-                          width: 20, // 필요에 따라 조절
-                          height: 27,
-                        ),
+                        icon: SvgPicture.asset('assets/icons/month_right.svg', width: 20, height: 27),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        '두산',
-                        style: TextStyle(
-                            fontSize: 19, fontWeight: FontWeight.w800),
+                        schedule.myTeam,
+                        style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
                       ),
-                      SizedBox(width: 66),
-                      Text(
+                      const SizedBox(width: 66),
+                      const Text(
                         'VS',
                         style: TextStyle(
                           fontSize: 19,
@@ -236,34 +278,26 @@ class _HomePageState extends State<HomePage> {
                           color: AppColors.primary700,
                         ),
                       ),
-                      SizedBox(width: 66),
+                      const SizedBox(width: 66),
                       Text(
-                        'LG',
-                        style: TextStyle(
-                            fontSize: 19, fontWeight: FontWeight.w800),
+                        schedule.opponentTeam,
+                        style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
                       ),
                     ],
                   ),
                   const SizedBox(height: 6),
-                  const Text(
-                    '17:00',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'Pretendard',
-                    ),
+                  Text(
+                    schedule.gameDateTime.split(' ')[1],
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
-                  const Text(
-                    '@ 잠실 종합운동장 잠실야구장',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: 'Pretendard',
-                    ),
+                  Text(
+                    '@ ${schedule.stadium}',
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
             ),
+
             const SizedBox(height: 21),
             SizedBox(
               width: 360,
