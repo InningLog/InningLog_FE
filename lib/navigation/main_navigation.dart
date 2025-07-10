@@ -6,30 +6,22 @@ import '../screens/board_page.dart';
 import '../screens/my_page.dart';
 import '../screens/seat_page.dart';
 import 'package:inninglog/navigation/main_navigation.dart';
+import 'package:go_router/go_router.dart';
 
 
-class MainNavigation extends StatefulWidget {
-  const MainNavigation({super.key});
+class MainNavigation extends StatelessWidget {
+  final Widget child;
+  const MainNavigation({super.key, required this.child});
 
-  @override
-  State<MainNavigation> createState() => _MainNavigationState();
-}
-
-class _MainNavigationState extends State<MainNavigation> {
-  int _currentIndex = 0;
-
-  final List<Widget> _pages = const [
-    HomePage(),
-    DiaryPage(),
-    SeatPage(),
-    BoardPage(),
-    MyPage(),
-  ];
+  static const List<String> _routes = ['/home', '/diary', '/seat', '/board', '/mypage'];
 
   @override
   Widget build(BuildContext context) {
+    final location = GoRouter.of(context).routeInformationProvider.value.location;
+    final currentIndex = _routes.indexWhere((r) => location.startsWith(r));
+
     return Scaffold(
-      body: _pages[_currentIndex],
+      body: child,
       bottomNavigationBar: Container(
         height: 104,
         padding: const EdgeInsets.fromLTRB(23, 18, 23, 10),
@@ -50,28 +42,26 @@ class _MainNavigationState extends State<MainNavigation> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildTabItem(0, '홈', 'assets/icons/Home_black.svg', 'assets/icons/Home_gray.svg'),
-            _buildTabItem(1, '직관 기록', 'assets/icons/Diary_black.svg', 'assets/icons/Diary_gray.svg'),
-            _buildTabItem(2, '좌석', 'assets/icons/field_black.svg', 'assets/icons/field_gray.svg'),
-            _buildTabItem(3, '커뮤니티', 'assets/icons/Community_black.svg', 'assets/icons/Community_gray.svg'),
-            _buildTabItem(4, '마이페이지', 'assets/icons/Mypage_black.svg', 'assets/icons/Mypage_gray.svg'),
+            _buildTabItem(context, 0, '홈', 'assets/icons/Home_black.svg', 'assets/icons/Home_gray.svg', currentIndex),
+            _buildTabItem(context, 1, '직관 기록', 'assets/icons/Diary_black.svg', 'assets/icons/Diary_gray.svg', currentIndex),
+            _buildTabItem(context, 2, '좌석', 'assets/icons/field_black.svg', 'assets/icons/field_gray.svg', currentIndex),
+            _buildTabItem(context, 3, '커뮤니티', 'assets/icons/Community_black.svg', 'assets/icons/Community_gray.svg', currentIndex),
+            _buildTabItem(context, 4, '마이페이지', 'assets/icons/Mypage_black.svg', 'assets/icons/Mypage_gray.svg', currentIndex),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTabItem(int index, String label, String selectedIcon, String unselectedIcon) {
-    final isSelected = _currentIndex == index;
+  Widget _buildTabItem(BuildContext context, int index, String label, String selectedIcon, String unselectedIcon, int currentIndex) {
+    final isSelected = index == currentIndex;
+    final route = _routes[index];
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _currentIndex = index;
-        });
+        context.go(route);
       },
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-
         children: [
           SvgPicture.asset(
             isSelected ? selectedIcon : unselectedIcon,

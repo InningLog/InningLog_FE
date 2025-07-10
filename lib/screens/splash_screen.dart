@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:inninglog/navigation/main_navigation.dart';
 import 'package:inninglog/screens/onboarding_screen.dart';
 import 'package:inninglog/app_colors.dart';
+
+import 'home_page.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -34,26 +37,19 @@ class _SplashScreenState extends State<SplashScreen> {
 
     final prefs = await SharedPreferences.getInstance();
 
-// 개발용: 온보딩 계속 보이게 하기
+    // 개발 중 계속 온보딩 보게 하려면 false)
     await prefs.setBool('hasSeenOnboarding', true);
 
-    final hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? true;
-   //print('[Splash] 이동 직전 hasSeenOnboarding = $hasSeenOnboarding');
-
+    final hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
 
     if (!mounted) return;
 
-    //print('[Splash] 이동 준비중: hasSeenOnboarding = $hasSeenOnboarding');
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) =>
-        hasSeenOnboarding ? const MainNavigation() : const OnboardingScreen(),
-      ),
-    );
-
-
+    // ✅ go_router 사용한 화면 전환
+    if (hasSeenOnboarding) {
+      context.go('/home');
+    } else {
+      context.go('/onboarding');
+    }
   }
 
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
 import '../widgets/common_header.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -615,12 +616,8 @@ class _DiaryPageState extends State<DiaryPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AddDiaryPage(initialDate: selectedDate),
-            ),
-          );
+          context.push('/adddiary');
+
         },
         backgroundColor: AppColors.primary700,
         shape: const CircleBorder(),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../app_colors.dart';
 import '../navigation/main_navigation.dart';
+import 'home_page.dart';
 
 class OnboardingPage6 extends StatefulWidget {
   const OnboardingPage6({super.key});
@@ -173,7 +174,8 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const MainNavigation(),
+                      builder: (context) => const MainNavigation(child: HomePage()),
+
                     ),
                   );
                 }

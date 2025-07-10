@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import '../app_colors.dart';
@@ -416,10 +417,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                             child: ElevatedButton(
                               onPressed: isFormValid
                                   ? () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => const AddSeatPage()),
-                                );
+                                context.push('/addseat');
                               }
                                   : null,
                               style: ElevatedButton.styleFrom(
