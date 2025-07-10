@@ -35,9 +35,9 @@ class _SplashScreenState extends State<SplashScreen> {
     final prefs = await SharedPreferences.getInstance();
 
 // 개발용: 온보딩 계속 보이게 하기
-    await prefs.setBool('hasSeenOnboarding', false);
+    await prefs.setBool('hasSeenOnboarding', true);
 
-    final hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
+    final hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? true;
    //print('[Splash] 이동 직전 hasSeenOnboarding = $hasSeenOnboarding');
 
 

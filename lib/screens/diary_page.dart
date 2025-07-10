@@ -24,7 +24,7 @@ class _DiaryPageState extends State<DiaryPage> {
   // 경기 데이터 샘플
   final List<Map<String, dynamic>> gameList = [
     {
-      'date': DateTime.utc(2025, 6, 6),
+      'date': DateTime.utc(2025, 7, 6),
       'homeScore': 6,
       'awayScore': 4,
       'opponent': 'NC 다이노스',
@@ -32,7 +32,7 @@ class _DiaryPageState extends State<DiaryPage> {
       'photo': 'assets/images/KakaoTalk_20250611_184301449_04.jpg',
     },
     {
-      'date': DateTime.utc(2025, 6, 12),
+      'date': DateTime.utc(2025, 7, 12),
       'homeScore': 3,
       'awayScore': 3,
       'opponent': '키움 히어로즈',

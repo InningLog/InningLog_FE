@@ -17,12 +17,17 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
   String? selectedZone;
   final TextEditingController sectionController = TextEditingController();
   final TextEditingController rowController = TextEditingController();
-  final List<String> selectedTags = [];
+  final Map<String, String> selectedTags = {};
 
-  final List<String> hashTags = [
-    "#시야_탁트임", "#햇빛_강함", "#응원_분위기_최고","#응원_분위기_최고",
-    "#응원_단상_가까움", "#가성비_최고", "#지붕_있어요",
-  ];
+  // 각 카테고리 정의
+  final Map<String, List<String>> tagCategories = {
+    '응원': ['#일어남', '#일어날_사람은_일어남', '#앉아서'],
+    '햇빛': ['#강함', '#있다가_그늘짐', '#없음'],
+    '지붕': ['#있음', '#없음'],
+    '시야 방해': ['#그물', '#아크릴_가림막', '#없음'],
+    '좌석 공간': ['#아주_넓음', '#넓음', '#보통', '#좁음'],
+  };
+
 
   bool get isDirectSearchValid {
     return selectedZone != null;
@@ -227,7 +232,7 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
 
 
 
-                    ///해시태그 검색 화면
+                    //해시태그 검색 화면
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 15.0),
@@ -244,7 +249,7 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                             ),
                             const SizedBox(height: 0),
                             const Text(
-                              '최대 2개까지 고를 수 있어요',
+                              '최대 5개까지 고를 수 있어요.',
                               style: TextStyle(
                                 fontWeight: FontWeight.w500,
                                 fontSize: 12,
@@ -255,43 +260,63 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                             const SizedBox(height: 12),
 
                             // 해시태그 Wrap
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: hashTags.map((tag) {
-                                final selected = selectedTags.contains(tag);
-                                return ChoiceChip(
-                                  showCheckmark: false,
-                                  label: Text(tag),
-                                  selected: selected,
-                                  onSelected: (selectedNow) {
-                                    setState(() {
-                                      if (selectedNow) {
-                                        if (selectedTags.length < 2) {
-                                          selectedTags.add(tag);
-                                        }
-                                      } else {
-                                        selectedTags.remove(tag);
-                                      }
-                                    });
-                                  },
-                                  selectedColor: AppColors.primary100,
-                                  backgroundColor: Colors.white,
-                                  labelStyle: TextStyle(
-                                    color: selected ? const Color(0xFF272727) : AppColors.gray700,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    side: BorderSide(
-                                      color: selected ? AppColors.primary700 : AppColors.gray300,
-                                      width: 1,
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: tagCategories.entries.map((entry) {
+                                final category = entry.key;
+                                final tags = entry.value;
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(category,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14,)),
+                                    const SizedBox(height: 8),
+                                    Wrap(
+                                      spacing: 12,
+                                      runSpacing: 12,
+                                      children: tags.map((tag) {
+                                        final selected = selectedTags[category] == tag;
+                                        return ChoiceChip(
+                                          showCheckmark: false, // ✅ 체크 아이콘 제거
+                                          label: Text(tag),
+                                          selected: selected,
+                                          onSelected: (_) {
+                                            setState(() {
+                                              if (selected) {
+                                                // ✅ 이미 선택된 경우 → 해제
+                                                selectedTags.remove(category);
+                                              } else {
+                                                // ✅ 선택되지 않은 경우 → 해당 카테고리에 tag 할당
+                                                selectedTags[category] = tag;
+                                              }
+                                            });
+                                          },
+                                          selectedColor: AppColors.primary100,
+                                          backgroundColor: Colors.white,
+                                          labelStyle: TextStyle(
+                                            color: selected ?  Color(0xFF272727) : AppColors.gray700,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(16),
+                                            side: BorderSide(
+                                              color: selected ? AppColors.primary700 : AppColors.gray300,
+                                              width: 1,
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
                                     ),
-                                  ),
+                                    const SizedBox(height: 16),
+                                  ],
                                 );
                               }).toList(),
                             ),
+
+
                             const SizedBox(height: 22),
                             SizedBox(
                               width: double.infinity,
@@ -320,7 +345,7 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                                   ),
                                 ),
                                 child: Text(
-                                  '작성 완료',
+                                  '검색하기',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
