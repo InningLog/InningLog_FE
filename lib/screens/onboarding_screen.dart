@@ -1,10 +1,17 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:inninglog/navigation/main_navigation.dart';
 import 'package:inninglog/screens/onboarding_page1.dart';
 import 'package:inninglog/screens/onboarding_page5.dart';
 import 'package:inninglog/screens/onboarding_content_page.dart';
 import 'package:inninglog/screens/onboarding_page6.dart';
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 
 import '../app_colors.dart';
@@ -20,6 +27,36 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int _currentPage = 0;
+
+  Future<void> _loginWithKakao() async {
+    try {
+      OAuthToken token;
+
+      if (kIsWeb) {
+        // ✅ 웹일 경우
+        token = await UserApi.instance.loginWithKakaoAccount();
+      } else if (Platform.isAndroid || Platform.isIOS) {
+        // ✅ 모바일일 경우
+        final isInstalled = await isKakaoTalkInstalled();
+        token = isInstalled
+            ? await UserApi.instance.loginWithKakaoTalk()
+            : await UserApi.instance.loginWithKakaoAccount();
+      } else {
+        throw UnsupportedError('이 플랫폼은 지원하지 않음');
+      }
+
+      // 토큰 저장
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('access_token', token.accessToken);
+
+      print('로그인 성공: ${token.accessToken}');
+      if (!context.mounted) return;
+
+      context.go('/onboarding6'); // GNB 페이지로 이동
+    } catch (error) {
+      print('로그인 실패: $error');
+    }
+  }
 
   final List<Widget> _pages = const [
     OnboardingPage1(),
@@ -142,12 +179,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: const Text('다음'),
               ),
             ),
-
           if (_currentPage == 4)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: GestureDetector(
-                onTap: _nextPage,
+                onTap: _loginWithKakao, // ✅ 여기 연결!
                 child: SvgPicture.asset(
                   'assets/icons/kakao_button.svg',
                   height: 54,
@@ -156,9 +192,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
 
 
+
           const SizedBox(height: 30),
         ],
       ),
     );
   }
+
+
+
 }

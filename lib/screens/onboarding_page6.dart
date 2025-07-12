@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
 import '../navigation/main_navigation.dart';
 import 'home_page.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:inninglog/service/member_api.dart';
+
 
 class OnboardingPage6 extends StatefulWidget {
   const OnboardingPage6({super.key});
@@ -16,8 +22,24 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
   final int _maxLength = 10;
   String? _selectedTeam;
 
+  //숏코드랑 매핑
+  Map<String, String> teamShortCodes = {
+    'LG 트윈스': 'LG',
+    '두산 베어스': 'OB',
+    'SSG 랜더스': 'SK',
+    '한화 이글즈': 'HH',
+    '삼성 라이온즈': 'SS',
+    'KT 위즈': 'KT',
+    '롯데 자이언츠': 'LT',
+    'KIA 타이거즈': 'HT',
+    'NC 다이노스': 'NC',
+    '키움 히어로즈': 'WO',
+  };
+
+
+
   final List<String> _teams = [
-    '기아 타이거즈',
+    'KIA 타이거즈',
     '두산 베어스',
     '롯데 자이언츠',
     '삼성 라이온즈',
@@ -33,6 +55,14 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
   void initState() {
     super.initState();
     _focusNode.addListener(() => setState(() {}));
+    _saveDebugToken();
+
+  }
+
+  void _saveDebugToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('access_token', '$토큰자리');
+    print('🪪 테스트용 토큰 저장 완료');
   }
 
   @override
@@ -169,17 +199,31 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-                onPressed: isButtonEnabled
-                    ? () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const MainNavigation(child: HomePage()),
+              onPressed: isButtonEnabled
+                  ? () async {
+                final nickname = _nicknameController.text.trim();
+                print('🧪 보내는 닉네임: "$nickname"');
+                print('📤 보낼 바디: ${jsonEncode({'nickname': nickname})}');
 
-                    ),
+
+                final shortCode = teamShortCodes[_selectedTeam!]!;
+
+                try {
+                  await MemberApi.patchNickname(nickname);
+                  await MemberApi.patchTeam(shortCode);
+
+                  // ✅ go_router로 /home 이동
+                  if (!mounted) return;
+                  context.go('/home');
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(e.toString())),
                   );
                 }
-                    : null,
+              }
+                  : null,
+
 
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size.fromHeight(50),
