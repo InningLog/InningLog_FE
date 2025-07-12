@@ -9,12 +9,15 @@ import 'home_detail.dart';
 import '../service/api_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
-  //연동 -> api_service.dart에서 API 불러오기
+
+
+//연동 -> api_service.dart에서 API 불러오기
   static Future<HomeData?> fetchHomeData() async {
     final url = Uri.parse('https://api.inninglog.shop/home/view');
     final response = await http.get(url);
@@ -27,6 +30,8 @@ class HomePage extends StatefulWidget {
       return null;
     }
   }
+
+
 
 
 

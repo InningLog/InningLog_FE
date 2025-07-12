@@ -1,6 +1,8 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.inninglog">
 
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
@@ -24,9 +26,14 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+                <data android:scheme="kakao3e0a9528d7ddb6147c97af78f60ab300" android:host="oauth" />
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
@@ -35,6 +42,8 @@
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
+
+
 
 
 
