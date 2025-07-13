@@ -61,7 +61,7 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
 
   void _saveDebugToken() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('access_token', '$토큰자리');
+    await prefs.setString('access_token', 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIyIiwiaWF0IjoxNzUyMzI3Mzc2LCJleHAiOjE5NjgzMjczNzZ9.gWWnWej9bFGgIxzzAtByoD1RpDudVi8QX9FwHGCcasAO6Smy7_gYF9B1eTz1M1H2mQe7BnuE7Z3UHvjZcV-GEA');
     print('🪪 테스트용 토큰 저장 완료');
   }
 

@@ -12,6 +12,35 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 
+const Map<String, String> teamNameMap = {
+  'LG': 'LG',
+  'OB': '두산',
+  'SK': 'SSG',
+  'HH': '한화',
+  'SS': '삼성',
+  'KT': 'KT',
+  'LT': '롯데',
+  'HT': 'KIA',
+  'NC': 'NC',
+  'WO': '키움',
+};
+
+
+const Map<String, String> stadiumNameMap = {
+  'JAM': '잠실 야구장',
+  'GOC': '고척 스카이돔',
+  'INC': '랜더스필드',
+  'DAE': '한화생명 볼파크',
+  'DAU': '라이온즈 파크',
+  'SUW': '위즈파크',
+  'SAJ': '사직 야구장',
+  'GWJ': '챔피언스 월드',
+  'CHW': 'NC 파크',
+};
+
+
+
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -128,7 +157,25 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final Color teamColor = teamColors[teamShortCode] ?? AppColors.primary800;
 
-    final schedule = homeData?.myTeamSchedule.first;
+    //오늘 날짜 기준 경기 찾기
+    MyTeamSchedule? todaySchedule;
+
+    try {
+      todaySchedule = homeData?.myTeamSchedule.firstWhere(
+            (s) {
+          final gameDate = DateTime.parse(s.gameDateTime.split(' ')[0]);
+          return gameDate.year == currentDate.year &&
+              gameDate.month == currentDate.month &&
+              gameDate.day == currentDate.day;
+        },
+      );
+    } catch (e) {
+      // 못 찾았을 경우
+      todaySchedule = null;
+    }
+
+
+
 
 
 
@@ -230,21 +277,16 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 12),
 
 
-            schedule == null
-                ? const SizedBox(
-              height: 148,
-              child: Center(child: CircularProgressIndicator()),
-            )
-                : Container(
+            Container(
               width: 360,
-              height: 148,
-              padding: const EdgeInsets.only(left: 19, right: 19),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 border: Border.all(color: AppColors.gray300),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
                 children: [
+                  // 날짜 & 이동 버튼
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -267,41 +309,79 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        schedule.myTeam,
-                        style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+
+                  // 👇 여기부터 경기 여부 분기
+                  if (todaySchedule == null)
+
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 19),
+                      child:  Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // 🐻 Bori sleepy 이미지 (왼쪽)
+                    Image.asset(
+                      'assets/images/bori_sleepy.jpg',
+                      width: 72,
+                      height: 60,
+                    ),
+                    const SizedBox(width: 13),
+
+                    // 📝 "경기가 없습니다" 텍스트 (오른쪽)
+                    const Text(
+                      '오늘은 경기가 없어요!',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        fontFamily: 'omyu pretty',
                       ),
-                      const SizedBox(width: 66),
-                      const Text(
-                        'VS',
-                        style: TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary700,
+                    ),
+                  ],
+                ),
+                    )
+          else
+                    Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              teamNameMap[todaySchedule!.myTeam] ?? todaySchedule!.myTeam,
+                              style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+                            ),
+                            const SizedBox(width: 66),
+                            const Text(
+                              'VS',
+                              style: TextStyle(
+                                fontSize: 19,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary700,
+                              ),
+                            ),
+                            const SizedBox(width: 66),
+                            Text(
+                              teamNameMap[todaySchedule!.opponentTeam] ?? todaySchedule!.opponentTeam,
+                              style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 66),
-                      Text(
-                        schedule.opponentTeam,
-                        style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    schedule.gameDateTime.split(' ')[1],
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  Text(
-                    '@ ${schedule.stadium}',
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
-                  ),
+                        const SizedBox(height: 6),
+                        Text(
+                          todaySchedule!.gameDateTime.contains(' ')
+                              ? todaySchedule!.gameDateTime.split(' ')[1]
+                              : '',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
+                        Text(
+                          '@ ${stadiumNameMap[todaySchedule!.stadium] ?? todaySchedule!.stadium}',
+                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),
+
 
             const SizedBox(height: 21),
             SizedBox(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../app_colors.dart';
+import '../service/api_service.dart';
 
 class Player {
   final int playerId;
@@ -22,6 +23,20 @@ class Player {
     required this.totalInning,
     required this.halPoongRi,
   });
+
+  factory Player.fromJson(Map<String, dynamic> json) {
+    return Player(
+      playerId: json['playerId'],
+      playerName: json['playerName'],
+      playerType: json['playerType'],
+      totalHits: json['totalHits'],
+      totalAtBats: json['totalAtBats'],
+      totalEarned: json['totalEarned'],
+      totalInning: json['totalInning']?.toDouble() ?? 0.0,
+      halPoongRi: (json['halPoongRi'] ?? 0) / 1000,
+    );
+  }
+
 }
 
 class MyReportResponse {
@@ -42,64 +57,52 @@ class MyReportResponse {
     required this.bottomBatters,
     required this.bottomPitchers,
   });
+
+  factory MyReportResponse.fromJson(Map<String, dynamic> json) {
+    List<Player> parsePlayers(List<dynamic> list) =>
+        list.map((item) => Player.fromJson(item)).toList();
+
+    return MyReportResponse(
+      totalVisitedGames: json['totalVisitedGames'],
+      winGames: json['winGames'],
+      winningRateHalPoongRi: json['myWeaningRate'] / 1000,
+      topBatters: parsePlayers(json['topBatters']),
+      topPitchers: parsePlayers(json['topPitchers']),
+      bottomBatters: parsePlayers(json['bottomBatters']),
+      bottomPitchers: parsePlayers(json['bottomPitchers']),
+    );
+  }
+
 }
-final dummyReport = MyReportResponse(
-  totalVisitedGames: 10,
-  winGames: 6,
-  winningRateHalPoongRi: 0.600,
-  topBatters: [
-    Player(
-      playerId: 1,
-      playerName: '문성주',
-      playerType: 'BATTER',
-      totalHits: 34,
-      totalAtBats: 100,
-      totalEarned: 0,
-      totalInning: 0,
-      halPoongRi: 0.750,
-    ),
-  ],
-  topPitchers: [
-    Player(
-      playerId: 2,
-      playerName: '송승기',
-      playerType: 'PITCHER',
-      totalHits: 0,
-      totalAtBats: 0,
-      totalEarned: 2,
-      totalInning: 2.1,
-      halPoongRi: 0.850,
-    ),
-  ],
-  bottomBatters: [
-    Player(
-      playerId: 3,
-      playerName: '박동원',
-      playerType: 'BATTER',
-      totalHits: 4,
-      totalAtBats: 40,
-      totalEarned: 0,
-      totalInning: 0,
-      halPoongRi: 0.200,
-    ),
-  ],
-  bottomPitchers: [
-    Player(
-      playerId: 4,
-      playerName: '장현식',
-      playerType: 'PITCHER',
-      totalHits: 0,
-      totalAtBats: 0,
-      totalEarned: 9,
-      totalInning: 2.0,
-      halPoongRi: 0.100,
-    ),
-  ],
-);
+
+class HomeDetailPage extends StatefulWidget {
+  const HomeDetailPage({super.key});
+
+  @override
+  State<HomeDetailPage> createState() => _HomeDetailPageState();
+}
+
+class _HomeDetailPageState extends State<HomeDetailPage> {
+  MyReportResponse? report;
+
+  @override
+  void initState() {
+    super.initState();
+    loadReport(); // 🟡 페이지 들어오자마자 API 호출
+  }
 
 
-class HomeDetailPage extends StatelessWidget {
-  HomeDetailPage({super.key});
+
+  Future<void> loadReport() async {
+    final result = await ApiService.fetchMyReport(
+
+    ); // 아까 만든 API 함수 호출
+    setState(() {
+      report = result;
+    });
+
+  }
+
 
   // 유저 정보 더미 데이터
   final String nickname = '디디';
@@ -128,8 +131,17 @@ class HomeDetailPage extends StatelessWidget {
     final Color teamColor = teamColors[teamShortCode] ?? AppColors.primary700;
 
 
+    if (report == null) {
+      // ⏳ 아직 데이터를 불러오는 중일 때
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final reportData = report!;
+
     //전체 직관 횟수가 3회 미만인 경우
-    if (dummyReport.totalVisitedGames < 3) {
+    if (reportData.totalVisitedGames < 3) {
       return Scaffold(
         backgroundColor: Colors.white,
         body: SafeArea(
@@ -220,7 +232,7 @@ class HomeDetailPage extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
                 Text(
-                  '현재:${dummyReport.totalVisitedGames}회' ,
+                  '현재:${reportData.totalVisitedGames}회' ,
                   style: TextStyle(
                   color: AppColors.gray700,
                   fontWeight: FontWeight.w700,
@@ -333,13 +345,13 @@ class HomeDetailPage extends StatelessWidget {
                               Column(
                                 children: [
                                   Image.asset(
-                                    getImageForRate(dummyReport.winningRateHalPoongRi),
+                                    getImageForRate(reportData.winningRateHalPoongRi),
                                     width: 51,
                                     height: 51,
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    getCaptionForRate(dummyReport.winningRateHalPoongRi),
+                                    getCaptionForRate(reportData.winningRateHalPoongRi),
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       fontSize: 12,
@@ -356,7 +368,7 @@ class HomeDetailPage extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Text(
-                                    dummyReport.winningRateHalPoongRi.toStringAsFixed(3),
+                                    reportData.winningRateHalPoongRi.toStringAsFixed(3),
                                     style: TextStyle(
                                       fontSize: 26,
                                       fontWeight: FontWeight.w800,
@@ -366,7 +378,7 @@ class HomeDetailPage extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '2025 직관 횟수: ${dummyReport.totalVisitedGames}회',
+                                    '2025 직관 횟수: ${reportData.totalVisitedGames}회',
                                     style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w400,
@@ -374,7 +386,7 @@ class HomeDetailPage extends StatelessWidget {
                                     ),
                                   ),
                                   Text(
-                                    '${dummyReport.winGames}승 7패 1무',
+                                    '${reportData.winGames}승 7패 1무',
                                     style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700,
@@ -395,7 +407,6 @@ class HomeDetailPage extends StatelessWidget {
 
                     /// 그래프 비교 박스
                 Container(
-                  height: 176,
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   decoration: BoxDecoration(
                     color: AppColors.primary50,
@@ -415,8 +426,8 @@ class HomeDetailPage extends StatelessWidget {
                           ),
                           const SizedBox(height: 12),
                           _buildBar(label: '내 직관 승률',
-                              value: dummyReport.winningRateHalPoongRi,
-                              color: AppColors.primary300),
+                              value: reportData.winningRateHalPoongRi,
+                              color: AppColors.primary300,),
                           const SizedBox(height: 10),
                           _buildBar(label: '팀 승률',
                               value: 0.405,
@@ -424,7 +435,7 @@ class HomeDetailPage extends StatelessWidget {
                           const SizedBox(height: 12),
                           Center(
                             child: Text(
-                              '$nickname님의 직관 승률이 팀 승률보다 ${dummyReport.winningRateHalPoongRi} 낮아요.',
+                              '$nickname님의 직관 승률이 팀 승률보다 ${reportData.winningRateHalPoongRi} 낮아요.',
                               //이거 나중에 꼭 수정 필요
                               style: TextStyle(
                                 fontSize: 12,
@@ -444,10 +455,10 @@ class HomeDetailPage extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: _buildPlayerCard('오이구 내 새끼 🥹', dummyReport.topPitchers.first,dummyReport.topBatters.first),
-                        ),   const SizedBox(width: 18),
+                          child: _buildPlayerCard('오이구 내 새끼 🥹', reportData.topPitchers.first,reportData.topBatters.first),
+                        ),   const SizedBox(width: 20),
                         Expanded(
-                          child: _buildPlayerCard('아이고 이 새끼 🤬', dummyReport.bottomPitchers.first,dummyReport.bottomBatters.first),
+                          child: _buildPlayerCard('아이고 이 새끼 🤬', reportData.bottomPitchers.first,reportData.bottomBatters.first),
                         ),
                       ],
                     ),
@@ -501,30 +512,36 @@ class HomeDetailPage extends StatelessWidget {
   }) {
     return Padding(
 
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 4,horizontal: 21),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // 🔤 레이블
           Container(
-            width: 70,
-            alignment: Alignment.centerRight,
+            width: 66,
+            child: Transform.translate(
+          offset: const Offset(-6, 0),
             child: Text(
+
               label,
-              textAlign: TextAlign.center,
+              textAlign: TextAlign.right,
               style: const TextStyle(
                 fontSize: 12,
                 fontFamily: 'Pretendard',
                 fontWeight: FontWeight.w600,
+                letterSpacing: -0.12,
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          ),
+          const SizedBox(width: 6),
           //프로그레스 바 디자인
-          Expanded(
+          Container(
+            alignment: Alignment.center,
             child: Container(
               height: 20,
               width: 200,
+              alignment: Alignment.centerLeft,
               decoration: BoxDecoration(
                 color: AppColors.primary50,
                 border: Border.all(color: Color(0xFFA9A9A9)),
@@ -564,8 +581,7 @@ class HomeDetailPage extends StatelessWidget {
   /// 선수 카드
   Widget _buildPlayerCard(String title, Player pitcher,Player batter) {
     return Container(
-      width: 170,
-      height: 120,
+
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color:AppColors.primary50,
