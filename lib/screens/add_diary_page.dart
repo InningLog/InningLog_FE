@@ -1,11 +1,19 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../app_colors.dart';
 import 'dart:io';
+import '../models/home_view.dart';
 import 'add_seat_page.dart';
+import 'package:http/http.dart' as http;
+
+import 'home_page.dart';
+
 
 File? _pickedImage;
 //상태변수
@@ -30,23 +38,23 @@ class AddDiaryPage extends StatefulWidget {
 class _AddDiaryPageState extends State<AddDiaryPage> {
   DateTime currentDate = DateTime.now();
 
-  @override
-  void initState() {
-    super.initState();
-    currentDate = widget.initialDate ?? DateTime.now(); // 전달받은 날짜 or 오늘
+  void _updateScheduleForDate(DateTime date) async {
+    final schedule = await loadScheduleFromPrefs(date);
+    setState(() {
+      currentDate = date;
+      todaySchedule = schedule;
+
+    });
   }
 
-
   void _goToPreviousDay() {
-    setState(() {
-      currentDate = currentDate.subtract(const Duration(days: 1));
-    });
+    final newDate = currentDate.subtract(const Duration(days: 1));
+    _updateScheduleForDate(newDate);
   }
 
   void _goToNextDay() {
-    setState(() {
-      currentDate = currentDate.add(const Duration(days: 1));
-    });
+    final newDate = currentDate.add(const Duration(days: 1));
+    _updateScheduleForDate(newDate);
   }
 
   String _formatDate(DateTime date) {
@@ -57,6 +65,29 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
     if (isToday) return 'Today';
     return DateFormat('MM.dd(E)', 'ko').format(date);
   }
+
+  MyTeamSchedule? todaySchedule;
+
+  @override
+  void initState() {
+    super.initState();
+    currentDate = widget.initialDate ?? DateTime.now();
+    _updateScheduleForDate(currentDate);
+  }
+  String generateGameId(DateTime date, String myTeam, String opponentTeam) {
+    final formattedDate = DateFormat('yyyyMMdd').format(date);
+    return '$formattedDate-$myTeam-$opponentTeam';
+  }
+
+  String getEmotionKor(int index) {
+    const emotions = ['짜릿함', '감동', '흐뭇', '답답함', '아쉬움', '분노'];
+    if (index < 0 || index >= emotions.length) return '';
+    return emotions[index];
+  }
+
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -124,8 +155,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                       // 날짜 & 팀 매치 정보
                       Container(
                         width: double.infinity,
-                        height: 153,
-                        padding: const EdgeInsets.only(top: 8, left: 19, right: 19,bottom: 8),
+                        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 19),
                         decoration: BoxDecoration(
                           border: Border.all(color: AppColors.gray300),
                           borderRadius: BorderRadius.circular(12),
@@ -162,48 +192,73 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               ],
                             ),
                             const SizedBox(height: 12),
-                            const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  '두산',
-                                  style: TextStyle(
-                                      fontSize: 19, fontWeight: FontWeight.w800),
+                            if (todaySchedule == null)
+
+                              Padding(
+                                padding: const EdgeInsets.only(left: 16, right: 16, bottom: 19),
+                                child:  Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    // 🐻 Bori sleepy 이미지 (왼쪽)
+                                    Image.asset(
+                                      'assets/images/bori_sleepy.jpg',
+                                      width: 72,
+                                      height: 60,
+                                    ),
+                                    const SizedBox(width: 13),
+
+                                    // 📝 "경기가 없습니다" 텍스트 (오른쪽)
+                                    const Text(
+                                      '오늘은 경기가 없어요!',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w400,
+                                        fontFamily: 'omyu pretty',
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                SizedBox(width: 66),
-                                Text(
-                                  'VS',
-                                  style: TextStyle(
-                                    fontSize: 19,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.primary700,
+                              )
+                            else
+                              Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        teamNameMap[todaySchedule!.myTeam] ?? todaySchedule!.myTeam,
+                                        style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+                                      ),
+                                      const SizedBox(width: 66),
+                                      const Text(
+                                        'VS',
+                                        style: TextStyle(
+                                          fontSize: 19,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.primary700,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 66),
+                                      Text(
+                                        teamNameMap[todaySchedule!.opponentTeam] ?? todaySchedule!.opponentTeam,
+                                        style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                                SizedBox(width: 66),
-                                Text(
-                                  'LG',
-                                  style: TextStyle(
-                                      fontSize: 19, fontWeight: FontWeight.w800),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              '17:00',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'Pretendard',
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    todaySchedule!.gameDateTime.contains(' ')
+                                        ? todaySchedule!.gameDateTime.split(' ')[1]
+                                        : '',
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                                  ),
+                                  Text(
+                                    '@ ${stadiumNameMap[todaySchedule!.stadium] ?? todaySchedule!.stadium}',
+                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+                                  ),
+                                ],
                               ),
-                            ),
-                            const Text(
-                              '@ 잠실 종합운동장 잠실야구장',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                                fontFamily: 'Pretendard',
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -450,7 +505,58 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                             width: 360,
                             height: 54,
                             child: ElevatedButton(
-                              onPressed: isFormValid ? () {} : null,
+                              onPressed: isFormValid ? () async {
+                                print('🟢 [작성완료 버튼] 클릭됨');
+
+                                if (_pickedImage == null) {
+                                  print('❗ 이미지가 선택되지 않았습니다.');
+                                  return;
+                                }
+
+                                if (todaySchedule == null) {
+                                  print('❗ 오늘 경기 정보가 없습니다.');
+                                  return;
+                                }
+
+                                final fileName = 'journal_${DateTime.now().millisecondsSinceEpoch}.jpeg';
+                                print('📁 파일 이름: $fileName');
+
+                                // 1. Presigned URL 발급
+                                final presignedUrl = await getPresignedUrl(fileName, 'image/jpeg');
+                                print('🔗 Presigned URL 결과: $presignedUrl');
+                                if (presignedUrl == null) {
+                                  print('❌ Presigned URL 발급 실패');
+                                  return;
+                                }
+
+                                // 2. S3 업로드
+                                final uploaded = await uploadImageToS3(presignedUrl, _pickedImage!);
+                                print('📦 이미지 S3 업로드 결과: $uploaded');
+                                if (!uploaded) {
+                                  print('❌ 이미지 업로드 실패');
+                                  return;
+                                }
+
+                                // 3. 일지 업로드
+                                print('📤 일지 업로드 요청 시작');
+                                await uploadJournal(
+                                  gameId: generateGameId(currentDate, todaySchedule!.myTeam, todaySchedule!.opponentTeam),
+                                  gameDateTime: DateTime.parse(todaySchedule!.gameDateTime),
+                                  stadiumShortCode: todaySchedule!.stadium,
+                                  opponentTeamShortCode: todaySchedule!.opponentTeam,
+                                  ourScore: int.parse(ourScore),
+                                  theirScore: int.parse(opponentScore),
+                                  fileName: fileName,
+                                  emotion: getEmotionKor(selectedEmotionIndex),
+                                  reviewText: '', // 후기는 아직 입력값 연동 안 된 상태
+                                );
+
+                                print('✅ 전체 업로드 성공!');
+                                if (context.mounted) context.pop();
+                              } : null,
+
+
+
                               style: ElevatedButton.styleFrom(
                                 backgroundColor:
                                 isFormValid ? Colors.white : AppColors.gray200,
@@ -655,5 +761,102 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
     );
   }
 }
+
+Future<String?> getPresignedUrl(String fileName, String contentType) async {
+  final url = Uri.parse(
+    'https://api.inninglog.shop/s3/journal/presigned?fileName=$fileName&contentType=$contentType',
+  );
+  final response = await http.get(url);
+
+  if (response.statusCode == 200) {
+    final json = jsonDecode(response.body);
+    return json['data']; // presigned URL
+  } else {
+    print('❌ Presigned URL 발급 실패: ${response.body}');
+    return null;
+  }
+}
+Future<bool> uploadImageToS3(String presignedUrl, File file) async {
+  final bytes = await file.readAsBytes();
+
+  final response = await http.put(
+    Uri.parse(presignedUrl),
+    headers: {
+      'Content-Type': 'image/jpeg',
+    },
+    body: bytes,
+  );
+
+  print('📤 S3 업로드 응답 코드: ${response.statusCode}');
+  return response.statusCode == 200;
+}
+Future<void> uploadJournal({
+  required String gameId,
+  required String fileName,
+  required String stadiumShortCode,
+  required String opponentTeamShortCode,
+  required DateTime gameDateTime,
+  required int ourScore,
+  required int theirScore,
+  required String emotion,
+  required String reviewText,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('access_token');
+  print('🪪 저장된 토큰: $token');
+
+  final bodyData = {
+    "gameId": gameId,
+    "gameDateTime": gameDateTime.toIso8601String(),
+    "stadiumShortCode": stadiumShortCode,
+    "opponentTeamShortCode": opponentTeamShortCode,
+    "ourScore": ourScore,
+    "theirScore": theirScore,
+    "fileName": fileName,
+    "emotion": emotion,
+    "review_text": reviewText,
+  };
+  print('📤 보낼 바디: ${jsonEncode(bodyData)}');
+
+  final response = await http.post(
+    Uri.parse('https://api.inninglog.shop/journals/contents'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode(bodyData),
+  );
+
+  print('📡 응답 코드: ${response.statusCode}');
+  print('📦 응답 바디: ${response.body}');
+
+  if (response.statusCode == 201) {
+    print('✅ 일지 업로드 성공!');
+  } else {
+    print('❌ 일지 업로드 실패: ${response.body}');
+  }
+}
+
+
+Future<MyTeamSchedule?> loadScheduleFromPrefs(DateTime date) async {
+
+  final prefs = await SharedPreferences.getInstance();
+  final key = 'schedule_${DateFormat('yyyy-MM-dd').format(date)}';
+  final jsonString = prefs.getString(key);
+  if (jsonString == null) return null;
+
+
+  final jsonData = jsonDecode(jsonString);
+  return MyTeamSchedule.fromJson(jsonData);
+
+
+}
+
+
+
+
+
+
+
 
 

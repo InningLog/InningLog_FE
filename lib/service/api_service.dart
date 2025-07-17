@@ -8,6 +8,7 @@ import '../screens/home_detail.dart';
 class ApiService {
   static const String baseUrl = 'https://api.inninglog.shop';
 
+
   static Future<http.Response> getHomeView() async {
     final url = Uri.parse('$baseUrl/home/view');
     return await http.get(url);
@@ -29,7 +30,7 @@ class ApiService {
     final response = await http.get(
       url,
       headers: {
-        'Authorization': 'Bearer $token', // ✅ 하드코딩 말고 이걸 써야 해!
+        'Authorization': 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIyIiwiaWF0IjoxNzUyMzI3Mzc2LCJleHAiOjE5NjgzMjczNzZ9.gWWnWej9bFGgIxzzAtByoD1RpDudVi8QX9FwHGCcasAO6Smy7_gYF9B1eTz1M1H2mQe7BnuE7Z3UHvjZcV-GEA', // 하드코딩 말고 이걸 써야 함
         'Content-Type': 'application/json',
       },
     );
@@ -56,7 +57,7 @@ class ApiService {
     final response = await http.get(
       url,
       headers: {
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIyIiwiaWF0IjoxNzUyMzI3Mzc2LCJleHAiOjE5NjgzMjczNzZ9.gWWnWej9bFGgIxzzAtByoD1RpDudVi8QX9FwHGCcasAO6Smy7_gYF9B1eTz1M1H2mQe7BnuE7Z3UHvjZcV-GEA',
       },
     );
 
@@ -80,6 +81,8 @@ class ApiService {
       print('❌ API 오류: ${errorJson['message']}');
       return null;
     }
+
+
   }
 
 

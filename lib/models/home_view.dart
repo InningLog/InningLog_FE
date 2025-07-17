@@ -13,6 +13,19 @@ class MyTeamSchedule {
     required this.gameDateTime,
   });
 
+  Map<String, dynamic> toJson() {
+    return {
+      'myTeam': myTeam,
+      'opponentTeam': opponentTeam,
+      'stadium': stadium,
+      'gameDateTime': gameDateTime,
+    };
+  }
+
+
+
+
+
   factory MyTeamSchedule.fromJson(Map<String, dynamic> json) {
     return MyTeamSchedule(
       myTeam: json['myTeam'],

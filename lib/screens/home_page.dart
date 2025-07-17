@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 
+
 const Map<String, String> teamNameMap = {
   'LG': 'LG',
   'OB': '두산',
@@ -72,6 +73,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   DateTime currentDate = DateTime.now();
 
+
   //HomePage에서 상태 변수 추가
   HomeData? homeData;
 
@@ -79,20 +81,118 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    fetchData();
+    loadNickname(); // 닉네임 불러오기
+    loadTeamCode();
+    fetchMyWeaningRate();
+    fetchData();// 기존 API 호출
+
+
+
   }
+  void saveScheduleToPrefs(MyTeamSchedule schedule) async {
+    final prefs = await SharedPreferences.getInstance();
+    final gameDate = DateTime.parse(schedule.gameDateTime);
+    final key = DateFormat('yyyy-MM-dd').format(gameDate);
+    await prefs.setString('schedule_$key', jsonEncode(schedule.toJson()));
+    print('📝 저장 중: $key -> ${schedule.toJson()}');
+
+  }
+
+  void saveScheduleListToPrefs(List<MyTeamSchedule> scheduleList) async {
+    final prefs = await SharedPreferences.getInstance();
+    for (var schedule in scheduleList) {
+      final gameDate = DateTime.parse(schedule.gameDateTime);
+      final key = 'schedule_${DateFormat('yyyy-MM-dd').format(gameDate)}';
+      print('📦 저장할 키: $key');
+      await prefs.setString(key, jsonEncode(schedule.toJson()));
+    }
+  }
+
+
+
+
+
+
+
+  //닉네임 꺼내오기
+  String? nickname;
+
+
+  void loadNickname() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      nickname = prefs.getString('nickname') ?? '유저';
+    });
+  }
+
+  String teamShortCode = 'LG'; // 기본값
+
+  void loadTeamCode() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      teamShortCode = prefs.getString('teamShortCode') ?? 'LG';
+    });
+  }
+
 
   void fetchData() async {
     final data = await ApiService.fetchHomeData();
     setState(() {
       homeData = data;
     });
+
+    final result = await ApiService.fetchHomeData();
+    if (result != null && result.myTeamSchedule.isNotEmpty) {
+      saveScheduleListToPrefs(result.myTeamSchedule);
+    }
+
+
+
   }
 
-  // 유저 정보 더미 데이터
-  final String nickname = '망곰 14';
-  final double winningRateHalPoongRi = 0.932;
-  final String teamShortCode = 'LG';
+  int? myWeaningRate;
+
+
+  void fetchMyWeaningRate() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+    if (token == null) return;
+
+    final response = await http.get(
+      Uri.parse('https://api.inninglog.shop/report/main'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    print('📡 응답 상태: ${response.statusCode}');
+    print('📦 리포트 API 응답 바디: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      final int rate = jsonData['data']['myWeaningRate'];
+      setState(() {
+        myWeaningRate = rate;
+      });
+    } else if (response.statusCode == 400) {
+      final errorJson = jsonDecode(response.body);
+      final errorCode = errorJson['code'];
+      if (errorCode == 'NO_VISITED_GAME') {
+        print('📭 직관 기록 없음');
+        setState(() {
+          myWeaningRate = 0; // 또는 null 대신 0으로 표시
+        });
+      } else {
+        print('❌ 알 수 없는 400 오류: ${errorJson['message']}');
+      }
+    } else {
+      print('❌ 기타 오류: ${response.statusCode}');
+    }
+  }
+
+
+
+
+
+
 
   // 팀별 색상 정의
   final Map<String, Color> teamColors = {
@@ -160,6 +260,7 @@ class _HomePageState extends State<HomePage> {
     //오늘 날짜 기준 경기 찾기
     MyTeamSchedule? todaySchedule;
 
+
     try {
       todaySchedule = homeData?.myTeamSchedule.firstWhere(
             (s) {
@@ -169,8 +270,10 @@ class _HomePageState extends State<HomePage> {
               gameDate.day == currentDate.day;
         },
       );
+      if (todaySchedule != null) {
+        saveScheduleToPrefs(todaySchedule!);
+      }
     } catch (e) {
-      // 못 찾았을 경우
       todaySchedule = null;
     }
 
@@ -184,254 +287,255 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-        child: Column(
-          children: [
-            const CommonHeader(title: '홈'),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Text(
-                  '$nickname님의 직관 승률',
-                  style: const TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'Pretendard',
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              height: 271,
-              width: 360,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.gray400),
-              ),
-              child: Column(
-                children: [
-                  const SizedBox(height: 12),
-                  Image.asset(
-                    getImageForRate(winningRateHalPoongRi),
-                    width: 88,
-                    height: 88,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    winningRateHalPoongRi.toStringAsFixed(3),
-                    style: TextStyle(
-                      fontSize: 28,
+          child: Column(
+            children: [
+              const CommonHeader(title: '홈'),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Text(
+                    '$nickname님의 직관 승률',
+                    style: const TextStyle(
+                      fontSize: 19,
                       fontWeight: FontWeight.w700,
-                      color: teamColor,
                       fontFamily: 'Pretendard',
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  OutlinedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => HomeDetailPage()),
-                      );
-                    },
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppColors.primary600),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      backgroundColor: const Color(0xFFF9FCF1),
-                      minimumSize: const Size.fromHeight(40),
-                      fixedSize: const Size(301, 53),
-                    ),
-                    child: const Text(
-                      '나의 직관 리포트',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Pretendard',
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-
-                ],
-              ),
-            ),
-            const SizedBox(height: 26),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Text(
-                  '우리팀 경기 일정',
-                  style: const TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'Pretendard',
-                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-
-
-            Container(
-              width: 360,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.gray300),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  // 날짜 & 이동 버튼
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        onPressed: _goToPreviousDay,
-                        icon: SvgPicture.asset('assets/icons/month_left.svg', width: 20, height: 27),
-                      ),
-                      Text(
-                        _formatDate(currentDate),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'Pretendard',
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: _goToNextDay,
-                        icon: SvgPicture.asset('assets/icons/month_right.svg', width: 20, height: 27),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // 👇 여기부터 경기 여부 분기
-                  if (todaySchedule == null)
-
-                    Padding(
-                      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 19),
-                      child:  Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
+              const SizedBox(height: 12),
+              Container(
+                height: 271,
+                width: 360,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.gray400),
+                ),
+                child: myWeaningRate != null
+                    ? Column(
                   children: [
-                    // 🐻 Bori sleepy 이미지 (왼쪽)
+                    const SizedBox(height: 12),
                     Image.asset(
-                      'assets/images/bori_sleepy.jpg',
-                      width: 72,
-                      height: 60,
+                      getImageForRate(myWeaningRate! / 1000),
+                      width: 88,
+                      height: 88,
                     ),
-                    const SizedBox(width: 13),
-
-                    // 📝 "경기가 없습니다" 텍스트 (오른쪽)
-                    const Text(
-                      '오늘은 경기가 없어요!',
+                    const SizedBox(height: 12),
+                    Text(
+                      (myWeaningRate! / 1000).toStringAsFixed(3),
                       style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        fontFamily: 'omyu pretty',
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        color: teamColor,
+                        fontFamily: 'Pretendard',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const HomeDetailPage(),
+                          ),
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: AppColors.primary600),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        backgroundColor: const Color(0xFFF9FCF1),
+                        minimumSize: const Size.fromHeight(40),
+                        fixedSize: const Size(301, 53),
+                      ),
+                      child: const Text(
+                        '나의 직관 리포트',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Pretendard',
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ],
+                )
+                    : const Center(
+                  child: CircularProgressIndicator(),
                 ),
-                    )
-          else
-                    Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              teamNameMap[todaySchedule!.myTeam] ?? todaySchedule!.myTeam,
-                              style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
-                            ),
-                            const SizedBox(width: 66),
-                            const Text(
-                              'VS',
-                              style: TextStyle(
-                                fontSize: 19,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primary700,
-                              ),
-                            ),
-                            const SizedBox(width: 66),
-                            Text(
-                              teamNameMap[todaySchedule!.opponentTeam] ?? todaySchedule!.opponentTeam,
-                              style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          todaySchedule!.gameDateTime.contains(' ')
-                              ? todaySchedule!.gameDateTime.split(' ')[1]
-                              : '',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                        ),
-                        Text(
-                          '@ ${stadiumNameMap[todaySchedule!.stadium] ?? todaySchedule!.stadium}',
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                ],
               ),
-            ),
 
-
-            const SizedBox(height: 21),
-            SizedBox(
-              width: 360,
-              height: 57,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal:0),
-                child: ElevatedButton(
-                  onPressed: () {
-                    openTicketUrl(teamShortCode); // 이 변수는 현재 'LG' 같은 코드로 정의돼 있음
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary50,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    side: BorderSide(color: AppColors.gray400),
-
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-
-                  ),
-                  child: const Text(
-                    '우리팀 예매처 바로가기',
-                    style: TextStyle(
-                      fontSize: 16,
+              const SizedBox(height: 26),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Text(
+                    '우리팀 경기 일정',
+                    style: const TextStyle(
+                      fontSize: 19,
                       fontWeight: FontWeight.w700,
-                      color: Colors.black,
                       fontFamily: 'Pretendard',
                     ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 32),
-          ],
+              const SizedBox(height: 12),
+
+
+              Container(
+                width: 360,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.gray300),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    // 날짜 & 이동 버튼
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          onPressed: _goToPreviousDay,
+                          icon: SvgPicture.asset('assets/icons/month_left.svg', width: 20, height: 27),
+                        ),
+                        Text(
+                          _formatDate(currentDate),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Pretendard',
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: _goToNextDay,
+                          icon: SvgPicture.asset('assets/icons/month_right.svg', width: 20, height: 27),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // 👇 여기부터 경기 여부 분기
+                    if (todaySchedule == null)
+
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 19),
+                        child:  Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // 🐻 Bori sleepy 이미지 (왼쪽)
+                            Image.asset(
+                              'assets/images/bori_sleepy.jpg',
+                              width: 72,
+                              height: 60,
+                            ),
+                            const SizedBox(width: 13),
+
+                            // 📝 "경기가 없습니다" 텍스트 (오른쪽)
+                            const Text(
+                              '오늘은 경기가 없어요!',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                                fontFamily: 'omyu pretty',
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                teamNameMap[todaySchedule!.myTeam] ?? todaySchedule!.myTeam,
+                                style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+                              ),
+                              const SizedBox(width: 66),
+                              const Text(
+                                'VS',
+                                style: TextStyle(
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.primary700,
+                                ),
+                              ),
+                              const SizedBox(width: 66),
+                              Text(
+                                teamNameMap[todaySchedule!.opponentTeam] ?? todaySchedule!.opponentTeam,
+                                style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            todaySchedule!.gameDateTime.contains(' ')
+                                ? todaySchedule!.gameDateTime.split(' ')[1]
+                                : '',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          ),
+                          Text(
+                            '@ ${stadiumNameMap[todaySchedule!.stadium] ?? todaySchedule!.stadium}',
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+
+
+              const SizedBox(height: 21),
+              SizedBox(
+                width: 360,
+                height: 57,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal:0),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      openTicketUrl(teamShortCode); // 이 변수는 현재 'LG' 같은 코드로 정의돼 있음
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary50,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      side: BorderSide(color: AppColors.gray400),
+
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+
+                    ),
+                    child: const Text(
+                      '우리팀 예매처 바로가기',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black,
+                        fontFamily: 'Pretendard',
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
 }
 
 String getImageForRate(double rate) {
-  if (rate <= 0.3) {
-    return 'assets/images/bori30.jpg';
-  } else if (rate <= 0.5) {
-    return 'assets/images/bori50.jpg';
-  } else if (rate <= 0.7) {
-    return 'assets/images/bori70.jpg';
-  } else {
-    return 'assets/images/bori100.jpg';
-  }
+  if (rate <= 0.3) return 'assets/images/bori30.jpg';
+  if (rate <= 0.5) return 'assets/images/bori50.jpg';
+  if (rate <= 0.7) return 'assets/images/bori70.jpg';
+  return 'assets/images/bori100.jpg';
 }

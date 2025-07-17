@@ -183,7 +183,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: GestureDetector(
-                onTap: _loginWithKakao, // ✅ 여기 연결!
+                onTap: _loginWithKakao,
                 child: SvgPicture.asset(
                   'assets/icons/kakao_button.svg',
                   height: 54,
