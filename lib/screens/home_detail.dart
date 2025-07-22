@@ -70,6 +70,7 @@ class MyReportResponse {
       topPitchers: parsePlayers(json['topPitchers']),
       bottomBatters: parsePlayers(json['bottomBatters']),
       bottomPitchers: parsePlayers(json['bottomPitchers']),
+
     );
   }
 
@@ -141,7 +142,7 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
     final reportData = report!;
 
     //전체 직관 횟수가 3회 미만인 경우
-    if (reportData.totalVisitedGames < 3) {
+    if (reportData.totalVisitedGames < 2) {
       return Scaffold(
         backgroundColor: Colors.white,
         body: SafeArea(
@@ -580,7 +581,11 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
 
   /// 선수 카드
   Widget _buildPlayerCard(String title, Player pitcher,Player batter) {
+
+
     return Container(
+
+
 
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(

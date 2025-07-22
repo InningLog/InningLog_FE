@@ -47,19 +47,19 @@ class HomePage extends StatefulWidget {
 
 
 
-//연동 -> api_service.dart에서 API 불러오기
-  static Future<HomeData?> fetchHomeData() async {
-    final url = Uri.parse('https://api.inninglog.shop/home/view');
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final jsonBody = json.decode(response.body);
-      return HomeData.fromJson(jsonBody['data']);
-    } else {
-      print('API 오류: ${response.statusCode}');
-      return null;
-    }
-  }
+// //연동 -> api_service.dart에서 API 불러오기
+//   static Future<HomeData?> fetchHomeData() async {
+//     final url = Uri.parse('https://api.inninglog.shop/home/view');
+//     final response = await http.get(url);
+//
+//     if (response.statusCode == 200) {
+//       final jsonBody = json.decode(response.body);
+//       return HomeData.fromJson(jsonBody['data']);
+//     } else {
+//       print('API 오류: ${response.statusCode}');
+//       return null;
+//     }
+//   }
 
 
 
@@ -73,6 +73,10 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   DateTime currentDate = DateTime.now();
 
+  String nickName = '유저'; // 기본값 설정
+  String teamShortCode = 'LG'; // 기본 응원팀 코드
+
+
 
   //HomePage에서 상태 변수 추가
   HomeData? homeData;
@@ -81,8 +85,6 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    loadNickname(); // 닉네임 불러오기
-    loadTeamCode();
     fetchMyWeaningRate();
     fetchData();// 기존 API 호출
 
@@ -111,44 +113,23 @@ class _HomePageState extends State<HomePage> {
 
 
 
-
-
-
-  //닉네임 꺼내오기
-  String? nickname;
-
-
-  void loadNickname() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      nickname = prefs.getString('nickname') ?? '유저';
-    });
-  }
-
-  String teamShortCode = 'LG'; // 기본값
-
-  void loadTeamCode() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      teamShortCode = prefs.getString('teamShortCode') ?? 'LG';
-    });
-  }
-
-
   void fetchData() async {
     final data = await ApiService.fetchHomeData();
-    setState(() {
-      homeData = data;
-    });
+    print('🏠 받아온 홈 데이터: $data'); // ← 이거 추가해봐
 
-    final result = await ApiService.fetchHomeData();
-    if (result != null && result.myTeamSchedule.isNotEmpty) {
-      saveScheduleListToPrefs(result.myTeamSchedule);
+    if (data != null) {
+      setState(() {
+        homeData = data;
+        nickName = data.nickName; // ✅ 서버 응답에서 닉네임 가져오기
+        teamShortCode = data.supportTeamSC; // ✅ 응원팀 코드 가져오기
+      });
+
+      if (data.myTeamSchedule.isNotEmpty) {
+        saveScheduleListToPrefs(data.myTeamSchedule);
+      }
     }
-
-
-
   }
+
 
   int? myWeaningRate;
 
@@ -295,7 +276,7 @@ class _HomePageState extends State<HomePage> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Text(
-                    '$nickname님의 직관 승률',
+                    '$nickName님의 직관 승률',
                     style: const TextStyle(
                       fontSize: 19,
                       fontWeight: FontWeight.w700,

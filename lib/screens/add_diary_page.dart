@@ -76,8 +76,9 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
   }
   String generateGameId(DateTime date, String myTeam, String opponentTeam) {
     final formattedDate = DateFormat('yyyyMMdd').format(date);
-    return '$formattedDate-$myTeam-$opponentTeam';
+    return '${formattedDate}${opponentTeam}${myTeam}0';
   }
+
 
   String getEmotionKor(int index) {
     const emotions = ['짜릿함', '감동', '흐뭇', '답답함', '아쉬움', '분노'];
@@ -380,7 +381,14 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                       ),
                       const SizedBox(height: 8),
                       // 사진 업로드
-                      DiaryImagePicker(),
+                      DiaryImagePicker(
+                        onImageSelected: (image) {
+                          setState(() {
+                            _pickedImage = image;
+                          });
+                        },
+                      ),
+
 
 
                       const SizedBox(height: 26),
@@ -505,39 +513,37 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                             width: 360,
                             height: 54,
                             child: ElevatedButton(
+                              // 작성 완료 버튼 내부
                               onPressed: isFormValid ? () async {
                                 print('🟢 [작성완료 버튼] 클릭됨');
-
-                                if (_pickedImage == null) {
-                                  print('❗ 이미지가 선택되지 않았습니다.');
-                                  return;
-                                }
 
                                 if (todaySchedule == null) {
                                   print('❗ 오늘 경기 정보가 없습니다.');
                                   return;
                                 }
 
-                                final fileName = 'journal_${DateTime.now().millisecondsSinceEpoch}.jpeg';
-                                print('📁 파일 이름: $fileName');
+                                String? fileName;
 
-                                // 1. Presigned URL 발급
-                                final presignedUrl = await getPresignedUrl(fileName, 'image/jpeg');
-                                print('🔗 Presigned URL 결과: $presignedUrl');
-                                if (presignedUrl == null) {
-                                  print('❌ Presigned URL 발급 실패');
-                                  return;
+                                // 이미지가 있을 경우 Presigned URL & S3 업로드
+                                if (_pickedImage != null) {
+                                  fileName = 'journal_${DateTime.now().millisecondsSinceEpoch}.jpeg';
+                                  print('📁 파일 이름: $fileName');
+
+                                  final presignedUrl = await getPresignedUrl(fileName, 'image/jpeg');
+                                  print('🔗 Presigned URL 결과: $presignedUrl');
+                                  if (presignedUrl == null) {
+                                    print('❌ Presigned URL 발급 실패');
+                                    return;
+                                  }
+
+                                  final uploaded = await uploadImageToS3(presignedUrl, _pickedImage!);
+                                  print('📦 이미지 S3 업로드 결과: $uploaded');
+                                  if (!uploaded) {
+                                    print('❌ 이미지 업로드 실패');
+                                    return;
+                                  }
                                 }
 
-                                // 2. S3 업로드
-                                final uploaded = await uploadImageToS3(presignedUrl, _pickedImage!);
-                                print('📦 이미지 S3 업로드 결과: $uploaded');
-                                if (!uploaded) {
-                                  print('❌ 이미지 업로드 실패');
-                                  return;
-                                }
-
-                                // 3. 일지 업로드
                                 print('📤 일지 업로드 요청 시작');
                                 await uploadJournal(
                                   gameId: generateGameId(currentDate, todaySchedule!.myTeam, todaySchedule!.opponentTeam),
@@ -546,14 +552,15 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                   opponentTeamShortCode: todaySchedule!.opponentTeam,
                                   ourScore: int.parse(ourScore),
                                   theirScore: int.parse(opponentScore),
-                                  fileName: fileName,
+                                  fileName: fileName ?? '', // 빈 문자열로 전달
                                   emotion: getEmotionKor(selectedEmotionIndex),
-                                  reviewText: '', // 후기는 아직 입력값 연동 안 된 상태
+                                  reviewText: '', // 후기는 아직 연동 안 했다고 했지
                                 );
 
                                 print('✅ 전체 업로드 성공!');
                                 if (context.mounted) context.pop();
                               } : null,
+
 
 
 
@@ -704,7 +711,9 @@ Widget _scoreInputField({
 
 //사진 가져오기
 class DiaryImagePicker extends StatefulWidget {
-  const DiaryImagePicker({super.key});
+  final void Function(File image) onImageSelected;
+
+  const DiaryImagePicker({super.key, required this.onImageSelected});
 
   @override
   State<DiaryImagePicker> createState() => _DiaryImagePickerState();
@@ -715,13 +724,14 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
-    final XFile? image =
-    await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
 
     if (image != null) {
+      final file = File(image.path);
       setState(() {
-        _pickedImage = File(image.path);
+        _pickedImage = file;
       });
+      widget.onImageSelected(file); // 👈 부모에게 전달
     }
   }
 
@@ -807,15 +817,16 @@ Future<void> uploadJournal({
 
   final bodyData = {
     "gameId": gameId,
-    "gameDateTime": gameDateTime.toIso8601String(),
-    "stadiumShortCode": stadiumShortCode,
-    "opponentTeamShortCode": opponentTeamShortCode,
+    "gameDate": DateFormat('yyyy-MM-dd HH:mm').format(gameDateTime), // ✅ 형식 변경
+    "stadiumSC": stadiumShortCode,           // ✅ 키 변경
+    "opponentTeamSC": opponentTeamShortCode, // ✅ 키 변경
     "ourScore": ourScore,
     "theirScore": theirScore,
     "fileName": fileName,
     "emotion": emotion,
     "review_text": reviewText,
   };
+
   print('📤 보낼 바디: ${jsonEncode(bodyData)}');
 
   final response = await http.post(
@@ -851,6 +862,7 @@ Future<MyTeamSchedule?> loadScheduleFromPrefs(DateTime date) async {
 
 
 }
+
 
 
 
