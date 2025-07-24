@@ -1,3 +1,5 @@
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
@@ -14,16 +16,40 @@ import 'package:inninglog/screens/seat_page.dart';
 import 'package:inninglog/screens/board_page.dart';
 import 'package:inninglog/screens/my_page.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
-import 'package:flutter/material.dart';
 import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
+import 'package:amplitude_flutter/amplitude.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' show Platform;
+import 'analytics/analytics.dart';
+import 'package:inninglog/analytics/amplitude_flutter.dart';
+
+
+final analytics = AnalyticsService();
+
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  analytics.init();
+
+  // Kakao SDK 초기화
   KakaoSdk.init(
-    nativeAppKey: '3e0a9528d7ddb6147c97af78f60ab300', // 실제 native app key
+    nativeAppKey: '3e0a9528d7ddb6147c97af78f60ab300',
   );
+
+
+
   runApp(const InningLogApp());
 }
 
+
+// void initAmplitude() {
+//   if (kIsWeb || Platform.isAndroid || Platform.isIOS) {
+//     amplitude.init("821c8925a751c008310e896ad437b1bc");
+//     amplitude.trackingSessionEvents(true);
+//   } else {
+//     print("⚠️ Amplitude is not supported on this platform.");
+//   }
+// }
 
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -107,6 +133,8 @@ class InningLogApp extends StatelessWidget {
     );
   }
 }
+
+
 
 
 // 각 카테고리 정의

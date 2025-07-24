@@ -1,12 +1,16 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
+import '../main.dart';
 import '../navigation/main_navigation.dart';
 import 'home_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:inninglog/service/member_api.dart';
+
 
 
 class OnboardingPage6 extends StatefulWidget {
@@ -199,30 +203,39 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: isButtonEnabled
-                  ? () async {
-                final nickname = _nicknameController.text.trim();
-                print('🧪 보내는 닉네임: "$nickname,$teamShortCodes"');
-                print('📤 보낼 바디: ${jsonEncode({'nickname': nickname})}');
+                onPressed: isButtonEnabled
+                    ? () async {
+                  final nickname = _nicknameController.text.trim();
+                  final selectedTeam = _selectedTeam!;
+                  final shortCode = teamShortCodes[selectedTeam]!;
+
+                  // ✅ Amplitude 이벤트 로깅
+                  await analytics.logEvent('onboarding_complete', properties: {
+                    'nickname': nickname ?? '',
+                    'team': selectedTeam ?? '',
+                    'team_short_code': shortCode ?? '',
+                    'category': 'User',
+                    'action': 'setup_complete',
+                  });
 
 
-                final shortCode = teamShortCodes[_selectedTeam!]!;
 
-                try {
-                  await MemberApi.patchNickname(nickname);
-                  await MemberApi.patchTeam(shortCode);
 
-                  // ✅ go_router로 /home 이동
-                  if (!mounted) return;
-                  context.go('/home');
-                } catch (e) {
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(e.toString())),
-                  );
+                  try {
+                    await MemberApi.patchNickname(nickname);
+                    await MemberApi.patchTeam(shortCode);
+
+                    if (!mounted) return;
+                    context.go('/home');
+                  } catch (e) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(e.toString())),
+                    );
+                  }
                 }
-              }
-                  : null,
+
+                : null,
 
 
               style: ElevatedButton.styleFrom(

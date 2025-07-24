@@ -85,9 +85,9 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
       builder: (context) {
         return DraggableScrollableSheet(
           expand: false,
-          initialChildSize: 0.85,
-          minChildSize: 0.3,
-          maxChildSize: 0.95,
+          initialChildSize: 0.68,
+          minChildSize:0.68,
+          maxChildSize: 0.68,
           builder: (context, scrollController) {
             return StatefulBuilder(
               builder: (context, setModalState) {

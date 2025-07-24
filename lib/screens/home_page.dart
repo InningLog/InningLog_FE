@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import '../app_colors.dart';
+import '../main.dart';
 import '../models/home_view.dart';
 import '../widgets/common_header.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -10,6 +11,7 @@ import '../service/api_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
 
 
 
@@ -315,7 +317,17 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 16),
                     OutlinedButton(
-                      onPressed: () {
+                      onPressed: () async {
+                        await analytics.logEvent(
+                          'view_home_report',
+                          properties: {
+                            'category': 'Custom',
+                            'action': 'page_view',
+                            'report_period': 'recent_1days',
+                            'report_count': 1, // 또는 실제 값으로 대체
+                          },
+                        );
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -323,6 +335,7 @@ class _HomePageState extends State<HomePage> {
                           ),
                         );
                       },
+
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: AppColors.primary600),
                         shape: RoundedRectangleBorder(
