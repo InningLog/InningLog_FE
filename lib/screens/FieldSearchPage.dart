@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../app_colors.dart';
 import '../widgets/common_header.dart';
+import 'package:go_router/go_router.dart';
+
 
 class FieldSearchPage extends StatefulWidget {
   final String stadiumName;
@@ -204,9 +206,20 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                           width: double.infinity,
                           height: 54,
                           child: ElevatedButton(
-                            onPressed: isDirectSearchValid ? () {
-                              // 작성 완료 처리
-                            } : null,
+                            onPressed: isDirectSearchValid
+                                ? () {
+                              context.pushNamed(
+                                'field_result',
+                                extra: {
+                                  'index': 1,
+                                  'stadiumName': widget.stadiumName,
+                                  'selectedTags': selectedTags,
+                                  'tagCategories': tagCategories,
+                                },
+                              );
+                            }
+                                : null,
+
                             style: ElevatedButton.styleFrom(
                               backgroundColor: isDirectSearchValid? AppColors.primary700 : AppColors.gray200,
                               shape: RoundedRectangleBorder(
@@ -322,12 +335,19 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                               width: double.infinity,
                               height: 54,
                               child: ElevatedButton(
-                                onPressed: (_selectedIndex == 0 && isDirectSearchValid) ||
-                                    (_selectedIndex == 1 && isHashtagSearchValid)
-                                    ? () {
-                                  // 작성 완료 처리
-                                }
-                                    : null,
+                                onPressed: () {
+                                  context.pushNamed(
+                                    'field_result',
+                                    extra: {
+                                      'index': 0,
+                                      'stadiumName': widget.stadiumName,
+                                      'zone': selectedZone,
+                                      'section': sectionController.text,
+                                      'row': rowController.text,
+                                    },
+                                  );
+
+                                },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: (_selectedIndex == 0 && isDirectSearchValid) ||
                                       (_selectedIndex == 1 && isHashtagSearchValid)

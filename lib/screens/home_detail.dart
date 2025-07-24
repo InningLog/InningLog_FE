@@ -58,6 +58,7 @@ class MyReportResponse {
     required this.bottomPitchers,
   });
 
+
   factory MyReportResponse.fromJson(Map<String, dynamic> json) {
     List<Player> parsePlayers(List<dynamic> list) =>
         list.map((item) => Player.fromJson(item)).toList();
@@ -95,11 +96,17 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
 
 
   Future<void> loadReport() async {
+
     final result = await ApiService.fetchMyReport(
+
+
+
 
     ); // 아까 만든 API 함수 호출
     setState(() {
       report = result;
+      print('🔍 TopBatters: ${result?.topBatters.length}, TopPitchers: ${result?.topPitchers.length}');
+
     });
 
   }
@@ -108,7 +115,6 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
   // 유저 정보 더미 데이터
   final String nickname = '디디';
   final String teamShortCode = 'NC';
-
 
 
 
@@ -131,6 +137,13 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
   Widget build(BuildContext context) {
     final Color teamColor = teamColors[teamShortCode] ?? AppColors.primary700;
 
+    final reportData = report!;
+
+    final hasTopPlayers =
+        reportData.topPitchers.isNotEmpty && reportData.topBatters.isNotEmpty;
+    final hasBottomPlayers =
+        reportData.bottomPitchers.isNotEmpty && reportData.bottomBatters.isNotEmpty;
+
 
     if (report == null) {
       // ⏳ 아직 데이터를 불러오는 중일 때
@@ -139,7 +152,6 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
       );
     }
 
-    final reportData = report!;
 
     //전체 직관 횟수가 3회 미만인 경우
     if (reportData.totalVisitedGames < 2) {
@@ -455,14 +467,17 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
                     /// 선수 카드 박스
                     Row(
                       children: [
-                        Expanded(
-                          child: _buildPlayerCard('오이구 내 새끼 🥹', reportData.topPitchers.first,reportData.topBatters.first),
-                        ),   const SizedBox(width: 20),
-                        Expanded(
-                          child: _buildPlayerCard('아이고 이 새끼 🤬', reportData.bottomPitchers.first,reportData.bottomBatters.first),
-                        ),
+                        if (hasTopPlayers)
+                          Expanded(
+                            child: _buildPlayerCard('오이구 내 새끼 🥹', reportData.topPitchers.first, reportData.topBatters.first),
+                          ),
+                        if (hasBottomPlayers)
+                          Expanded(
+                            child: _buildPlayerCard('아이고 이 새끼 🤬', reportData.bottomPitchers.first, reportData.bottomBatters.first),
+                          ),
                       ],
                     ),
+
 
                     const SizedBox(height: 24),
 
@@ -581,6 +596,7 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
 
   /// 선수 카드
   Widget _buildPlayerCard(String title, Player pitcher,Player batter) {
+
 
 
     return Container(
