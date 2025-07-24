@@ -86,3 +86,81 @@ class GameInfoResponse {
     );
   }
 }
+
+class Journal {
+  final int journalId;
+  final int ourScore;
+  final int theirScore;
+  final String resultScore;
+  final DateTime gameDate;
+  final String supportTeamSC;
+  final String opponentTeamSC;
+  final String stadiumSC;
+  final String mediaUrl;
+
+
+  Journal({
+    required this.journalId,
+    required this.ourScore,
+    required this.theirScore,
+    required this.resultScore,
+    required this.gameDate,
+    required this.supportTeamSC,
+    required this.opponentTeamSC,
+    required this.stadiumSC,
+    required this.mediaUrl
+
+  });
+
+  factory Journal.fromJson(Map<String, dynamic> json) {
+    return Journal(
+      journalId: json['journalId'] ?? 0,
+      ourScore: json['ourScore'] ?? 0,
+      theirScore: json['theirScore'] ?? 0,
+      resultScore: json['resultScore'] ?? '정보 없음',
+      gameDate: DateTime.tryParse(json['gameDate'] ?? '') ?? DateTime.now(),
+      supportTeamSC: json['supportTeamSC'] ?? '팀 정보 없음',
+      opponentTeamSC: json['opponentTeamSC'] ?? '팀 정보 없음',
+      stadiumSC: json['stadiumSC'] ?? '구장 정보 없음', mediaUrl: '',
+    );
+  }
+
+}
+
+class GameInfo {
+  final String gameId;
+  final String gameDate;
+  final String supportTeamSC;
+  final String opponentTeamSC;
+  final String stadiumSC;
+
+  GameInfo({
+    required this.gameId,
+    required this.gameDate,
+    required this.supportTeamSC,
+    required this.opponentTeamSC,
+    required this.stadiumSC,
+  });
+
+  factory GameInfo.fromJson(Map<String, dynamic> json) {
+    return GameInfo(
+      gameId: json['gameId'],
+      gameDate: json['gameDate'],
+      supportTeamSC: json['supportTeamSC'],
+      opponentTeamSC: json['opponentTeamSC'],
+      stadiumSC: json['stadiumSC'],
+    );
+  }
+  // models/home_view.dart
+  factory GameInfo.fromJournalContentJson(Map<String, dynamic> json) {
+    return GameInfo(
+      gameId: json['gameId'],
+      gameDate: json['gameDate'],
+      supportTeamSC: json['supportTeamSC'],
+      opponentTeamSC: json['opponentTeamSC'],
+      stadiumSC: json['stadiumSC'],
+    );
+  }
+
+}
+

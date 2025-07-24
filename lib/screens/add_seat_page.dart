@@ -1,22 +1,51 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:inninglog/app_colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../models/home_view.dart';
+import '../service/api_service.dart';
+import 'add_diary_page.dart';
+import 'diary_page.dart';
+import 'package:http/http.dart' as http;
+
+
+
 
 class AddSeatPage extends StatefulWidget {
   const AddSeatPage({super.key});
+
+
 
   @override
   State<AddSeatPage> createState() => _AddSeatPageState();
 }
 
 class _AddSeatPageState extends State<AddSeatPage> {
+
+  MyTeamSchedule? todaySchedule;
+  DateTime currentDate = DateTime.now();
+
   String? selectedZone;
   final TextEditingController sectionController = TextEditingController();
   final TextEditingController rowController = TextEditingController();
   File? seatImage;
   final Map<String, String> selectedTags = {};
+
+  Future<void> loadTodaySchedule() async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'schedule_${currentDate.toIso8601String().split("T")[0]}';
+    final jsonString = prefs.getString(key);
+    if (jsonString == null) return;
+
+    final jsonData = jsonDecode(jsonString);
+    setState(() {
+      todaySchedule = MyTeamSchedule.fromJson(jsonData);
+    });
+  }
 
 
   // 각 카테고리 정의
@@ -47,6 +76,13 @@ class _AddSeatPageState extends State<AddSeatPage> {
         seatImage != null&&
         selectedTags.isNotEmpty;
   }
+
+  @override
+  void initState() {
+    super.initState();
+    loadTodaySchedule();
+  }
+
 
 
   @override
@@ -118,24 +154,23 @@ class _AddSeatPageState extends State<AddSeatPage> {
                             color: AppColors.primary400),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Column(
+                      child: todaySchedule == null
+                          ? const Text('경기 정보 없음')
+                          : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '잠실 종합운동장 잠실야구장',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                            ),
+                            stadiumNameMap[todaySchedule!.stadium] ?? todaySchedule!.stadium,
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                           ),
-                          SizedBox(height: 4),
+                          const SizedBox(height: 4),
                           Text(
-                            '06.26(목) 17:00',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14,),
+                            todaySchedule!.gameDateTime.replaceAll('-', '.'),
+                            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
                           ),
                         ],
                       ),
+
                     ),
                     const SizedBox(height: 26),
                     Text.rich(
@@ -395,9 +430,37 @@ class _AddSeatPageState extends State<AddSeatPage> {
                       width: double.infinity,
                       height: 54,
                       child: ElevatedButton(
-                        onPressed: isFormValid ? () {
-                          // 작성 완료 처리
+                        onPressed: isFormValid ? () async {
+                          if (seatImage == null || todaySchedule == null) return;
+
+                          final fileName = 'seatview_${DateTime.now().millisecondsSinceEpoch}.jpeg';
+                          final presignedUrl = await getPresignedUrl(fileName, 'image/jpeg');
+                          if (presignedUrl == null) return;
+
+                          final success = await uploadToS3(presignedUrl, seatImage!);
+                          if (!success) return;
+
+                          final zoneCode = getZoneShortCode(selectedZone!);
+                          if (zoneCode == null) return;
+
+                          final tagCodes = selectedTags.values
+                              .map((tag) => tagCodeMap[tag])
+                              .whereType<String>()
+                              .toList();
+
+                          await uploadSeatView(
+                            journalId: 123, // 👈 실제 journalId 전달 필요
+                            stadiumSC: todaySchedule!.stadium,
+                            zoneSC: zoneCode,
+                            section: sectionController.text.trim(),
+                            row: rowController.text.trim(),
+                            tagCodes: tagCodes,
+                            fileName: fileName,
+                          );
+
+                          if (context.mounted) Navigator.pop(context);
                         } : null,
+
                         style: ElevatedButton.styleFrom(
                           backgroundColor: isFormValid ? AppColors.primary700 : AppColors.gray200,
                           shape: RoundedRectangleBorder(
@@ -488,4 +551,57 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
       ),
     );
   }
+
+  Future<String?> getPresignedUrl(String fileName, String contentType) async {
+    final url = Uri.parse('https://api.inninglog.shop/s3/journal/presigned?fileName=$fileName&contentType=$contentType');
+    final res = await http.get(url);
+    if (res.statusCode == 200) return jsonDecode(res.body)['data'];
+    return null;
+  }
+  Future<bool> uploadToS3(String presignedUrl, File file) async {
+    final bytes = await file.readAsBytes();
+    final res = await http.put(Uri.parse(presignedUrl), headers: {
+      'Content-Type': 'image/jpeg',
+    }, body: bytes);
+    return res.statusCode == 200;
+  }
+  // Future<void> loadTodaySchedule() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final key = 'schedule_${currentDate.toIso8601String().split("T")[0]}';
+  //   final jsonString = prefs.getString(key);
+  //   if (jsonString == null) return;
+  //
+  //   final jsonData = jsonDecode(jsonString);
+  //   setState(() {
+  //     todaySchedule = MyTeamSchedule.fromJson(jsonData);
+  //   });
+  // }
+
 }
+
+
+String? getZoneShortCode(String zone) {
+  const map = {
+    '1루': 'JAM_BLUE',
+    '3루': 'JAM_RED',
+    '중앙': 'JAM_CENTER',
+    '외야': 'JAM_OUTFIELD',
+  };
+  return map[zone];
+}
+final Map<String, String> tagCodeMap = {
+  '#일어남': 'CHEERING_MOSTLY_STANDING',
+  '#일어날_사람은_일어남': 'CHEERING_HALF_STANDING',
+  '#앉아서': 'CHEERING_SITTING',
+  '#강함': 'SUN_STRONG',
+  '#있다가_그늘짐': 'SUN_TEMPORARY',
+  '#없음': 'SUN_NONE',
+  '#있음': 'COVER_EXIST',
+  '#없음': 'COVER_NONE',
+  '#그물': 'OBSTRUCTION_NET',
+  '#아크릴_가림막': 'OBSTRUCTION_PLEXI',
+  '#아주_넓음': 'SPACE_VERY_WIDE',
+  '#넓음': 'SPACE_WIDE',
+  '#보통': 'SPACE_NORMAL',
+  '#좁음': 'SPACE_NARROW',
+};

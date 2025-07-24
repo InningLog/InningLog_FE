@@ -202,7 +202,7 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
               onPressed: isButtonEnabled
                   ? () async {
                 final nickname = _nicknameController.text.trim();
-                print('🧪 보내는 닉네임: "$nickname"');
+                print('🧪 보내는 닉네임: "$nickname,$teamShortCodes"');
                 print('📤 보낼 바디: ${jsonEncode({'nickname': nickname})}');
 
 

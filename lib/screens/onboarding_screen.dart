@@ -190,6 +190,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ),
             ),
+          // //로그인 시발 터져서
+          // ElevatedButton(
+          //   onPressed: skipLoginForDebug,
+          //   child: const Text('카카오 없이 시작하기 (디버그용)'),
+          // ),
+
 
 
 
@@ -199,6 +205,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  // //로그인 시발 터져서
+  // Future<void> skipLoginForDebug() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //
+  //   // ✅ 테스트용 토큰 (실제로 API 호출이 되려면 유효한 토큰이어야 함)
+  //   await prefs.setString('access_token', 'test-token-for-user-2');
+  //
+  //   // ✅ userId 직접 저장 (필요한 경우)
+  //   await prefs.setInt('user_id', 2);
+  //
+  //   print('🛠️ 테스트 유저로 로그인 우회 완료');
+  //
+  //   // ✅ 원하는 화면으로 이동
+  //   if (!context.mounted) return;
+  //   context.go('/home');
+  // }
+
 
 
 }
+

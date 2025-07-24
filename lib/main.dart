@@ -17,10 +17,12 @@ import 'package:flutter/material.dart';
 import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
 
 void main() {
-
-  KakaoSdk.init(nativeAppKey: '3e0a9528d7ddb6147c97af78f60ab300');
+  KakaoSdk.init(
+    nativeAppKey: '3e0a9528d7ddb6147c97af78f60ab300', // 실제 native app key
+  );
   runApp(const InningLogApp());
 }
+
 
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -33,7 +35,14 @@ final GoRouter _router = GoRouter(
     /// GNB 없는 화면들
     GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
     GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
-    GoRoute(path: '/adddiary', builder: (_, __) => const AddDiaryPage()),
+    GoRoute(
+      path: '/adddiary',
+      builder: (context, state) {
+        final selectedDate = state.extra as DateTime?;
+        return AddDiaryPage(initialDate: selectedDate); // 날짜까지 전달!
+      },
+    ),
+
     GoRoute(path: '/addseat', builder: (_, __) => const AddSeatPage()),
     GoRoute(path: '/onboarding6', builder: (_, __) => const OnboardingPage6()),
 

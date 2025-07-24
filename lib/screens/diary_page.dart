@@ -1,10 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:month_picker_dialog/month_picker_dialog.dart';
 import '../app_colors.dart';
+import '../models/home_view.dart';
+import '../service/api_service.dart';
 import '../widgets/common_header.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'add_diary_page.dart';
+import 'package:collection/collection.dart';
+
+
+const Map<String, String> teamNameMap = {
+  'LG': 'LG',
+  'OB': '두산',
+  'SK': 'SSG',
+  'HH': '한화',
+  'SS': '삼성',
+  'KT': 'KT',
+  'LT': '롯데',
+  'HT': 'KIA',
+  'NC': 'NC',
+  'WO': '키움',
+};
+
+
+const Map<String, String> stadiumNameMap = {
+  'JAM': '잠실 야구장',
+  'GOC': '고척 스카이돔',
+  'INC': '랜더스필드',
+  'DAE': '한화생명 볼파크',
+  'DAU': '라이온즈 파크',
+  'SUW': '위즈파크',
+  'SAJ': '사직 야구장',
+  'GWJ': '챔피언스 월드',
+  'CHW': 'NC 파크',
+};
 
 
 class DiaryPage extends StatefulWidget {
@@ -20,70 +51,67 @@ class _DiaryPageState extends State<DiaryPage> {
   String? selectedFilterCalendar;    // 캘린더 화면용 필터
   String? selectedFilterCollection;  // 모아보기 화면용 필터
   DateTime? selectedDate; //날짜 선택
+  DateTime focusedDay = DateTime.now(); // ✅ 현재 보고 있는 달
 
 
-  // 경기 데이터 샘플
-  final List<Map<String, dynamic>> gameList = [
-    {
-      'date': DateTime.utc(2025, 7, 6),
-      'homeScore': 6,
-      'awayScore': 4,
-      'opponent': 'NC 다이노스',
-      'location': '삼성 종합운동장',
-      'photo': 'assets/images/KakaoTalk_20250611_184301449_04.jpg',
-    },
-    {
-      'date': DateTime.utc(2025, 7, 12),
-      'homeScore': 3,
-      'awayScore': 3,
-      'opponent': '키움 히어로즈',
-      'location': '고척 스카이돔',
-      'photo': 'assets/images/KakaoTalk_20250611_184301449.jpg',
-    },
-    {
-      'date': DateTime.utc(2025, 6, 13),
-      'homeScore': 2,
-      'awayScore': 1,
-      'opponent': '두산 베어스',
-      'location': '잠실 야구장',
-      'photo': 'assets/images/KakaoTalk_20250611_184301449_01.jpg',
-    },
-    {
-      'date': DateTime.utc(2025, 6, 14),
-      'homeScore': 0,
-      'awayScore': 5,
-      'opponent': '롯데 자이언츠',
-      'location': '사직 야구장',
-      'photo': 'assets/images/KakaoTalk_20250611_184301449_03.jpg',
-    },
-    {
-      'date': DateTime.utc(2025, 6, 17),
-      'homeScore': 9,
-      'awayScore': 5,
-      'opponent': '두산 베어스',
-      'location': '잠실 야구장',
-      'photo': 'assets/images/KakaoTalk_20250611_184301449_05.jpg',
-    },
-    {
-      'date': DateTime.utc(2025, 6, 28),
-      'homeScore': 5,
-      'awayScore': 5,
-      'opponent': '엘지 트윈스',
-      'location': '한화생명볼파크',
-      'photo': 'assets/images/KakaoTalk_20250611_184301449_06.jpg',
-    },
-  ];
 
-  // 승/패/무 판단 함수
-  String getGameResult(int homeScore, int awayScore) {
-    if (homeScore > awayScore) {
-      return '승리';
-    } else if (homeScore == awayScore) {
-      return '무승부';
-    } else {
-      return '패배';
+  List<Journal> journalList = [];
+  bool isLoading = true;
+
+  //인피니트 스크롤
+  ScrollController _scrollController = ScrollController();
+  int page = 0;
+  bool isLoadingMore = false;
+  bool hasMore = true;
+
+
+  @override
+  void initState() {
+    super.initState();
+    loadCalendar();
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent && !isLoadingMore && hasMore) {
+        loadMoreSummary();
+      }
+    });
+
+  }
+
+  Future<void> loadCalendar() async {
+    try {
+      final result = await fetchJournalCalendar(resultScore: selectedFilterCalendar);
+      setState(() {
+        journalList = result;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('❌ 캘린더 로딩 실패: $e');
     }
   }
+
+  Future<void> loadMoreSummary() async {
+    setState(() => isLoadingMore = true);
+    final newList = await fetchJournalSummary(
+      page: page,
+      resultScore: selectedFilterCollection,
+    );
+
+    setState(() {
+      if (newList.length < 10) hasMore = false;
+      journalList.addAll(newList);
+      page++;
+      isLoadingMore = false;
+    });
+  }
+
+
+  // 승/패/무 판단 함수
+  String getGameResult(int ourScore, int theirScore) {
+    if (ourScore > theirScore) return '승리';
+    if (ourScore < theirScore) return '패배';
+    return '무승부';
+  }
+
 
   String _shortenResult(String result) {
     if (result == '승리') return '승';
@@ -135,6 +163,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                   (value) {
                                 setState(() {
                                   selectedFilterCalendar = value;
+                                  loadCalendar();
                                 });
                               },
                             ),
@@ -144,6 +173,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                   (value) {
                                 setState(() {
                                   selectedFilterCalendar = value;
+                                  loadCalendar();
                                 });
                               },
                             ),
@@ -153,6 +183,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                   (value) {
                                 setState(() {
                                   selectedFilterCalendar = value;
+                                  loadCalendar();
                                 });
                               },
                             ),
@@ -174,7 +205,24 @@ class _DiaryPageState extends State<DiaryPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const SizedBox(height: 0),
-                                    _buildMonthHeader(),
+                                    GestureDetector(
+                                      onTap: () async {
+                                        final newDate = await showMonthPicker(
+                                          context: context,
+                                          initialDate: focusedDay,
+                                          firstDate: DateTime(2020),
+                                          lastDate: DateTime(2030),
+                                        );
+                                        if (newDate != null) {
+                                          setState(() {
+                                            focusedDay = newDate;
+                                          });
+                                        }
+                                      },
+                                      child: _buildMonthHeader(),
+                                    ),
+
+
                                     const SizedBox(height: 26),
                                   ],
                                 ),
@@ -188,7 +236,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                   locale: 'ko_KR',
                                   firstDay: DateTime.utc(2020, 1, 1),
                                   lastDay: DateTime.utc(2030, 12, 31),
-                                  focusedDay: DateTime.now(),
+                                  focusedDay: focusedDay,
                                   selectedDayPredicate: (day) {
                                     return selectedDate != null &&
                                         DateTime.utc(day.year, day.month, day.day) ==
@@ -223,17 +271,18 @@ class _DiaryPageState extends State<DiaryPage> {
                                   headerVisible: false,
                                   calendarBuilders: CalendarBuilders(
                                     selectedBuilder: (context, date, focusedDay) {
-                                      final game = gameList.firstWhere(
-                                            (g) => DateTime.utc(g['date'].year, g['date'].month, g['date'].day) ==
-                                            DateTime.utc(date.year, date.month, date.day),
-                                        orElse: () => {},
+                                      final Journal? game = journalList.firstWhereOrNull(
+                                            (j) => DateUtils.isSameDay(j.gameDate, date),
                                       );
+
+
+
 
                                       // 기본 색
                                       Color borderColor = AppColors.gray900;
 
-                                      if (game['homeScore'] != null && game['awayScore'] != null) {
-                                        final result = getGameResult(game['homeScore'], game['awayScore']);
+                                      if (game != null && game.ourScore != null && game.theirScore != null) {
+                                        final result = getGameResult(game.ourScore!, game.theirScore!);
                                         if (result == '승리') {
                                           borderColor = Color(0xFFAFD956);
                                         } else if (result == '패배') {
@@ -305,16 +354,16 @@ class _DiaryPageState extends State<DiaryPage> {
                               Padding(
                                 padding: const EdgeInsets.only(top: 16),
                                 child: Column(
-                                  children: gameList
+                                  children: journalList
                                       .where((game) {
-                                    final result = getGameResult(game['homeScore'], game['awayScore']);
+                                    final result = getGameResult(game.ourScore, game.theirScore);
                                     // 승패무 필터
                                     if (selectedFilterCalendar != null && result != selectedFilterCalendar) {
                                       return false;
                                     }
                                     // 날짜 필터 적용
                                     if (selectedDate != null) {
-                                      final gameDate = DateTime.utc(game['date'].year, game['date'].month, game['date'].day);
+                                      final gameDate = DateTime.utc(game.gameDate.year,game.gameDate.month, game.gameDate.day);
                                       final selected = DateTime.utc(selectedDate!.year, selectedDate!.month, selectedDate!.day);
                                       if (gameDate != selected) {
                                         return false;
@@ -325,7 +374,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                   })
 
                                       .map((game) {
-                                    final result = getGameResult(game['homeScore'], game['awayScore']);
+                                    final result = getGameResult(game.ourScore, game.theirScore);
                                     return Container(
                                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
                                       padding: const EdgeInsets.all(14),
@@ -338,11 +387,11 @@ class _DiaryPageState extends State<DiaryPage> {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            '${game['date'].month}월 ${game['date'].day}일 (${_getWeekday(game['date'])})',
+                                            '${game.gameDate.month}월 ${game.gameDate.day}일 (${_getWeekday(game.gameDate)})',
                                             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Pretendard-Black'),
                                           ),
                                           const SizedBox(height: 4),
-                                          Text('@${game['location']}',
+                                          Text('@${stadiumNameMap[game.stadiumSC] ?? game.stadiumSC}',
                                               style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w500, fontFamily: 'Pretendard-Black')),
 
                                           const SizedBox(height: 8),
@@ -371,7 +420,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                                     child: Transform.translate(
                                                       offset: const Offset(0, -2),
                                                       child: Text(
-                                                        '${game['homeScore']}',
+                                                        '${game.ourScore}',
                                                         style: const TextStyle(
                                                           fontSize: 22,
                                                           fontWeight: FontWeight.w400,
@@ -392,7 +441,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                                   ),
                                                   const SizedBox(width: 8),
                                                   Text(
-                                                    '${game['awayScore']}',
+                                                    '${game.theirScore}',
                                                     style: const TextStyle(
                                                       fontSize: 22,
                                                       fontWeight: FontWeight.w400,
@@ -420,7 +469,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                                       fontFamily: 'MBC1961GulimOTF',
                                                     ),
                                                   ),
-                                                  Text('vs ${game['opponent']}',
+                                                  Text('vs  ${teamNameMap[game.opponentTeamSC] ?? game.opponentTeamSC}',
                                                     style: const TextStyle(
                                                       fontFamily: 'Pretendard-Black',
                                                       fontSize: 14,
@@ -447,6 +496,7 @@ class _DiaryPageState extends State<DiaryPage> {
                   ),
 
                   // 모아보기 화면
+
                   Column(
                     children: [
                       // 필터 버튼
@@ -459,19 +509,29 @@ class _DiaryPageState extends State<DiaryPage> {
                               '승리',
                               selectedFilterCollection,
                                   (value) {
-                                setState(() {
-                                  selectedFilterCollection = value;
-                                });
-                              },
+                                    setState(() {
+                                      selectedFilterCollection = value;
+                                      page = 0;
+                                      journalList.clear();
+                                      hasMore = true;
+                                    });
+                                    loadMoreSummary();
+
+                                  },
                             ),
                             _buildFilterButton(
                               '패배',
                               selectedFilterCollection,
                                   (value) {
-                                setState(() {
-                                  selectedFilterCollection = value;
-                                });
-                              },
+                                    setState(() {
+                                      selectedFilterCollection = value;
+                                      page = 0;
+                                      journalList.clear();
+                                      hasMore = true;
+                                    });
+                                    loadMoreSummary();
+
+                                  },
                             ),
                             _buildFilterButton(
                               '무승부',
@@ -479,8 +539,13 @@ class _DiaryPageState extends State<DiaryPage> {
                                   (value) {
                                 setState(() {
                                   selectedFilterCollection = value;
+                                  page = 0;
+                                  journalList.clear();
+                                  hasMore = true;
                                 });
-                              },
+                                loadMoreSummary();
+
+                                  },
                             ),
 
                           ],
@@ -488,16 +553,18 @@ class _DiaryPageState extends State<DiaryPage> {
                       ),
 
 
+
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16), // Figma처럼 좌우 여백 주기
 
                           child: GridView.builder(
-                            itemCount: gameList.where((game) {
+                            controller: _scrollController,
+                            itemCount: journalList.where((game) {
                               if (selectedFilterCollection == null) {
                                 return true; // 전체 보여주기
                               }
-                              final result = getGameResult(game['homeScore'], game['awayScore']);
+                              final result = getGameResult(game.ourScore, game.theirScore);
                               return result == selectedFilterCollection;
                             }).length,
                             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -507,11 +574,11 @@ class _DiaryPageState extends State<DiaryPage> {
                               childAspectRatio: 0.75, // 카드 비율 (필요 시 조절)
                             ),
                             itemBuilder: (context, index) {
-                              final filteredGames = gameList.where((game) {
+                              final filteredGames = journalList.where((game) {
                                 if (selectedFilterCollection == null) {
                                   return true;
                                 }
-                                final result = getGameResult(game['homeScore'], game['awayScore']);
+                                final result = getGameResult(game.ourScore, game.theirScore);
                                 return result == selectedFilterCollection;
                               }).toList();
                               final game = filteredGames[index];
@@ -520,13 +587,14 @@ class _DiaryPageState extends State<DiaryPage> {
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(10),
                                     // 카드 둥근 모서리
-                                    child: Image.asset(
-                                      game['photo'],
+                                    child:Image.network(
+                                      game.mediaUrl,
                                       fit: BoxFit.cover,
                                       width: double.infinity,
                                       height: double.infinity,
-
+                                      errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image)),
                                     ),
+
 
                                   ),
                                   Positioned(
@@ -539,7 +607,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Text(
-                                        _shortenResult(getGameResult(game['homeScore'], game['awayScore'])),
+                                        _shortenResult(getGameResult(game.ourScore, game.theirScore)),
                                         style: TextStyle(
                                           color: AppColors.gray50,
                                           fontSize: 26,
@@ -563,7 +631,7 @@ class _DiaryPageState extends State<DiaryPage> {
 
                                         Text(
 
-                                          '${game['date'].month}/${game['date'].day}(${_getWeekday(game['date'])})',
+                                          '${game.gameDate.month}/${game.gameDate.day}(${_getWeekday(game.gameDate)})',
                                           style: TextStyle(
                                             color: AppColors.gray50,
                                             fontSize: 9,
@@ -574,7 +642,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                           ),
                                         ),
                                         Text(
-                                          'vs ${game['opponent']}',
+                                          'vs  ${teamNameMap[game.opponentTeamSC] ?? game.opponentTeamSC}',
                                           style: TextStyle(
                                             color: AppColors.gray50,
                                             fontSize: 9,
@@ -584,7 +652,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                           ),
                                         ),
                                         Text(
-                                          '@${game['location']}',
+                                          '@${stadiumNameMap[game.stadiumSC] ?? game.stadiumSC}',
                                           style: TextStyle(
                                             color: AppColors.gray50,
                                             fontSize: 9,
@@ -603,7 +671,7 @@ class _DiaryPageState extends State<DiaryPage> {
                         ),
                       ),
 
-                      // 모아보기 화면 내용 (여기에 원하면 동일하게 구성 가능)
+
                     ],
                   ),
                 ],
@@ -616,9 +684,10 @@ class _DiaryPageState extends State<DiaryPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          context.push('/adddiary');
-
+          final dateToSend = selectedDate ?? DateTime.now();
+          context.push('/adddiary', extra: dateToSend);
         },
+
         backgroundColor: AppColors.primary700,
         shape: const CircleBorder(),
         child: SvgPicture.asset(
@@ -636,16 +705,16 @@ class _DiaryPageState extends State<DiaryPage> {
 
   // 날짜 셀 커스텀 빌더
   Widget? _buildDayCell(DateTime date) {
-    final game = gameList.firstWhere(
-          (g) => DateTime.utc(g['date'].year, g['date'].month, g['date'].day) == DateTime.utc(date.year, date.month, date.day),
-      orElse: () => {},
+    final Journal? game = journalList.firstWhereOrNull(
+          (j) => DateUtils.isSameDay(j.gameDate, date),
     );
 
-    if (game.isEmpty) {
+
+    if (game == null) {
       return null;
     }
 
-    final result = getGameResult(game['homeScore'], game['awayScore']);
+    final result = getGameResult(game.ourScore, game.theirScore);
 
     if (selectedFilterCalendar != null && result != selectedFilterCalendar) {
       return null;
@@ -776,7 +845,7 @@ class _DiaryPageState extends State<DiaryPage> {
   // 월 헤더
   Widget _buildMonthHeader() {
     final now = DateTime.now();
-    final currentMonth = '${now.month}월';
+    final currentMonth = '${focusedDay.month}월';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -809,4 +878,34 @@ class _DiaryPageState extends State<DiaryPage> {
     const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
     return weekdays[date.weekday % 7];
   }
+}
+
+
+Future<DateTime?> showMonthPickerDialog(BuildContext context, DateTime initialDate) async {
+  DateTime? selectedDate = initialDate;
+
+  return showDialog<DateTime>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('월 선택'),
+        content: SizedBox(
+          height: 300,
+          width: 300,
+          child: GridView.count(
+            crossAxisCount: 3,
+            children: List.generate(12, (index) {
+              final month = index + 1;
+              return InkWell(
+                onTap: () {
+                  Navigator.pop(context, DateTime(initialDate.year, month, 1));
+                },
+                child: Center(child: Text('$month월')),
+              );
+            }),
+          ),
+        ),
+      );
+    },
+  );
 }
