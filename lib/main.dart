@@ -70,7 +70,18 @@ final GoRouter _router = GoRouter(
       },
     ),
 
-    GoRoute(path: '/addseat', builder: (_, __) => const AddSeatPage()),
+    GoRoute(
+      path: '/addseat',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
+        return AddSeatPage(
+          stadium: extra['stadium'],
+          gameDateTime: extra['gameDateTime'],
+          journalId: extra['journalId'],
+        );
+      },
+    ),
+
     GoRoute(path: '/onboarding6', builder: (_, __) => const OnboardingPage6()),
 
 

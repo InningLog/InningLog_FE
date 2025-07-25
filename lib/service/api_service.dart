@@ -137,7 +137,7 @@ class ApiService {
     return response.statusCode == 200;
   }
 
-  static Future<void> uploadJournal({
+ static Future<int?> uploadJournal({
     required String gameId,
     required String fileName,
     required String stadiumShortCode,
@@ -178,8 +178,15 @@ class ApiService {
     print('📡 응답 코드: ${response.statusCode}');
     print('📦 응답 바디: ${response.body}');
 
-    if (response.statusCode == 201) {
-      print('✅ 일지 업로드 성공!');
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      print('📡 응답 코드: ${response.statusCode}');
+      print('📦 응답 바디: ${response.body}');
+
+      final data = json['data'];
+      final journalId = data['journalId']; // 🔍 요 부분!
+
+      return journalId;
     } else {
       print('❌ 일지 업로드 실패: ${response.body}');
     }
@@ -289,37 +296,7 @@ Future<GameInfo?> fetchGameInfoByGameId(String gameId) async {
 }
 
 
-Future<void> uploadSeatView({
-  required int journalId,
-  required String stadiumSC,
-  required String zoneSC,
-  required String section,
-  required String row,
-  required List<String> tagCodes,
-  required String fileName,
-}) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('access_token');
-  final body = jsonEncode({
-    "journalId": journalId,
-    "stadiumShortCode": stadiumSC,
-    "zoneShortCode": zoneSC,
-    "section": section,
-    "seatRow": row,
-    "emotionTagCodes": tagCodes,
-    "fileName": fileName,
-  });
 
-
-  await http.post(
-  Uri.parse('https://api.inninglog.shop/seatViews/contents'),
-  headers: {
-  'Authorization': 'Bearer $token',
-  'Content-Type': 'application/json',
-  },
-  body: jsonEncode(body),
-  );
-}
 
 Future<bool> uploadToS3(String presignedUrl, File file) async {
   final bytes = await file.readAsBytes();
@@ -329,5 +306,48 @@ Future<bool> uploadToS3(String presignedUrl, File file) async {
     body: bytes,
   );
   return res.statusCode == 200;
+}
+
+
+
+Future<bool> uploadSeatView({
+  required int journalId,
+  required String stadiumSC,
+  required String zoneSC,
+  required String section,
+  required String row,
+  required List<String> tagCodes,
+  required String fileName,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('access_token'); // JWT 토큰
+  if (token == null) return false;
+
+  final url = Uri.parse('https://api.inninglog.shop/seatViews/contents');
+
+  final response = await http.post(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',ㅁ
+    },
+    body: jsonEncode({
+      'journalId': journalId,
+      'stadiumShortCode': stadiumSC,
+      'zoneShortCode': zoneSC,
+      'section': section,
+      'seatRow': row,
+      'emotionTagCodes': tagCodes,
+      'fileName': fileName,
+    }),
+  );
+
+  if (response.statusCode == 201) {
+    print('✅ 좌석 시야 업로드 성공');
+    return true;
+  } else {
+    print('❌ 좌석 시야 업로드 실패: ${response.body}');
+    return false;
+  }
 }
 

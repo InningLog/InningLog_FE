@@ -12,7 +12,7 @@ import '../main.dart';
 import '../models/home_view.dart';
 import 'add_seat_page.dart';
 import 'package:http/http.dart' as http;
-
+import '../service/api_service.dart';
 import 'home_page.dart';
 
 
@@ -92,6 +92,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
     };
 
     final baseUri = 'https://api.inninglog.shop/journals/contents?gameId=';
+
 
     // gameId1 확인
     final res1 = await http.get(Uri.parse('$baseUri$gameId1'), headers: headers);
@@ -581,7 +582,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                     return;
                                   }
 
-                                  await uploadJournal(
+                                  final int? journalId = await ApiService.uploadJournal(
                                     gameId: gameId,
                                     gameDateTime: DateTime.parse(todaySchedule!.gameDateTime),
                                     stadiumShortCode: todaySchedule!.stadium,
@@ -593,8 +594,22 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                     reviewText: '',
                                   );
 
-                                  print('✅ 전체 업로드 성공!');
-                                  context.push('/addseat');
+
+                                  if (journalId == null) {
+                                    print('❌ 업로드 실패로 journalId가 null입니다.');
+                                    return;
+                                  }
+
+                                  context.push(
+                                    '/addseat',
+                                    extra: {
+                                      'journalId': journalId,
+                                      'stadium': todaySchedule!.stadium,
+                                      'gameDateTime': todaySchedule!.gameDateTime,
+                                    },
+                                  );
+
+
                                 } : null,
 
                                 style: ElevatedButton.styleFrom(
@@ -672,20 +687,16 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                   return;
                                 }
 
-                                await uploadJournal(
-                                  gameId: gameId,
-                                  gameDateTime: DateTime.parse(todaySchedule!.gameDateTime),
-                                  stadiumShortCode: todaySchedule!.stadium,
-                                  opponentTeamShortCode: todaySchedule!.opponentTeam,
-                                  ourScore: int.parse(ourScore),
-                                  theirScore: int.parse(opponentScore),
-                                  fileName: fileName ?? '',
-                                  emotion: getEmotionKor(selectedEmotionIndex),
-                                  reviewText: '',
-                                );
+
 
                                 print('✅ 전체 업로드 성공!');
-                                if (context.mounted) context.pop();
+                                context.push(
+                                  '/addseat',
+                                  extra: {
+                                    'stadium': todaySchedule!.stadium,
+                                    'gameDateTime': todaySchedule!.gameDateTime,
+                                  },
+                                );
                               } : null,
 
 
@@ -914,10 +925,20 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
 }
 
 Future<String?> getPresignedUrl(String fileName, String contentType) async {
+
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('access_token'); // ✅ 토큰 불러오기
+
   final url = Uri.parse(
     'https://api.inninglog.shop/s3/journal/presigned?fileName=$fileName&contentType=$contentType',
   );
-  final response = await http.get(url);
+  final response = await http.get(
+    url,
+    headers: {
+      'Authorization': 'Bearer $token', // ✅ 인증 헤더 추가
+      'Content-Type': 'application/json',
+    },
+  );
 
   if (response.statusCode == 200) {
     final json = jsonDecode(response.body);
@@ -933,6 +954,7 @@ Future<bool> uploadImageToS3(String presignedUrl, File file) async {
   final response = await http.put(
     Uri.parse(presignedUrl),
     headers: {
+
       'Content-Type': 'image/jpeg',
     },
     body: bytes,
@@ -941,53 +963,7 @@ Future<bool> uploadImageToS3(String presignedUrl, File file) async {
   print('📤 S3 업로드 응답 코드: ${response.statusCode}');
   return response.statusCode == 200;
 }
-Future<void> uploadJournal({
-  required String gameId,
-  required String fileName,
-  required String stadiumShortCode,
-  required String opponentTeamShortCode,
-  required DateTime gameDateTime,
-  required int ourScore,
-  required int theirScore,
-  required String emotion,
-  required String reviewText,
-}) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('access_token');
-  print('🪪 저장된 토큰: $token');
 
-  final bodyData = {
-    "gameId": gameId,
-    "gameDate": DateFormat('yyyy-MM-dd HH:mm').format(gameDateTime), // ✅ 형식 변경
-    "stadiumSC": stadiumShortCode,           // ✅ 키 변경
-    "opponentTeamSC": opponentTeamShortCode, // ✅ 키 변경
-    "ourScore": ourScore,
-    "theirScore": theirScore,
-    "fileName": fileName,
-    "emotion": emotion,
-    "review_text": reviewText,
-  };
-
-  print('📤 보낼 바디: ${jsonEncode(bodyData)}');
-
-  final response = await http.post(
-    Uri.parse('https://api.inninglog.shop/journals/contents'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode(bodyData),
-  );
-
-  print('📡 응답 코드: ${response.statusCode}');
-  print('📦 응답 바디: ${response.body}');
-
-  if (response.statusCode == 201) {
-    print('✅ 일지 업로드 성공!');
-  } else {
-    print('❌ 일지 업로드 실패: ${response.body}');
-  }
-}
 
 
 Future<MyTeamSchedule?> loadScheduleFromPrefs(DateTime date) async {

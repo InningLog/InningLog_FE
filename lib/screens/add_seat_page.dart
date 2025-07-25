@@ -5,19 +5,31 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:inninglog/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import '../service/api_service.dart';
 import '../models/home_view.dart';
 import '../service/api_service.dart';
 import 'add_diary_page.dart';
 import 'diary_page.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart';
+
+
 
 
 
 
 class AddSeatPage extends StatefulWidget {
-  const AddSeatPage({super.key});
+  final String stadium;
+  final String gameDateTime;
+  final int journalId;
 
+  const AddSeatPage({
+    required this.journalId,
+    super.key,
+    required this.stadium,
+    required this.gameDateTime,
+  });
 
 
   @override
@@ -25,6 +37,7 @@ class AddSeatPage extends StatefulWidget {
 }
 
 class _AddSeatPageState extends State<AddSeatPage> {
+
 
   MyTeamSchedule? todaySchedule;
   DateTime currentDate = DateTime.now();
@@ -34,6 +47,7 @@ class _AddSeatPageState extends State<AddSeatPage> {
   final TextEditingController rowController = TextEditingController();
   File? seatImage;
   final Map<String, String> selectedTags = {};
+  late String selectedStadiumCode;
 
   Future<void> loadTodaySchedule() async {
     final prefs = await SharedPreferences.getInstance();
@@ -46,6 +60,24 @@ class _AddSeatPageState extends State<AddSeatPage> {
       todaySchedule = MyTeamSchedule.fromJson(jsonData);
     });
   }
+  String _formatDateTime(String rawDateTime) {
+    try {
+      final date = DateTime.parse(rawDateTime);
+      final isToday = DateTime.now().year == date.year &&
+          DateTime.now().month == date.month &&
+          DateTime.now().day == date.day;
+
+      final formattedDate = isToday
+          ? 'Today'
+          : DateFormat('MM.dd(E)', 'ko').format(date);
+      final formattedTime = DateFormat('HH:mm').format(date);
+
+      return '$formattedDate $formattedTime';
+    } catch (e) {
+      return rawDateTime; // 파싱 실패 시 원본 그대로
+    }
+  }
+
 
 
   // 각 카테고리 정의
@@ -70,19 +102,28 @@ class _AddSeatPageState extends State<AddSeatPage> {
 
   //버튼 활성화 조건
   bool get isFormValid {
-    return selectedZone != null &&
-        sectionController.text.trim().isNotEmpty &&
-        rowController.text.trim().isNotEmpty &&
-        seatImage != null&&
-        selectedTags.isNotEmpty;
+    final hasZoneOrSection =
+        (selectedZone != null && selectedZone!.isNotEmpty) ||
+            sectionController.text.trim().isNotEmpty;
+
+    return hasZoneOrSection && seatImage != null;
   }
+
 
   @override
   void initState() {
     super.initState();
+    selectedStadiumCode = widget.stadium;
     loadTodaySchedule();
   }
 
+
+  List<String> get availableZoneCodes {
+    var selectedStadiumCode;
+    final map = stadiumZones[selectedStadiumCode];
+    if (map == null) return [];
+    return map.keys.toList(); // ✅ key만 리스트로
+  }
 
 
   @override
@@ -143,35 +184,45 @@ class _AddSeatPageState extends State<AddSeatPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // 경기 정보 박스
+                    // 경기 정보 박스
                     Container(
                       width: double.infinity,
-                      height: 79,
                       margin: const EdgeInsets.symmetric(vertical: 16),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Color(0xFFFDFEFC) ,
-                        border: Border.all(
-                            color: AppColors.primary400),
+                        color: AppColors.primary50,
+                        border: Border.all(color: AppColors.primary400),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: todaySchedule == null
-                          ? const Text('경기 정보 없음')
-                          : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center, // ✅ 중앙 정렬
                         children: [
+                          // 경기장 이름
                           Text(
-                            stadiumNameMap[todaySchedule!.stadium] ?? todaySchedule!.stadium,
-                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                            stadiumNameMap[widget.stadium] ?? widget.stadium,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                            ),
+                            textAlign: TextAlign.center, // ✅ 가운데 정렬
                           ),
                           const SizedBox(height: 4),
+                          // 날짜 + 시간
                           Text(
-                            todaySchedule!.gameDateTime.replaceAll('-', '.'),
-                            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                            _formatDateTime(widget.gameDateTime),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                            ),
+                            textAlign: TextAlign.center, // ✅ 가운데 정렬
                           ),
                         ],
                       ),
-
                     ),
+
+
+
+
                     const SizedBox(height: 26),
                     Text.rich(
                       TextSpan(
@@ -202,38 +253,42 @@ class _AddSeatPageState extends State<AddSeatPage> {
                       dropdownColor: Colors.white,
                       decoration: InputDecoration(
                         hintText: '존을 선택하세요.',
-                        hintStyle: TextStyle(
-                          color: AppColors.gray700,         // 글자 색
-                          fontSize: 16,               // 글자 크기
-                          fontWeight: FontWeight.w500, // 두께
-                          fontFamily: 'Pretendard',   // 폰트 (지정했을 경우)
+                        hintStyle: const TextStyle(
+                          color: AppColors.gray700,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: 'Pretendard',
                         ),
-                        filled: true, // 내부 색상 적용하려면 이거 true!
-                        fillColor: AppColors.gray100, // 내부 배경 색상 (연한 회색 등)
+                        filled: true,
+                        fillColor: AppColors.gray100,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: AppColors.gray300), // 기본 border 색상
+                          borderSide: const BorderSide(color: AppColors.gray300),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: AppColors.gray300), // 비활성 상태 테두리
+                          borderSide: const BorderSide(color: AppColors.gray300),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Color(0xFFF94C32C)),
-                          // 포커스 시 테두리
+                          borderSide: const BorderSide(color: AppColors.primary700),
                         ),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                       ),
                       value: selectedZone,
-                      items: ['1루', '3루', '중앙', '외야'].map((zone) {
-                        return DropdownMenuItem(value: zone, child: Text(zone));
+                      items: stadiumZones[selectedStadiumCode]!.entries.map((entry) {
+                        final code = entry.key;
+                        final name = entry.value;
+                        return DropdownMenuItem<String>(
+                          value: code, // ✅ key로 저장
+                          child: Text(name), // ✅ 사용자에겐 name 보여줌
+                        );
                       }).toList(),
+
                       onChanged: (value) {
                         setState(() => selectedZone = value);
                       },
                     ),
-
                     const SizedBox(height: 12),
 
                     Row(
@@ -440,7 +495,7 @@ class _AddSeatPageState extends State<AddSeatPage> {
                           final success = await uploadToS3(presignedUrl, seatImage!);
                           if (!success) return;
 
-                          final zoneCode = getZoneShortCode(selectedZone!);
+                          final zoneCode = (selectedZone!);
                           if (zoneCode == null) return;
 
                           final tagCodes = selectedTags.values
@@ -449,14 +504,17 @@ class _AddSeatPageState extends State<AddSeatPage> {
                               .toList();
 
                           await uploadSeatView(
-                            journalId: 123, // 👈 실제 journalId 전달 필요
+                            journalId: widget.journalId,
                             stadiumSC: todaySchedule!.stadium,
-                            zoneSC: zoneCode,
+                            zoneSC: selectedZone!,
                             section: sectionController.text.trim(),
                             row: rowController.text.trim(),
                             tagCodes: tagCodes,
                             fileName: fileName,
                           );
+
+
+
 
                           if (context.mounted) Navigator.pop(context);
                         } : null,
@@ -492,6 +550,22 @@ class _AddSeatPageState extends State<AddSeatPage> {
       ),
     );
   }
+
+  String formatDateWithTodayCheck(DateTime date) {
+    final today = DateTime.now();
+    final isToday = date.year == today.year &&
+        date.month == today.month &&
+        date.day == today.day;
+    if (isToday) return 'Today';
+    return DateFormat('MM.dd(E)', 'ko').format(date);
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(StringProperty('selectedStadiumCode', selectedStadiumCode));
+  }
+
 }
 class DiaryImagePicker extends StatefulWidget {
   final Function(File) onImageSelected;
@@ -556,6 +630,7 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
     final url = Uri.parse('https://api.inninglog.shop/s3/journal/presigned?fileName=$fileName&contentType=$contentType');
     final res = await http.get(url);
     if (res.statusCode == 200) return jsonDecode(res.body)['data'];
+    print('프리사인드 전송 완료');
     return null;
   }
   Future<bool> uploadToS3(String presignedUrl, File file) async {
@@ -564,6 +639,7 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
       'Content-Type': 'image/jpeg',
     }, body: bytes);
     return res.statusCode == 200;
+
   }
   // Future<void> loadTodaySchedule() async {
   //   final prefs = await SharedPreferences.getInstance();
@@ -580,7 +656,6 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
 }
 
 
-String? getZoneShortCode(String zone) {
 
   final Map<String, String> stadiumNameToCode = {
     '잠실 야구장': 'JAM',
@@ -759,7 +834,7 @@ String? getZoneShortCode(String zone) {
 
   };
 
-}
+
 final Map<String, String> tagCodeMap = {
   '#일어남': 'CHEERING_MOSTLY_STANDING',
   '#일어날_사람은_일어남': 'CHEERING_HALF_STANDING',
@@ -776,3 +851,25 @@ final Map<String, String> tagCodeMap = {
   '#보통': 'SPACE_NORMAL',
   '#좁음': 'SPACE_NARROW',
 };
+
+
+
+String formatScheduleDateTime(String rawDateTime) {
+  try {
+    final dt = DateTime.parse(rawDateTime);
+    final date = DateFormat('yyyy.MM.dd').format(dt);
+    final time = DateFormat('HH:mm').format(dt);
+    return '$date  $time';
+  } catch (e) {
+    return rawDateTime; // 파싱 실패 시 원본 문자열 반환
+  }
+}
+
+
+
+String? getZoneNameFromCode(String stadiumName, String? zoneCode) {
+  if (zoneCode == null) return null;
+  final code = stadiumNameToCode[stadiumName];
+  return stadiumZones[code]?[zoneCode] ?? zoneCode;
+}
+
