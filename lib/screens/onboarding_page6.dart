@@ -13,6 +13,7 @@ import 'package:inninglog/service/member_api.dart';
 
 
 
+
 class OnboardingPage6 extends StatefulWidget {
   const OnboardingPage6({super.key});
 

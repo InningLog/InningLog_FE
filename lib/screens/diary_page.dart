@@ -9,6 +9,7 @@ import '../widgets/common_header.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'add_diary_page.dart';
 import 'package:collection/collection.dart';
+import '../main.dart';
 
 
 const Map<String, String> teamNameMap = {
@@ -164,6 +165,11 @@ class _DiaryPageState extends State<DiaryPage> {
                                 setState(() {
                                   selectedFilterCalendar = value;
                                   loadCalendar();
+                                  analytics.logEvent('select_diary_filter', properties: {
+                                    'event_type': 'Custom',
+                                    'component': 'btn_click',
+                                    'filter_result': 'win',
+                                  });
                                 });
                               },
                             ),
@@ -174,6 +180,11 @@ class _DiaryPageState extends State<DiaryPage> {
                                 setState(() {
                                   selectedFilterCalendar = value;
                                   loadCalendar();
+                                  analytics.logEvent('select_diary_filter', properties: {
+                                    'event_type': 'Custom',
+                                    'component': 'btn_click',
+                                    'filter_result': 'lose',
+                                  });
                                 });
                               },
                             ),
@@ -184,6 +195,11 @@ class _DiaryPageState extends State<DiaryPage> {
                                 setState(() {
                                   selectedFilterCalendar = value;
                                   loadCalendar();
+                                  analytics.logEvent('select_diary_filter', properties: {
+                                    'event_type': 'Custom',
+                                    'component': 'btn_click',
+                                    'filter_result': 'draw',
+                                  });
                                 });
                               },
                             ),
@@ -216,6 +232,12 @@ class _DiaryPageState extends State<DiaryPage> {
                                         if (newDate != null) {
                                           setState(() {
                                             focusedDay = newDate;
+                                          });
+                                          // ✅ Amplitude 이벤트 로깅
+                                          analytics.logEvent('change_diary_calendar_month', properties: {
+                                            'event_type': 'Custom',
+                                            'component': 'event',
+                                            'month': newDate.month,
                                           });
                                         }
                                       },
@@ -804,6 +826,7 @@ class _DiaryPageState extends State<DiaryPage> {
     );
   }
 
+
   // 탭바 버튼
   Widget _buildTabButton({required int index, required String label}) {
     final isSelected = _selectedIndex == index;
@@ -812,6 +835,21 @@ class _DiaryPageState extends State<DiaryPage> {
         setState(() {
           _selectedIndex = index;
         });
+        // ✅ Amplitude 이벤트 전송
+        if (index == 0) {
+          analytics.logEvent('click_diary_calendar_tab', properties: {
+            'component': 'btn_click',
+            'category': 'Diary',
+            'importance': 'High',
+          });
+        } else if (index == 1) {
+          analytics.logEvent('click_diary_collection_tab', properties: {
+            'component': 'btn_click',
+            'category': 'Diary',
+            'importance': 'High',
+          });
+        }
+
       },
       child: Container(
         width: 195,

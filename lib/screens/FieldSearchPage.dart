@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import '../app_colors.dart';
+import '../main.dart';
 import '../widgets/common_header.dart';
 import 'package:go_router/go_router.dart';
 
@@ -255,6 +256,19 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                           child: ElevatedButton(
                               onPressed: isDirectSearchValid
                                   ? () {
+                                analytics.logEvent('enter_stadium_direct_search', properties: {
+                                  'event_type': 'Custom',
+                                  'component': 'form_submit',
+                                  'zone_name': stadiumZones[selectedStadiumCode]?[selectedZone] ?? selectedZone ?? '',
+                                  'section': sectionController.text,
+                                  'row': int.tryParse(rowController.text) ?? 0,
+                                  'importance': 'High',
+                                });
+                                analytics.logEvent('execute_stadium_search', properties: {
+                                  'event_type': 'Custom',
+                                  'component': 'btn_click',
+                                  'search_type': 'direct',
+                                });
                                 context.pushNamed(
                                   'field_result',
                                   extra: {
@@ -385,14 +399,31 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                               height: 54,
                               child: ElevatedButton(
                                 onPressed: () {
+
+                                  final List<String> selectedHashtagList = selectedTags.entries
+                                      .map((entry) => "${entry.key}:${entry.value}")
+                                      .toList();
+
+                                  analytics.logEvent('select_stadium_hashtag', properties: {
+                                    'event_type': 'Custom',
+                                    'component': 'btn_click',
+                                    'hashtags': selectedHashtagList,
+                                    'hashtag_count': selectedHashtagList.length,
+                                    'importance': 'High',
+                                  });
+                                  analytics.logEvent('execute_stadium_search', properties: {
+                                    'event_type': 'Custom',
+                                    'component': 'btn_click',
+                                    'search_type': 'hashtag',
+                                  });
+
                                   context.pushNamed(
                                     'field_result',
                                     extra: {
-                                      'index': 0,
+                                      'index': 1,
                                       'stadiumName': widget.stadiumName,
-                                      'zone': selectedZone,
-                                      'section': sectionController.text,
-                                      'row': rowController.text,
+                                      'selectedTags': selectedTags,
+                                      'tagCategories': tagCategories,
                                     },
                                   );
 

@@ -1,4 +1,4 @@
-import 'package:amplitude_flutter/amplitude_flutter.dart';
+import 'amplitude_flutter.dart';
 
 late final AmplitudeFlutter _amplitude;
 
@@ -15,4 +15,3 @@ class AnalyticsService {
     return _amplitude.logEvent(eventName, eventProperties: properties);
   }
 }
-

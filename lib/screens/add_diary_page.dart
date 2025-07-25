@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_colors.dart';
 import 'dart:io';
+import '../main.dart';
 import '../models/home_view.dart';
 import 'add_seat_page.dart';
 import 'package:http/http.dart' as http;
@@ -113,11 +114,12 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
 
 
   String getEmotionKor(int index) {
-    const emotions = ['짜릿함', '감동', '흐뭇', '답답함', '아쉬움', '분노'];
+    const emotions = ['짜릿함', '감동', '흡족', '답답함', '아쉬움', '분노'];
     if (index < 0 || index >= emotions.length) return '';
     return emotions[index];
   }
 
+  final TextEditingController reviewController = TextEditingController();
 
 
 
@@ -149,7 +151,15 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                       width: 10,
                       height: 20,
                     ),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                  // ✅ Amplitude 이벤트 로깅
+                  analytics.logEvent('click_diary_write_back', properties: {
+                    'event_type': 'Custom',
+                    'component': 'btn_click',
+                    'importance': 'Medium',
+                   });
+                    Navigator.pop(context);
+                    },
                   ),
                   const SizedBox(width: 0),
                   const Text(
@@ -332,6 +342,13 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               setState(() {
                                 ourScore = value;
                               });
+                              analytics.logEvent('enter_diary_score', properties: {
+                                'event_type': 'Custom',
+                                'component': 'form_submit',
+                                'score_home': ourScore,
+                                'importance': 'High',
+                              });
+
                             },
                           ),
                           const Text(
@@ -349,6 +366,13 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               setState(() {
                                 opponentScore = value;
                               });
+                              analytics.logEvent('enter_diary_score', properties: {
+                                'event_type': 'Custom',
+                                'component': 'form_submit',
+                                'score_away': opponentScore,
+                                'importance': 'High',
+                              });
+
                             },
                           ),
                         ],
@@ -444,12 +468,15 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
 
                           // 텍스트필드
                           TextField(
+                            controller: reviewController,
                             maxLines: 4,
                             maxLength: 132,
                             onChanged: (value) {
                               setState(() {
                                 reviewLength = value.length;
                               });
+                              // ✅ 글자가 1자 이상 입력된 순간 한 번만 로그 전송
+
                             },
                             decoration: InputDecoration(
                               hintText: '후기를 작성해주세요.',
@@ -512,6 +539,21 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               child: ElevatedButton(
                                 onPressed: isFormValid ? () async {
                                   print('🟢 [작성완료 버튼] 클릭됨');
+
+                                  analytics.logEvent('write_diary_review', properties: {
+                                    'event_type': 'Custom',
+                                    'component': 'form_submit',
+                                    'review_length': reviewController.text.trim().length,
+                                    'importance': 'High',
+                                  });
+
+                                  analytics.logEvent('click_seat_review_write_start', properties: {
+                                    'event_type': 'Custom',
+                                    'component': 'btn_click',
+                                    //'diary_id': diaryId,
+                                    'importance': 'High',
+                                  });
+
 
                                   if (todaySchedule == null) {
                                     print('❗ 오늘 경기 정보가 없습니다.');
@@ -588,6 +630,21 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               // 작성 완료 버튼 내부
                               onPressed: isFormValid ? () async {
                                 print('🟢 [작성완료 버튼] 클릭됨');
+
+                                analytics.logEvent('write_diary_review', properties: {
+                                  'event_type': 'Custom',
+                                  'component': 'form_submit',
+                                  'review_length': reviewController.text.trim().length,
+                                  'importance': 'High',
+                                });
+
+                                analytics.logEvent('complete_diary_write', properties: {
+                                  'event_type': 'Custom',
+                                  'component': 'btn_click',
+                                  //'diary_id': diaryId,
+                                  'importance': 'High',
+                                });
+
 
                                 if (todaySchedule == null) {
                                   print('❗ 오늘 경기 정보가 없습니다.');
@@ -678,7 +735,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
   int selectedEmotionIndex = -1; // 선택된 감정 인덱스 상태 변수
 
   Widget _emotionIcon(int index) {
-    final List<String> labels = ['짜릿함', '감동', '흐뭇', '답답함', '아쉬움', '분노'];
+    final List<String> labels = ['짜릿함', '감동', '흡족', '답답함', '아쉬움', '분노'];
     final List<String> emojis = [
       'assets/icons/emotion_thrilled.svg',
       'assets/icons/emotion_touched.svg',
@@ -695,6 +752,12 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
       onTap: () {
         setState(() {
           selectedEmotionIndex = index;
+        });
+        // ✅ Amplitude 이벤트 로깅
+        analytics.logEvent('select_diary_emotion', properties: {
+          'event_type': 'Custom',
+          'component': 'btn_click',
+          'emotion': labels[index],
         });
       },
       child: Container(
@@ -802,7 +865,14 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
       setState(() {
         _pickedImage = file;
       });
-      widget.onImageSelected(file); // 👈 부모에게 전달
+      widget.onImageSelected(file);
+
+      analytics.logEvent('upload_diary_photo', properties: {
+        'event_type': 'Custom',
+        'component': 'event',
+        'photo_count': 1, // UT에서는 1장만 업로드하므로 고정
+        'importance': 'High',
+      });
     }
   }
 

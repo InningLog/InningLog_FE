@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
+import '../main.dart';
 import '../widgets/common_header.dart';
 import 'FieldSearchPage.dart';
 
@@ -36,6 +37,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
   late Map<String, String> selectedTags;
   int _selectedIndex = 0; // 기본은 직접 검색
 
+  String? selectedTag;
   String? selectedZone;
   final TextEditingController sectionController = TextEditingController();
   final TextEditingController rowController = TextEditingController();
@@ -174,6 +176,28 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                       value: selectedZone,
                       items: buildZoneItems(selectedStadiumCode),
                       onChanged: (value) {
+                        analytics.logEvent('change_stadium_direct_dropdown', properties: {
+                          'event_type': 'Custom',
+                          'component': 'btn_click',
+                          'changed_field': 'zone_name',
+                          'changed_value': value,
+                          'importance': 'High',
+                        });
+                        analytics.logEvent('change_stadium_direct_dropdown', properties: {
+                          'event_type': 'Custom',
+                          'component': 'btn_click',
+                          'changed_field': 'section',
+                          'changed_value': sectionController.text,
+                          'importance': 'High',
+                        });
+
+                        analytics.logEvent('change_stadium_direct_dropdown', properties: {
+                          'event_type': 'Custom',
+                          'component': 'btn_click',
+                          'changed_field': 'row',
+                          'changed_value': rowController.text,
+                          'importance': 'High',
+                        });
                         setState(() {
                           selectedZone = value;
                         });
@@ -379,8 +403,10 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                                           setState(() {
                                             if (selected) {
                                               selectedTags.remove(category);
+                                              selectedTag = null;
                                             } else {
                                               selectedTags[category] = tag;
+                                              selectedTag = tag;
                                             }
                                           });
                                           setModalState(() {});
@@ -416,6 +442,19 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                           height: 48,
                           child: ElevatedButton(
                             onPressed: () {
+
+                              final List<String> selectedHashtagList = selectedTags.entries
+                                  .map((entry) => "${entry.key}:${entry.value}")
+                                  .toList();
+
+                              // ✅ Amplitude 이벤트 로깅
+                              analytics.logEvent('change_stadium_hashtag_dropdown', properties: {
+                                'event_type': 'Custom',
+                                'component': 'btn_click',
+                                'changed_category': selectedHashtagList,
+                                'changed_value': selectedHashtagList.length,
+                                'importance': 'High',
+                              });
                               Navigator.pop(context);
                             },
                             style: ElevatedButton.styleFrom(
@@ -519,6 +558,12 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                               : '존',
                           isSelected: widget.zone?.isNotEmpty == true,
                           onTap: () {
+                            analytics.logEvent('change_stadium_direct_search_tab', properties: {
+                              'event_type': 'Custom',
+                              'component': 'btn_click',
+                              'field_changed': 'zone_name',
+                              'importance': 'High',
+                            });
                             _showDirectSearchBottomSheet();
                           },
                         ),
@@ -527,6 +572,12 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                           label: widget.section?.isNotEmpty == true ? widget.section! : '구역',
                           isSelected: widget.section?.isNotEmpty == true,
                           onTap: () {
+                            analytics.logEvent('change_stadium_direct_search_tab', properties: {
+                              'event_type': 'Custom',
+                              'component': 'btn_click',
+                              'field_changed': 'section',
+                              'importance': 'High',
+                            });
                             _showDirectSearchBottomSheet();
                           },
                         ),
@@ -535,6 +586,12 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                           label: widget.row?.isNotEmpty == true ? widget.row! : '열',
                           isSelected: widget.row?.isNotEmpty == true,
                           onTap: () {
+                            analytics.logEvent('change_stadium_direct_search_tab', properties: {
+                              'event_type': 'Custom',
+                              'component': 'btn_click',
+                              'field_changed': 'row',
+                              'importance': 'High',
+                            });
                             _showDirectSearchBottomSheet();
                           },
                         ),
@@ -556,7 +613,19 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                             return Padding(
                               padding: const EdgeInsets.only(right: 4.8),
                               child: InkWell(
-                                onTap: () => _showCategoryBottomSheet(category, (widget.tagCategories ?? {})[category]!),
+                                onTap: () {
+                                  // Amplitude 이벤트 추가
+                                  analytics.logEvent(
+                                      'change_stadium_hashtag_tab',
+                                      properties: {
+                                        'event_type': 'Custom',
+                                        'component': 'btn_click',
+                                        'selected_category': category,
+                                        'importance': 'High',
+                                      });
+                                  _showCategoryBottomSheet(category,
+                                      (widget.tagCategories ?? {})[category]!);
+                                },
                                 borderRadius: BorderRadius.circular(50),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

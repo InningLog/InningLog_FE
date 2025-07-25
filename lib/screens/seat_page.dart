@@ -1,28 +1,30 @@
 import 'package:flutter/material.dart';
 import '../app_colors.dart';
+import '../main.dart';
 import '../widgets/common_header.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'FieldSearchPage.dart';
 
 final List<_TeamStadium> teamStadiums = [
-  _TeamStadium('assets/icons/seoul_seat.svg', '두산 & LG','잠실 야구장'),
-  _TeamStadium('assets/icons/kw_seat.svg', '키움','고척 스카이돔'),
-  _TeamStadium('assets/icons/busan_seat.svg', '롯데','사직 야구장'),
-  _TeamStadium('assets/icons/ssg_seat.svg', 'SSG','랜더스 필드'),
-  _TeamStadium('assets/icons/lion_seat.svg', '삼성','라이온즈 파크'),
-  _TeamStadium('assets/icons/hh_seat.svg', '한화','한화생명 볼파크'),
-  _TeamStadium('assets/icons/kia_seat.svg', '기아','챔피언스 월드'),
-  _TeamStadium('assets/icons/kt_seat.svg', 'KT','위즈 파크'),
-  _TeamStadium('assets/icons/nc_seat.svg', 'NC','NC 파크장'),
+  _TeamStadium('assets/icons/seoul_seat.svg', '두산 & LG','잠실 야구장','잠실'),
+  _TeamStadium('assets/icons/kw_seat.svg', '키움','고척 스카이돔','고척'),
+  _TeamStadium('assets/icons/busan_seat.svg', '롯데','사직 야구장','사직'),
+  _TeamStadium('assets/icons/ssg_seat.svg', 'SSG','랜더스 필드','문학'),
+  _TeamStadium('assets/icons/lion_seat.svg', '삼성','라이온즈 파크','대구'),
+  _TeamStadium('assets/icons/hh_seat.svg', '한화','한화생명 볼파크','대전'),
+  _TeamStadium('assets/icons/kia_seat.svg', '기아','챔피언스 월드','광주'),
+  _TeamStadium('assets/icons/kt_seat.svg', 'KT','위즈 파크','수원'),
+  _TeamStadium('assets/icons/nc_seat.svg', 'NC','NC 파크장','창원'),
 ];
 
 class _TeamStadium {
   final String assetPath;
   final String teamName;
   final String stadiumName;
+  final String stadiumNameShort;
 
-  _TeamStadium(this.assetPath, this.teamName, this.stadiumName);
+  _TeamStadium(this.assetPath, this.teamName, this.stadiumName,this.stadiumNameShort);
 }
 
 class SeatPage extends StatelessWidget {
@@ -90,6 +92,12 @@ class SeatPage extends StatelessWidget {
                     final stadium = teamStadiums[index];
                     return GestureDetector(
                       onTap: () {
+                        analytics.logEvent('select_stadium', properties: {
+                          'event_type': 'Custom',
+                          'component': 'btn_click',
+                          'stadium_name':stadium.stadiumNameShort,
+                          'importance': 'High',
+                        });
                         Navigator.push(
                           context,
                           MaterialPageRoute(
