@@ -329,7 +329,7 @@ Future<bool> uploadSeatView({
     url,
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',ㅁ
+      'Authorization': 'Bearer $token',
     },
     body: jsonEncode({
       'journalId': journalId,
