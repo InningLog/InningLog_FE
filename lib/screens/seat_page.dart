@@ -35,7 +35,7 @@ class SeatPage extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            const CommonHeader(title: '좌석정보'),
+            const CommonHeader(title: '구장'),
             const SizedBox(height: 6),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),

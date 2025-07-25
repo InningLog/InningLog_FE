@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
 import '../widgets/common_header.dart';
+import 'FieldSearchPage.dart';
 
 class FieldHashtagSearchResultPage extends StatefulWidget {
   final int index; // 0이면 직접검색, 1이면 해시태그검색
@@ -9,6 +11,7 @@ class FieldHashtagSearchResultPage extends StatefulWidget {
   final String? zone, section, row;
   final Map<String, String>? selectedTags;
   final Map<String, List<String>>? tagCategories;
+
 
   const FieldHashtagSearchResultPage({
     super.key,
@@ -23,17 +26,46 @@ class FieldHashtagSearchResultPage extends StatefulWidget {
 
 
 
+
+
   @override
   State<FieldHashtagSearchResultPage> createState() => _FieldHashtagSearchResultPageState();
 }
 
 class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultPage> {
   late Map<String, String> selectedTags;
-  int _selectedIndex = 1;
+  int _selectedIndex = 0; // 기본은 직접 검색
+
+  String? selectedZone;
+  final TextEditingController sectionController = TextEditingController();
+  final TextEditingController rowController = TextEditingController();
+
+  String? get selectedStadiumCode => stadiumNameToCode[widget.stadiumName];
+
+  bool get isDirectSearchValid {
+    final hasZone = selectedZone?.isNotEmpty ?? false;
+    final hasSection = sectionController.text.trim().isNotEmpty;
+    final hasRow = rowController.text.trim().isNotEmpty;
+
+    // ✅ 존만 입력, 혹은 구역+열만 입력 둘 다 허용
+    return hasZone || (hasSection && hasRow);
+  }
+
+
+  String? getZoneNameFromCode(String stadiumName, String? zoneCode) {
+    if (zoneCode == null) return null;
+    final code = stadiumNameToCode[stadiumName];
+    return stadiumZones[code]?[zoneCode] ?? zoneCode;
+  }
+
+
+
+
 
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.index;
     selectedTags = Map<String, String>.from(widget.selectedTags ?? {});
   }
 
@@ -73,6 +105,185 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
       ),
     );
   }
+
+  void _showDirectSearchBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        // ✅ 바텀시트 열기 전에 현재 선택 상태 반영
+        selectedZone ??= widget.zone;
+        if (sectionController.text.isEmpty && widget.section != null) {
+          sectionController.text = widget.section!;
+        }
+        if (rowController.text.isEmpty && widget.row != null) {
+          rowController.text = widget.row!;
+        }
+
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 20,
+            right: 20,
+            top: 24,
+          ),
+          child: StatefulBuilder(
+            builder: (context, setModalState) {
+              return SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '좌석 검색',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      dropdownColor: Colors.white,
+                      decoration: InputDecoration(
+                        hintText: '존을 선택하세요.',
+                        hintStyle: const TextStyle(
+                          color: AppColors.gray700,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: 'Pretendard',
+                        ),
+                        filled: true,
+                        fillColor: AppColors.gray100,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: AppColors.gray300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: AppColors.gray300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFFF94C32C)),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                      ),
+                      value: selectedZone,
+                      items: buildZoneItems(selectedStadiumCode),
+                      onChanged: (value) {
+                        setState(() {
+                          selectedZone = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: sectionController,
+                            textAlign: TextAlign.center,
+                            decoration: _seatInputDecoration('ex) 314'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('구역',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: rowController,
+                            textAlign: TextAlign.center,
+                            decoration: _seatInputDecoration('ex) 3'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('열',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                    const SizedBox(height: 46),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: ElevatedButton(
+                        onPressed: isDirectSearchValid
+                            ? () {
+                          Navigator.pop(context); // 닫고 이동
+                          context.pushNamed(
+                            'field_result',
+                            extra: {
+                              'index': 0,
+                              'stadiumName': widget.stadiumName,
+                              'zone': selectedZone,
+                              'section': sectionController.text,
+                              'row': rowController.text,
+                            },
+                          );
+                        }
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isDirectSearchValid ? AppColors.primary700 : AppColors.gray200,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(36),
+                            side: BorderSide(
+                              color: isDirectSearchValid ? AppColors.primary700 : Colors.transparent,
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          '작성 완료',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: isDirectSearchValid ? Colors.white : AppColors.gray700,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  InputDecoration _seatInputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(
+        color: AppColors.gray700,
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        fontFamily: 'Pretendard',
+      ),
+      filled: true,
+      fillColor: AppColors.gray100,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: AppColors.gray300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: AppColors.gray300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Color(0xFFF94C32C)),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+    );
+  }
+
+
 
   void _showCategoryBottomSheet(String category, List<String> tags) {
     showModalBottomSheet(
@@ -242,7 +453,45 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
       body: SafeArea(
         child: Column(
           children: [
-            CommonHeader(title: widget.stadiumName),
+            Container(
+              height: 72,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              alignment: Alignment.center,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    icon: SvgPicture.asset(
+                      'assets/icons/back_but.svg',
+                      width: 10,
+                      height: 20,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const SizedBox(width: 0),
+                  Text(
+                    widget.stadiumName,
+                    style: const TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: -0.26,
+                      color: Color(0xFF272727),
+                      fontFamily: 'MBC1961GulimOTF',
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    icon: SvgPicture.asset(
+                      'assets/icons/Alarm.svg',
+                      width: 18.05,
+                    ),
+                    onPressed: () {},
+                  ),
+                ],
+              ),
+            ),
             Container(
               height: 42,
               child: Row(
@@ -258,90 +507,42 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                 children: [
                   // 탭 0: 직접 검색 (임시 화면)
                   // 직접 검색 탭 (index == 0)
-                  Padding(
+
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     child: Row(
                       children: [
-                        Expanded(
-                          child: Container(
-                            height: 36,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(50),
-                              border: Border.all(color: const Color(0xFFD3D3D3)),
-                              color: Colors.white,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: const [
-                                Text(
-                                  '존',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFFD3D3D3),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFFD3D3D3), size: 20),
-                              ],
-                            ),
-                          ),
+                        _buildDropdownPill(
+                          label: (widget.zone != null && widget.zone!.isNotEmpty)
+                              ? getZoneNameFromCode(widget.stadiumName, widget.zone) ?? '존'
+                              : '존',
+                          isSelected: widget.zone?.isNotEmpty == true,
+                          onTap: () {
+                            _showDirectSearchBottomSheet();
+                          },
                         ),
                         const SizedBox(width: 8),
-                        Expanded(
-                          child: Container(
-                            height: 36,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(50),
-                              border: Border.all(color: const Color(0xFFD3D3D3)),
-                              color: Colors.white,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: const [
-                                Text(
-                                  '구역',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFFD3D3D3),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFFD3D3D3), size: 20),
-                              ],
-                            ),
-                          ),
+                        _buildDropdownPill(
+                          label: widget.section?.isNotEmpty == true ? widget.section! : '구역',
+                          isSelected: widget.section?.isNotEmpty == true,
+                          onTap: () {
+                            _showDirectSearchBottomSheet();
+                          },
                         ),
                         const SizedBox(width: 8),
-                        Expanded(
-                          child: Container(
-                            height: 36,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(50),
-                              border: Border.all(color: const Color(0xFFD3D3D3)),
-                              color: Colors.white,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: const [
-                                Text(
-                                  '월',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFFD3D3D3),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFFD3D3D3), size: 20),
-                              ],
-                            ),
-                          ),
+                        _buildDropdownPill(
+                          label: widget.row?.isNotEmpty == true ? widget.row! : '열',
+                          isSelected: widget.row?.isNotEmpty == true,
+                          onTap: () {
+                            _showDirectSearchBottomSheet();
+                          },
                         ),
                       ],
                     ),
                   ),
+
+
 
                   // 탭 1: 해시태그 검색
                   Column(
@@ -423,6 +624,52 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
       ),
     );
   }
+
 }
+
+Widget _buildDropdownPill({
+  required String label,
+  required bool isSelected,
+  required VoidCallback onTap,
+}) {
+  final color = isSelected ? const Color(0xFF272727) : const Color(0xFFD3D3D3);
+
+  return IntrinsicWidth(
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(50),
+      child: Container(
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(50),
+          border: Border.all(color: color),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+            const SizedBox(width: 4),
+            SvgPicture.asset(
+              'assets/icons/filter_down_blackk.svg',
+              width: 5,
+              height: 10,
+              color: isSelected ? const Color(0xFF272727) : const Color(0xFFD3D3D3),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 
 
