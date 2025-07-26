@@ -397,7 +397,21 @@ class _DiaryPageState extends State<DiaryPage> {
 
                                       .map((game) {
                                     final result = getGameResult(game.ourScore, game.theirScore);
-                                    return Container(
+
+                                    return GestureDetector(
+                                        onTap: () {
+                                          // 여기에 navigation 처리
+                                          context.push(
+                                            '/adddiary',
+                                            extra: {
+                                              'initialDate': selectedDate,
+                                              'isEditMode': true,
+                                              'journalId': game.journalId,
+                                            },
+                                          );
+                                        },
+
+                                    child:  Container(
                                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
                                       padding: const EdgeInsets.all(14),
                                       decoration: BoxDecoration(
@@ -504,6 +518,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                           ),
                                         ],
                                       ),
+                                    ),
                                     );
                                   })
                                       .toList(),
@@ -707,7 +722,14 @@ class _DiaryPageState extends State<DiaryPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           final dateToSend = selectedDate ?? DateTime.now();
-          context.push('/adddiary', extra: dateToSend);
+          context.push(
+            '/adddiary',
+            extra: {
+              'initialDate': dateToSend,
+              'isEditMode': false,
+              'journalId': null,
+            },
+          );
         },
 
         backgroundColor: AppColors.primary700,

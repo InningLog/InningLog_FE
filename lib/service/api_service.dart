@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:inninglog/screens/field_hashtag_filter_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/home_view.dart';
@@ -10,6 +11,50 @@ import 'package:intl/intl.dart';
 
 class ApiService {
   static const String baseUrl = 'https://api.inninglog.shop';
+
+  static Future<void> updateJournal({
+    required int journalId,
+    required int ourScore,
+    required int theirScore,
+    required String mediaUrl,
+    required String emotion,
+    required String reviewText,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+    final headers = {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    };
+
+    print('🟡 PATCH 요청 body:');
+    print({
+      "ourScore": ourScore,
+      "theirScore": theirScore,
+      "media_url": mediaUrl,
+      "emotion": emotion,
+      "review_text": reviewText,
+    });
+
+    final body = jsonEncode({
+      "ourScore": ourScore,
+      "theirScore": theirScore,
+      "media_url": mediaUrl,
+      "emotion": emotion,
+      "review_text": reviewText,
+    });
+
+    print('🟡 PATCH 요청 body: $body');
+    final response = await http.patch(
+      Uri.parse('https://api.inninglog.shop/journals/update/$journalId'),
+      headers: headers,
+      body: body,
+    );
+
+    if (response.statusCode != 200) {
+      print('❌ 수정 실패: ${response.body}');
+    }
+  }
 
 
   static Future<http.Response> getHomeView() async {
@@ -248,30 +293,7 @@ Future<List<Journal>> fetchJournalSummary({
   }
 }
 
-// Future<GameInfo?> fetchGameInfo(String gameId) async {
-//   final prefs = await SharedPreferences.getInstance();
-//   final token = prefs.getString('access_token');
-//
-//   final url = Uri.parse('https://api.inninglog.shop/journals/contents?gameId=$gameId');
-//   final response = await http.get(
-//     url,
-//     headers: {
-//       'Authorization': 'Bearer $token',
-//     },
-//   );
-//
-//   print('📡 [GameInfo] 응답 코드: ${response.statusCode}');
-//   print('📦 [GameInfo] 응답 바디: ${response.body}');
-//
-//   if (response.statusCode == 200) {
-//     final jsonBody = jsonDecode(response.body);
-//     final data = jsonBody['data'];
-//     return GameInfo.fromJson(data);
-//   } else {
-//     print('❌ GameInfo API 실패: ${response.body}');
-//     return null;
-//   }
-// }
+
 
 Future<GameInfo?> fetchGameInfoByGameId(String gameId) async {
   final prefs = await SharedPreferences.getInstance();
@@ -349,5 +371,36 @@ Future<bool> uploadSeatView({
     print('❌ 좌석 시야 업로드 실패: ${response.body}');
     return false;
   }
+}
+
+
+Future<SeatViewDetail?> fetchSeatViewDetail(int seatViewId) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+
+    if (token == null) {
+      print('❌ 토큰 없음');
+      return null;
+    }
+
+    final response = await http.get(
+      Uri.parse('https://api.inninglog.shop/seatViews/$seatViewId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    print('📥 응답 코드: ${response.statusCode}');
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body)['data'];
+      print('좌석 시야 상세 조회 성공: $data');
+      return SeatViewDetail.fromJson(data);
+    } else {
+      print('❌ 좌석 시야 조회 실패: ${response.body}');
+    }
+  } catch (e) {
+    print('❌ 예외 발생: $e');
+  }
+  return null;
 }
 

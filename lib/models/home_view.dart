@@ -98,6 +98,8 @@ class Journal {
   final String stadiumSC;
   final String mediaUrl;
   final String reviewText;
+  final String? emotion;
+
 
 
   Journal({
@@ -111,6 +113,7 @@ class Journal {
     required this.stadiumSC,
     required this.mediaUrl,
     required this.reviewText,
+    required this.emotion,
 
   });
 
@@ -125,6 +128,7 @@ class Journal {
       opponentTeamSC: json['opponentTeamSC'] ?? '팀 정보 없음',
       stadiumSC: json['stadiumSC'] ?? '구장 정보 없음', mediaUrl: '',
       reviewText: json['review_text'] ?? '',
+      emotion: json['emotion'] ?? '',
     );
   }
 
@@ -165,5 +169,47 @@ class GameInfo {
     );
   }
 
+
+
+}
+
+class SeatViewDetail {
+  final int seatViewId;
+  final String viewMediaUrl;
+  final String zoneName;
+  final String zoneShortCode;
+  final String section;
+  final String seatRow;
+  final String stadiumName;
+  final List<String> emotionTags;
+
+  SeatViewDetail({
+    required this.seatViewId,
+    required this.viewMediaUrl,
+    required this.zoneName,
+    required this.zoneShortCode,
+    required this.section,
+    required this.seatRow,
+    required this.stadiumName,
+    required this.emotionTags,
+  });
+
+  factory SeatViewDetail.fromJson(Map<String, dynamic> json) {
+    final seatInfo = json['seatInfo'];
+    final emotions = (json['emotionTags'] as List<dynamic>)
+        .map((e) => e['label'] as String)
+        .toList();
+
+    return SeatViewDetail(
+      seatViewId: json['seatViewId'],
+      viewMediaUrl: json['viewMediaUrl'],
+      zoneName: seatInfo['zoneName'],
+      zoneShortCode: seatInfo['zoneShortCode'],
+      section: seatInfo['section'],
+      seatRow: seatInfo['seatRow'],
+      stadiumName: seatInfo['stadiumName'],
+      emotionTags: emotions,
+    );
+  }
 }
 

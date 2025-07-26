@@ -36,7 +36,11 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
 
 
   bool get isDirectSearchValid {
-    return selectedZone != null;
+    final hasZone = selectedZone?.isNotEmpty ?? false;
+    final hasSection = sectionController.text.trim().isNotEmpty;
+
+    // 존 또는 구역 중 하나라도 입력했으면 활성화
+    return hasZone || hasSection;
   }
 
   bool get isHashtagSearchValid {
@@ -173,6 +177,7 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                             Expanded(
                               child: TextField(
                                 controller: sectionController,
+                                onChanged: (_) => setState(() {}),
                                 textAlign: TextAlign.center,
                                 decoration: InputDecoration(
                                   hintText: 'ex) 314',
@@ -254,7 +259,10 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                           width: double.infinity,
                           height: 54,
                           child: ElevatedButton(
+
+
                               onPressed: isDirectSearchValid
+
                                   ? () {
                                 analytics.logEvent('enter_stadium_direct_search', properties: {
                                   'event_type': 'Custom',

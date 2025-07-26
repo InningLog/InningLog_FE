@@ -3,6 +3,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
 import '../main.dart';
+import '../models/home_view.dart';
+import '../service/api_service.dart';
 import '../widgets/common_header.dart';
 import 'FieldSearchPage.dart';
 
@@ -47,11 +49,12 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
   bool get isDirectSearchValid {
     final hasZone = selectedZone?.isNotEmpty ?? false;
     final hasSection = sectionController.text.trim().isNotEmpty;
-    final hasRow = rowController.text.trim().isNotEmpty;
 
-    // ✅ 존만 입력, 혹은 구역+열만 입력 둘 다 허용
-    return hasZone || (hasSection && hasRow);
+    // 존 또는 구역 중 하나라도 입력했으면 활성화
+    return hasZone || hasSection;
   }
+
+
 
 
   String? getZoneNameFromCode(String stadiumName, String? zoneCode) {
@@ -61,14 +64,20 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
   }
 
 
+// 예시 데이터 구조에 맞게 수정 필요
+  List<SeatViewDetail> seatViews = [];
 
 
 
   @override
   void initState() {
     super.initState();
+    print('✅ SeatViewDetailPage initState 진입');
     _selectedIndex = widget.index;
     selectedTags = Map<String, String>.from(widget.selectedTags ?? {});
+
+    sectionController.addListener(() => setState(() {}));
+    rowController.addListener(() => setState(() {}));
   }
 
   Widget _buildTabButton({required int index, required String label}) {
@@ -672,15 +681,42 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                             childAspectRatio: 0.75,
                           ),
                           itemCount: 8,
-                          itemBuilder: (context, index) {
-                            return ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.asset(
-                                'assets/images/KakaoTalk_20250611_184301449.jpg',
-                                fit: BoxFit.cover,
-                              ),
-                            );
-                          },
+                            itemBuilder: (context, index) {
+                              final seatViewId = seatViews[index].seatViewId;
+
+                              return GestureDetector(
+                                onTap: () async {
+                                  print('🟡 카드 클릭됨, seatViewId: $seatViewId'); // ← 이거 꼭 찍히는지 확인!
+                                  final detail = await fetchSeatViewDetail(seatViewId);
+                                  if (detail != null && context.mounted) {
+                                    showDialog(
+                                      context: context,
+                                      builder: (_) => AlertDialog(
+                                        title: Text(detail.stadiumName),
+                                        content: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Image.network(detail.viewMediaUrl),
+                                            Text('존: ${detail.zoneName}'),
+                                            Text('구역: ${detail.section}'),
+                                            Text('열: ${detail.seatRow}'),
+                                            ...detail.emotionTags.map((e) => Text('#$e')),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.asset(
+                                    'assets/images/KakaoTalk_20250611_184301449.jpg',
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              );
+                            }
+
                         ),
                       ),
                     ],
