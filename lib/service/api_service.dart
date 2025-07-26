@@ -342,7 +342,7 @@ Future<bool> uploadSeatView({
     }),
   );
 
-  if (response.statusCode == 201) {
+  if (response.statusCode == 200) {
     print('✅ 좌석 시야 업로드 성공');
     return true;
   } else {

@@ -591,7 +591,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                     theirScore: int.parse(opponentScore),
                                     fileName: fileName ?? '',
                                     emotion: getEmotionKor(selectedEmotionIndex),
-                                    reviewText: '',
+                                    reviewText: reviewController.text.trim(),
                                   );
 
 
@@ -690,13 +690,9 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
 
 
                                 print('✅ 전체 업로드 성공!');
-                                context.push(
-                                  '/addseat',
-                                  extra: {
-                                    'stadium': todaySchedule!.stadium,
-                                    'gameDateTime': todaySchedule!.gameDateTime,
-                                  },
-                                );
+                                if (context.mounted) {
+                                  context.go('/diary');
+                                }
                               } : null,
 
 

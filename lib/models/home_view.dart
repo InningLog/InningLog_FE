@@ -97,6 +97,7 @@ class Journal {
   final String opponentTeamSC;
   final String stadiumSC;
   final String mediaUrl;
+  final String reviewText;
 
 
   Journal({
@@ -108,7 +109,8 @@ class Journal {
     required this.supportTeamSC,
     required this.opponentTeamSC,
     required this.stadiumSC,
-    required this.mediaUrl
+    required this.mediaUrl,
+    required this.reviewText,
 
   });
 
@@ -122,6 +124,7 @@ class Journal {
       supportTeamSC: json['supportTeamSC'] ?? '팀 정보 없음',
       opponentTeamSC: json['opponentTeamSC'] ?? '팀 정보 없음',
       stadiumSC: json['stadiumSC'] ?? '구장 정보 없음', mediaUrl: '',
+      reviewText: json['review_text'] ?? '',
     );
   }
 

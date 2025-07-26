@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:inninglog/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,6 +16,56 @@ import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart';
 
 
+
+Future<String?> getPresignedUrl(String fileName, String contentType) async {
+  final url = Uri.parse(
+    'https://api.inninglog.shop/s3/seatView/presigned?fileName=$fileName&contentType=$contentType',
+  );
+
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('access_token');
+
+  final res = await http.get(
+    url,
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+  );
+
+  print('📡 Presigned 요청 URL: $url');
+  print('📡 Headers: Authorization=Bearer $token');
+
+  if (res.statusCode == 200) {
+    final body = jsonDecode(res.body);
+    return body['data'];
+  } else {
+    print('❌ Presigned URL 발급 실패: ${res.body}');
+    return null;
+  }
+}
+
+
+
+Future<bool> uploadToS3(String presignedUrl, File file) async {
+  try {
+    final bytes = await file.readAsBytes();
+    print('📸 업로드할 파일 크기: ${bytes.length}');
+
+    final res = await http.put(
+      Uri.parse(presignedUrl),
+      headers: {
+        'Content-Type': 'image/png',
+      },
+      body: bytes,
+    );
+    print('📤 S3 업로드 응답: ${res.statusCode}');
+    return res.statusCode == 200;
+  } catch (e) {
+    print('❌ S3 업로드 오류: $e');
+    return false;
+  }
+}
 
 
 
@@ -488,12 +539,19 @@ class _AddSeatPageState extends State<AddSeatPage> {
                         onPressed: isFormValid ? () async {
                           if (seatImage == null || todaySchedule == null) return;
 
-                          final fileName = 'seatview_${DateTime.now().millisecondsSinceEpoch}.jpeg';
-                          final presignedUrl = await getPresignedUrl(fileName, 'image/jpeg');
+                          final fileName = 'journal_${widget.journalId}_${DateTime.now().millisecondsSinceEpoch}.png';
+                          final presignedUrl = await getPresignedUrl(fileName, 'image/png');
+
                           if (presignedUrl == null) return;
 
                           final success = await uploadToS3(presignedUrl, seatImage!);
-                          if (!success) return;
+                          if (!success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('사진 업로드 실패')),
+
+                            );
+                            return;
+                          }
 
                           final zoneCode = (selectedZone!);
                           if (zoneCode == null) return;
@@ -516,7 +574,9 @@ class _AddSeatPageState extends State<AddSeatPage> {
 
 
 
-                          if (context.mounted) Navigator.pop(context);
+                          if (context.mounted) {
+                            context.go('/diary');
+                          }
                         } : null,
 
                         style: ElevatedButton.styleFrom(
@@ -626,21 +686,7 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
     );
   }
 
-  Future<String?> getPresignedUrl(String fileName, String contentType) async {
-    final url = Uri.parse('https://api.inninglog.shop/s3/journal/presigned?fileName=$fileName&contentType=$contentType');
-    final res = await http.get(url);
-    if (res.statusCode == 200) return jsonDecode(res.body)['data'];
-    print('프리사인드 전송 완료');
-    return null;
-  }
-  Future<bool> uploadToS3(String presignedUrl, File file) async {
-    final bytes = await file.readAsBytes();
-    final res = await http.put(Uri.parse(presignedUrl), headers: {
-      'Content-Type': 'image/jpeg',
-    }, body: bytes);
-    return res.statusCode == 200;
 
-  }
   // Future<void> loadTodaySchedule() async {
   //   final prefs = await SharedPreferences.getInstance();
   //   final key = 'schedule_${currentDate.toIso8601String().split("T")[0]}';
@@ -836,20 +882,21 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
 
 
 final Map<String, String> tagCodeMap = {
-  '#일어남': 'CHEERING_MOSTLY_STANDING',
-  '#일어날_사람은_일어남': 'CHEERING_HALF_STANDING',
-  '#앉아서': 'CHEERING_SITTING',
+  '#일어남': 'CHEERING_STANDING',
+  '#일어날_사람은_일어남': 'CHEERING_MOSTLY_STANDING',
+  '#앉아서': 'CHEERING_SEATED',
   '#강함': 'SUN_STRONG',
-  '#있다가_그늘짐': 'SUN_TEMPORARY',
-  '#없음': 'SUN_NONE',
-  '#있음': 'COVER_EXIST',
-  '#없음': 'COVER_NONE',
-  '#그물': 'OBSTRUCTION_NET',
-  '#아크릴_가림막': 'OBSTRUCTION_PLEXI',
-  '#아주_넓음': 'SPACE_VERY_WIDE',
-  '#넓음': 'SPACE_WIDE',
-  '#보통': 'SPACE_NORMAL',
-  '#좁음': 'SPACE_NARROW',
+  '#있다가_그늘짐': 'SUN_MOVES_TO_SHADE',
+  '#없음': 'SUN_NONE', // 햇빛 - 없음
+  '#있음': 'ROOF_EXISTS', // 지붕 - 있음
+  '#없음_지붕': 'ROOF_NONE', // 구분 위해 이름 바꿈
+  '#그물': 'VIEW_OBSTRUCT_NET',
+  '#아크릴_가림막': 'VIEW_OBSTRUCT_ACRYLIC',
+  '#없음_시야방해': 'VIEW_NO_OBSTRUCTION', // 구분 위해 이름 바꿈
+  '#아주_넓음': 'SEAT_SPACE_VERY_WIDE',
+  '#넓음': 'SEAT_SPACE_WIDE',
+  '#보통': 'SEAT_SPACE_NORMAL',
+  '#좁음': 'SEAT_SPACE_NARROW',
 };
 
 
