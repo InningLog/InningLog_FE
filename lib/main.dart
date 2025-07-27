@@ -103,7 +103,11 @@ final GoRouter _router = GoRouter(
       },
       routes: [
         GoRoute(path: '/home', builder: (_, __) => const HomePage()),
-        GoRoute(path: '/diary', builder: (_, __) => const DiaryPage()),
+        GoRoute(
+          path: '/diary',
+          builder: (context, state) => const DiaryPage(),
+        ),
+
         GoRoute(path: '/seat', builder: (_, __) => const SeatPage()),
         GoRoute(path: '/board', builder: (_, __) => const BoardPage()),
         GoRoute(path: '/mypage', builder: (_, __) => const MyPage()),

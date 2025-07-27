@@ -40,7 +40,16 @@ const Map<String, String> stadiumNameMap = {
 
 
 class DiaryPage extends StatefulWidget {
-  const DiaryPage({super.key});
+  final int? journalId;
+  final String? stadium;
+  final DateTime? gameDateTime;
+
+  const DiaryPage({
+    super.key,
+    this.journalId,
+    this.stadium,
+    this.gameDateTime,
+  });
 
   @override
   State<DiaryPage> createState() => _DiaryPageState();
@@ -969,3 +978,5 @@ Future<DateTime?> showMonthPickerDialog(BuildContext context, DateTime initialDa
     },
   );
 }
+
+

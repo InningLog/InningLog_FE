@@ -563,7 +563,7 @@ class _AddSeatPageState extends State<AddSeatPage> {
 
                           await uploadSeatView(
                             journalId: widget.journalId,
-                            stadiumSC: todaySchedule!.stadium,
+                            stadiumSC: widget.stadium,
                             zoneSC: selectedZone!,
                             section: sectionController.text.trim(),
                             row: rowController.text.trim(),
@@ -882,17 +882,26 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
 
 
 final Map<String, String> tagCodeMap = {
+  // 응원
   '#일어남': 'CHEERING_STANDING',
   '#일어날_사람은_일어남': 'CHEERING_MOSTLY_STANDING',
   '#앉아서': 'CHEERING_SEATED',
+
+  // 햇빛
   '#강함': 'SUN_STRONG',
   '#있다가_그늘짐': 'SUN_MOVES_TO_SHADE',
-  '#없음': 'SUN_NONE', // 햇빛 - 없음
-  '#있음': 'ROOF_EXISTS', // 지붕 - 있음
-  '#없음_지붕': 'ROOF_NONE', // 구분 위해 이름 바꿈
+  '#없음_햇빛': 'SUN_NONE',
+
+  // 지붕
+  '#있음_지붕': 'ROOF_EXISTS',
+  '#없음_지붕': 'ROOF_NONE',
+
+  // 시야 방해
   '#그물': 'VIEW_OBSTRUCT_NET',
   '#아크릴_가림막': 'VIEW_OBSTRUCT_ACRYLIC',
-  '#없음_시야방해': 'VIEW_NO_OBSTRUCTION', // 구분 위해 이름 바꿈
+  '#없음_시야': 'VIEW_NO_OBSTRUCTION',
+
+  // 좌석 공간
   '#아주_넓음': 'SEAT_SPACE_VERY_WIDE',
   '#넓음': 'SEAT_SPACE_WIDE',
   '#보통': 'SEAT_SPACE_NORMAL',

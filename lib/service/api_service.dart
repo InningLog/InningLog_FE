@@ -9,8 +9,19 @@ import '../screens/home_detail.dart';
 import 'package:intl/intl.dart';
 
 
+String extractFileName(String? url) {
+  if (url == null || url.isEmpty) return '';
+  final uri = Uri.parse(url);
+  final segments = uri.pathSegments;
+  return segments.isNotEmpty ? segments.last : '';
+}
+
+
+
 class ApiService {
   static const String baseUrl = 'https://api.inninglog.shop';
+
+
 
   static Future<void> updateJournal({
     required int journalId,
@@ -27,24 +38,24 @@ class ApiService {
       'Content-Type': 'application/json',
     };
 
-    print('🟡 PATCH 요청 body:');
-    print({
-      "ourScore": ourScore,
-      "theirScore": theirScore,
-      "media_url": mediaUrl,
-      "emotion": emotion,
-      "review_text": reviewText,
-    });
+    final fileNameOnly = extractFileName(mediaUrl);
 
-    final body = jsonEncode({
+    final Map<String, dynamic> bodyMap = {
       "ourScore": ourScore,
       "theirScore": theirScore,
-      "media_url": mediaUrl,
       "emotion": emotion,
       "review_text": reviewText,
-    });
+    };
+
+    // media_url이 비어 있지 않을 때만 포함
+    if (fileNameOnly.isNotEmpty) {
+      bodyMap["media_url"] = fileNameOnly;
+    }
+
+    final body = jsonEncode(bodyMap);
 
     print('🟡 PATCH 요청 body: $body');
+
     final response = await http.patch(
       Uri.parse('https://api.inninglog.shop/journals/update/$journalId'),
       headers: headers,
@@ -53,8 +64,15 @@ class ApiService {
 
     if (response.statusCode != 200) {
       print('❌ 수정 실패: ${response.body}');
+    } else {
+      print('✅ 수정 성공: ${response.body}');
     }
   }
+
+
+
+
+
 
 
   static Future<http.Response> getHomeView() async {
@@ -121,7 +139,10 @@ class ApiService {
         return MyReportResponse(
           totalVisitedGames: 0,
           winGames: 0,
+          loseGames: 0,
+          drawGames: 0,
           winningRateHalPoongRi: 0,
+          teamWinRate :0,
           topBatters: [],
           topPitchers: [],
           bottomBatters: [],
@@ -332,7 +353,7 @@ Future<bool> uploadToS3(String presignedUrl, File file) async {
 
 
 
-Future<bool> uploadSeatView({
+Future<void> uploadSeatView({
   required int journalId,
   required String stadiumSC,
   required String zoneSC,
@@ -342,65 +363,140 @@ Future<bool> uploadSeatView({
   required String fileName,
 }) async {
   final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('access_token'); // JWT 토큰
-  if (token == null) return false;
+  final token = prefs.getString('access_token');
 
-  final url = Uri.parse('https://api.inninglog.shop/seatViews/contents');
+  final body = {
+    "journalId": journalId,
+    "stadiumShortCode": stadiumSC,
+    "zoneShortCode": zoneSC,
+    "section": section,
+    "seatRow": row,
+    "emotionTagCodes": tagCodes,
+    "fileName": fileName,
+  };
 
-  final response = await http.post(
-    url,
+  print('📤 전송할 JSON: ${jsonEncode(body)}');
+  print('🚀 업로드 요청: $stadiumSC, $zoneSC, $section, $row, $tagCodes, $fileName');
+
+
+  final res = await http.post(
+    Uri.parse('https://api.inninglog.shop/seatViews/contents'),
     headers: {
-      'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
     },
-    body: jsonEncode({
-      'journalId': journalId,
-      'stadiumShortCode': stadiumSC,
-      'zoneShortCode': zoneSC,
-      'section': section,
-      'seatRow': row,
-      'emotionTagCodes': tagCodes,
-      'fileName': fileName,
-    }),
+    body: jsonEncode(body),
   );
 
+  print('📥 응답 코드: ${res.statusCode}');
+  print('📥 응답 본문: ${res.body}');
+}
+
+
+
+// Future<SeatViewDetail?> fetchSeatViewDetail(int seatViewId) async {
+//   try {
+//     final prefs = await SharedPreferences.getInstance();
+//     final token = prefs.getString('access_token');
+//
+//     final response = await http.get(
+//       Uri.parse('https://api.inninglog.shop/seatViews/$seatViewId'),
+//       headers: {'Authorization': 'Bearer $token'},
+//     );
+//
+//     print('📥 응답 코드: ${response.statusCode}');
+//
+//     if (response.statusCode == 200) {
+//       final data = json.decode(response.body)['data'];
+//       print('좌석 시야 상세 조회 성공: $data');
+//       return SeatViewDetail.fromJson(data);
+//     } else {
+//       print('❌ 좌석 시야 조회 실패: ${response.body}');
+//     }
+//   } catch (e) {
+//     print('❌ 예외 발생: $e');
+//   }
+//   return null;
+// }
+
+
+Future<List<SeatViewSimple>> fetchSeatViewsByHashtags({
+  required String stadiumShortCode,
+  required List<String> hashtagCodes,
+  int page = 0,
+  int size = 10,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('access_token');
+
+  final uri = Uri.https(
+    'api.inninglog.shop',
+    '/seatViews/hashtag/gallery',
+    {
+      'stadiumShortCode': stadiumShortCode,
+      'hashtagCodes': hashtagCodes,
+      'page': '$page',
+      'size': '$size',
+    },
+  );
+
+  final response = await http.get(uri, headers: {
+    'Authorization': 'Bearer $token',
+  });
+
   if (response.statusCode == 200) {
-    print('✅ 좌석 시야 업로드 성공');
-    return true;
+    final List content = json.decode(response.body)['data']['content'];
+    return content
+        .map((e) => SeatViewSimple.fromJson(e))
+        .toList(); // seatViewId, viewMediaUrl
   } else {
-    print('❌ 좌석 시야 업로드 실패: ${response.body}');
-    return false;
+    print('❌ 해시태그 검색 실패: ${response.body}');
+    return [];
   }
 }
 
 
-Future<SeatViewDetail?> fetchSeatViewDetail(int seatViewId) async {
+Future<List<SeatViewSummary>> fetchDirectSeatViews({
+  required String stadiumShortCode,
+  String? zoneShortCode,
+  String? section,
+  String? seatRow,
+}) async {
   try {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
-
     if (token == null) {
       print('❌ 토큰 없음');
-      return null;
+      return [];
     }
 
-    final response = await http.get(
-      Uri.parse('https://api.inninglog.shop/seatViews/$seatViewId'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+    final queryParams = {
+      'stadiumShortCode': stadiumShortCode,
+      if (zoneShortCode != null && zoneShortCode.isNotEmpty) 'zoneShortCode': zoneShortCode,
+      if (section != null && section.isNotEmpty) 'section': section,
+      if (seatRow != null && seatRow.isNotEmpty) 'seatRow': seatRow,
+      'page': '0',
+      'size': '30',
+    };
+
+    final uri = Uri.https('api.inninglog.shop', '/seatViews/normal/gallery', queryParams);
+    final response = await http.get(uri, headers: {
+      'Authorization': 'Bearer $token',
+    });
 
     print('📥 응답 코드: ${response.statusCode}');
+    print('📦 응답 내용: ${response.body}');
 
     if (response.statusCode == 200) {
-      final data = json.decode(response.body)['data'];
-      print('좌석 시야 상세 조회 성공: $data');
-      return SeatViewDetail.fromJson(data);
+      final jsonData = json.decode(response.body);
+      final List<dynamic> content = jsonData['data']['content'];
+      return content.map((e) => SeatViewSummary.fromJson(e)).toList();
     } else {
-      print('❌ 좌석 시야 조회 실패: ${response.body}');
+      print('❌ 검색 실패: ${response.body}');
+      return [];
     }
   } catch (e) {
     print('❌ 예외 발생: $e');
+    return [];
   }
-  return null;
 }
-

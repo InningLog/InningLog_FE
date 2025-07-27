@@ -101,7 +101,11 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
       currentDate = widget.initialDate ?? DateTime.now();
       _updateScheduleForDate(currentDate);
     }
+
+
   }
+
+
 
   String? mediaUrl;
 
@@ -122,8 +126,12 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         final data = json['data']['jourDetail'];
+        // ✅ presigned URL 먼저 await으로 가져오고
+        String? presignedImageUrl = data['media_url'];
 
         print('📦 journalDetail data: $data');
+        print('🖼️ presignedImageUrl: $presignedImageUrl');
+
 
 
         setState(() {
@@ -132,7 +140,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
           theirScoreController.text = data['theirScore']?.toString() ?? ''; // ✅ 이걸로 수정
           selectedEmotionIndex = getEmotionIndex(data['emotion'] ?? '');
           reviewController.text = data['review_text'] ?? '';
-          mediaUrl = data['media_url']; // 네트워크 URL로 저장
+          mediaUrl = presignedImageUrl;// 네트워크 URL로 저장
           final seatViewId = json['data']['seatViewId'];
           hasSeatView = seatViewId != null && seatViewId != 0;
 
@@ -445,6 +453,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               });
 
                             },
+                            isEditable: !widget.isEditMode,
                           ),
                           const Text(
                             'VS',
@@ -470,6 +479,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               });
 
                             },
+                            isEditable: !widget.isEditMode,
                           ),
                         ],
                       ),
@@ -534,6 +544,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                       const SizedBox(height: 8),
                       // 사진 업로드
                       DiaryImagePicker(
+                        initialImageUrl: mediaUrl,
                         onImageSelected: (image) {
                           setState(() {
                             _pickedImage = image;
@@ -642,7 +653,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                       journalId: journalId,
                                       ourScore: int.parse(ourScore),
                                       theirScore: int.parse(opponentScore),
-                                      mediaUrl: fileName ?? '',
+                                      mediaUrl: extractFileName(mediaUrl),
                                       emotion: getEmotionKor(selectedEmotionIndex),
                                       reviewText: reviewController.text.trim().isNotEmpty
                                           ? reviewController.text.trim()
@@ -772,7 +783,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                       journalId: journalId,
                                       ourScore: int.parse(ourScore),
                                       theirScore: int.parse(opponentScore),
-                                      mediaUrl: mediaUrl ?? '',
+                                      mediaUrl: extractFileName(mediaUrl),
                                       emotion: getEmotionKor(selectedEmotionIndex),
                                       reviewText: reviewController.text.trim().isNotEmpty
                                           ? reviewController.text.trim()
@@ -845,14 +856,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                   }
 
                                   if (context.mounted) {
-                                    context.push(
-                                      '/addseat',
-                                      extra: {
-                                        'journalId': journalId,
-                                        'stadium': todaySchedule!.stadium,
-                                        'gameDateTime': todaySchedule!.gameDateTime,
-                                      },
-                                    );
+                                    context.go('/diary'); // 👈 extra 없이도 기본 화면으로
                                   }
                                 }
                                     : null,
@@ -972,12 +976,15 @@ Widget _scoreInputField({
   required String hintText,
   required TextEditingController controller,
   required ValueChanged<String> onChanged,
+  required bool isEditable,
 }) {
   return SizedBox(
     width: 140,
     height: 40,
     child: TextField(
       onChanged: onChanged,
+      readOnly: !isEditable,
+
       textAlign: TextAlign.center,
       style: const TextStyle(
         fontSize: 16,
@@ -1019,8 +1026,11 @@ Widget _scoreInputField({
 //사진 가져오기
 class DiaryImagePicker extends StatefulWidget {
   final void Function(File image) onImageSelected;
+  final String? initialImageUrl;
 
-  const DiaryImagePicker({super.key, required this.onImageSelected});
+
+  const DiaryImagePicker({super.key, required this.onImageSelected,  this.initialImageUrl,});
+
 
   @override
   State<DiaryImagePicker> createState() => _DiaryImagePickerState();
@@ -1028,6 +1038,13 @@ class DiaryImagePicker extends StatefulWidget {
 
 class _DiaryImagePickerState extends State<DiaryImagePicker> {
   File? _pickedImage;
+  String? _initialImageUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialImageUrl = widget.initialImageUrl; // ✅ 이거 추가
+  }
 
 
 
@@ -1054,8 +1071,48 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
   }
 
 
+
+
   @override
   Widget build(BuildContext context) {
+    Widget content;
+
+    if (_pickedImage != null) {
+      content = ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.file(
+          _pickedImage!,
+          fit: BoxFit.fitWidth,
+          width: double.infinity,
+        ),
+      );
+    } else if (_initialImageUrl != null && _initialImageUrl!.isNotEmpty) {
+      content = ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          _initialImageUrl!,
+          fit: BoxFit.fitWidth,
+          width: double.infinity,
+          errorBuilder: (_, __, ___) {
+            print('❌ 이미지 로드 실패!');
+            return const Icon(Icons.broken_image);
+          },
+        ),
+      );
+    } else {
+      content = Padding(
+        padding: const EdgeInsets.symmetric(vertical: 36),
+        child: Center(
+          child: SvgPicture.asset(
+            "assets/icons/camera_icon.svg",
+            width: 28.3,
+            height: 28.3,
+          ),
+        ),
+      );
+    }
+    print('📸 DiaryImagePicker _initialImageUrl: $_initialImageUrl');
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque, // ✅ 터치가 빈 공간에도 반응하도록 설정
       onTap: _pickImage, // ✅ 이게 실행돼야 갤러리 열림
@@ -1173,6 +1230,12 @@ Widget buildMediaWidget(String mediaUrl) {
 }
 
 
+String extractFileName(String? url) {
+  if (url == null || url.isEmpty) return '';
+  final uri = Uri.parse(url);
+  final segments = uri.pathSegments;
+  return segments.isNotEmpty ? segments.last : '';
+}
 
 
 

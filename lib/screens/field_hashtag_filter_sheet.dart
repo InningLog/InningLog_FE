@@ -78,6 +78,24 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
 
     sectionController.addListener(() => setState(() {}));
     rowController.addListener(() => setState(() {}));
+
+    if (widget.index == 0) {
+      fetchViewsFromApi(); // 직접 검색 탭일 때 초기 호출
+    }
+  }
+
+  void fetchViewsFromApi() async {
+    if (selectedStadiumCode == null) return;
+
+    seatViews = (await fetchDirectSeatViews(
+      stadiumShortCode: selectedStadiumCode!,
+      zoneShortCode: selectedZone,
+      section: sectionController.text,
+      seatRow: rowController.text,
+    )).cast<SeatViewDetail>();
+
+    print('📸 현재 seatViews 개수: ${seatViews.length}');
+    setState(() {});
   }
 
   Widget _buildTabButton({required int index, required String label}) {
@@ -245,6 +263,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                       child: ElevatedButton(
                         onPressed: isDirectSearchValid
                             ? () {
+                          fetchViewsFromApi();
                           Navigator.pop(context); // 닫고 이동
                           context.pushNamed(
                             'field_result',
@@ -623,6 +642,9 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                               padding: const EdgeInsets.only(right: 4.8),
                               child: InkWell(
                                 onTap: () {
+                                  final List<String> selectedHashtagList = selectedTags.entries
+                                      .map((entry) => "${entry.key}:${entry.value}")
+                                      .toList();
                                   // Amplitude 이벤트 추가
                                   analytics.logEvent(
                                       'change_stadium_hashtag_tab',
@@ -673,6 +695,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                       ),
                       Expanded(
                         child: GridView.builder(
+
                           padding: const EdgeInsets.all(12),
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
@@ -680,39 +703,18 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                             crossAxisSpacing: 24,
                             childAspectRatio: 0.75,
                           ),
-                          itemCount: 8,
+                            itemCount: seatViews.length,
                             itemBuilder: (context, index) {
                               final seatViewId = seatViews[index].seatViewId;
+                              print('📸 현재 seatViews 개수: ${seatViews.length}');
 
                               return GestureDetector(
                                 onTap: () async {
-                                  print('🟡 카드 클릭됨, seatViewId: $seatViewId'); // ← 이거 꼭 찍히는지 확인!
-                                  final detail = await fetchSeatViewDetail(seatViewId);
-                                  if (detail != null && context.mounted) {
-                                    showDialog(
-                                      context: context,
-                                      builder: (_) => AlertDialog(
-                                        title: Text(detail.stadiumName),
-                                        content: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Image.network(detail.viewMediaUrl),
-                                            Text('존: ${detail.zoneName}'),
-                                            Text('구역: ${detail.section}'),
-                                            Text('열: ${detail.seatRow}'),
-                                            ...detail.emotionTags.map((e) => Text('#$e')),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  }
+
                                 },
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
-                                  child: Image.asset(
-                                    'assets/images/KakaoTalk_20250611_184301449.jpg',
-                                    fit: BoxFit.cover,
-                                  ),
+
                                 ),
                               );
                             }
@@ -777,4 +779,34 @@ Widget _buildDropdownPill({
 }
 
 
+final Map<String, String> tagCodeMap = {
+  // 응원
+  '#일어남': 'CHEERING_STANDING',
+  '#일어날_사람은_일어남': 'CHEERING_MOSTLY_STANDING',
+  '#앉아서': 'CHEERING_SEATED',
 
+  // 햇빛
+  '#강함': 'SUN_STRONG',
+  '#있다가_그늘짐': 'SUN_MOVES_TO_SHADE',
+  '#없음_햇빛': 'SUN_NONE',
+
+  // 지붕
+  '#있음_지붕': 'ROOF_EXISTS',
+  '#없음_지붕': 'ROOF_NONE',
+
+  // 시야 방해
+  '#그물': 'VIEW_OBSTRUCT_NET',
+  '#아크릴_가림막': 'VIEW_OBSTRUCT_ACRYLIC',
+  '#없음_시야': 'VIEW_NO_OBSTRUCTION',
+
+  // 좌석 공간
+  '#아주_넓음': 'SEAT_SPACE_VERY_WIDE',
+  '#넓음': 'SEAT_SPACE_WIDE',
+  '#보통': 'SEAT_SPACE_NORMAL',
+  '#좁음': 'SEAT_SPACE_NARROW',
+};
+Map<String, String> selectedTags = {};
+final selectedCodes = selectedTags.values
+    .where((tag) => tagCodeMap.containsKey(tag))
+    .map((tag) => tagCodeMap[tag]!)
+    .toList();

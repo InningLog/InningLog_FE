@@ -176,40 +176,70 @@ class GameInfo {
 class SeatViewDetail {
   final int seatViewId;
   final String viewMediaUrl;
+  final String stadiumName;
   final String zoneName;
-  final String zoneShortCode;
   final String section;
   final String seatRow;
-  final String stadiumName;
   final List<String> emotionTags;
 
   SeatViewDetail({
     required this.seatViewId,
     required this.viewMediaUrl,
+    required this.stadiumName,
     required this.zoneName,
-    required this.zoneShortCode,
     required this.section,
     required this.seatRow,
-    required this.stadiumName,
     required this.emotionTags,
   });
 
   factory SeatViewDetail.fromJson(Map<String, dynamic> json) {
     final seatInfo = json['seatInfo'];
-    final emotions = (json['emotionTags'] as List<dynamic>)
-        .map((e) => e['label'] as String)
+    final tags = (json['emotionTags'] as List)
+        .map<String>((tag) => tag['label'] as String)
         .toList();
 
     return SeatViewDetail(
       seatViewId: json['seatViewId'],
       viewMediaUrl: json['viewMediaUrl'],
+      stadiumName: seatInfo['stadiumName'],
       zoneName: seatInfo['zoneName'],
-      zoneShortCode: seatInfo['zoneShortCode'],
       section: seatInfo['section'],
       seatRow: seatInfo['seatRow'],
-      stadiumName: seatInfo['stadiumName'],
-      emotionTags: emotions,
+      emotionTags: tags,
     );
   }
 }
 
+class SeatViewSimple {
+  final int seatViewId;
+  final String viewMediaUrl;
+
+  SeatViewSimple({
+    required this.seatViewId,
+    required this.viewMediaUrl,
+  });
+
+  factory SeatViewSimple.fromJson(Map<String, dynamic> json) {
+    return SeatViewSimple(
+      seatViewId: json['seatViewId'],
+      viewMediaUrl: json['viewMediaUrl'],
+    );
+  }
+}
+
+class SeatViewSummary {
+  final int seatViewId;
+  final String viewMediaUrl;
+
+  SeatViewSummary({
+    required this.seatViewId,
+    required this.viewMediaUrl,
+  });
+
+  factory SeatViewSummary.fromJson(Map<String, dynamic> json) {
+    return SeatViewSummary(
+      seatViewId: json['seatViewId'],
+      viewMediaUrl: json['viewMediaUrl'],
+    );
+  }
+}
