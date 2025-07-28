@@ -1,12 +1,14 @@
 //아래 우리팀 경기 일정 관련 부분
 
 class MyTeamSchedule {
+  final String gameId;
   final String myTeam;
   final String opponentTeam;
   final String stadium;
   final String gameDateTime;
 
   MyTeamSchedule({
+    required this.gameId,
     required this.myTeam,
     required this.opponentTeam,
     required this.stadium,
@@ -15,6 +17,7 @@ class MyTeamSchedule {
 
   Map<String, dynamic> toJson() {
     return {
+      'gameId': gameId,
       'myTeam': myTeam,
       'opponentTeam': opponentTeam,
       'stadium': stadium,
@@ -24,10 +27,9 @@ class MyTeamSchedule {
 
 
 
-
-
   factory MyTeamSchedule.fromJson(Map<String, dynamic> json) {
     return MyTeamSchedule(
+      gameId: json['gameId'],
       myTeam: json['myTeam'],
       opponentTeam: json['opponentTeam'],
       stadium: json['stadium'],

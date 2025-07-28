@@ -730,6 +730,7 @@ class _DiaryPageState extends State<DiaryPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          _showGameConfirmationDialog(context, selectedDate);
           final dateToSend = selectedDate ?? DateTime.now();
           context.push(
             '/adddiary',
@@ -754,7 +755,127 @@ class _DiaryPageState extends State<DiaryPage> {
 
     );
 
+
   }
+  void _showGameConfirmationDialog(BuildContext context, DateTime? selectedDate) {
+    final dateToSend = selectedDate ?? DateTime.now();
+    final String formattedDate =
+        '${dateToSend.month.toString().padLeft(2, '0')}.${dateToSend.day.toString().padLeft(2, '0')}(${_getWeekday(dateToSend)})';
+
+    // 예시: 두산 vs LG, 18:30, 잠실 야구장
+    // 실제로는 해당 날짜의 경기 정보에서 가져와야 함
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          contentPadding: const EdgeInsets.all(0),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          content: Container(
+            width: double.maxFinite,
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  '직관하신 경기가 맞는지 확인해주세요!',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Pretendard',
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.gray50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Column(
+                    children: [
+                      Text(
+                        formattedDate,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(text: '두산'),
+                            TextSpan(
+                              text: '   VS   ',
+                              style: TextStyle(color: AppColors.primary700),
+                            ),
+                            TextSpan(text: 'LG'),
+                          ],
+                        ),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '18:30',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        '@ 잠실 종합운동장 잠실야구장',
+                        style: TextStyle(fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('취소'),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.gray300),
+                          foregroundColor: AppColors.gray700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context); // 먼저 닫고
+                          context.push(
+                            '/adddiary',
+                            extra: {
+                              'initialDate': dateToSend,
+                              'isEditMode': false,
+                              'journalId': null,
+                            },
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary700,
+                        ),
+                        child: const Text('일지 작성하기'),
+                      ),
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
 
   // 날짜 셀 커스텀 빌더
   Widget? _buildDayCell(DateTime date) {
@@ -977,6 +1098,7 @@ Future<DateTime?> showMonthPickerDialog(BuildContext context, DateTime initialDa
       );
     },
   );
+
 }
 
 

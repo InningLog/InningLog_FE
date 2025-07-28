@@ -131,6 +131,7 @@ class _AddSeatPageState extends State<AddSeatPage> {
 
 
 
+
   // 각 카테고리 정의
   final Map<String, List<String>> tagCategories = {
     '응원': ['#일어남', '#일어날_사람은_일어남', '#앉아서'],
@@ -166,6 +167,7 @@ class _AddSeatPageState extends State<AddSeatPage> {
     super.initState();
     selectedStadiumCode = widget.stadium;
     loadTodaySchedule();
+    print('✅ todaySchedule 초기값: $todaySchedule');
   }
 
 
@@ -177,9 +179,12 @@ class _AddSeatPageState extends State<AddSeatPage> {
   }
 
 
+
   @override
   Widget build(BuildContext context) {
 
+    final args = GoRouterState.of(context).extra as Map<String, dynamic>;
+    final MyTeamSchedule todaySchedule = args['todaySchedule'] as MyTeamSchedule;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -537,50 +542,63 @@ class _AddSeatPageState extends State<AddSeatPage> {
                       height: 54,
                       child: ElevatedButton(
                         onPressed: isFormValid ? () async {
-                          if (seatImage == null || todaySchedule == null) return;
+                          print("좌석 시야 버튼 클릭됨");
 
-                          final fileName = 'journal_${widget.journalId}_${DateTime.now().millisecondsSinceEpoch}.jpeg';
-                          final presignedUrl = await getPresignedUrl(fileName, 'image/jpeg');
-
-                          if (presignedUrl == null) return;
-
-                          final success = await uploadToS3(presignedUrl, seatImage!);
-                          if (!success) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('사진 업로드 실패')),
-
-                            );
+                          if (seatImage == null) {
+                            print("❌ seatImage가 null임");
                             return;
                           }
 
-                          final zoneCode = (selectedZone!);
-                          if (zoneCode == null) return;
+                          if (todaySchedule == null) {
+                            print("❌ todaySchedule이 null임");
+                            return;
+                          }
+
+                          final fileName = 'journal_${widget.journalId}_${DateTime.now().millisecondsSinceEpoch}.jpeg';
+                          final presignedUrl = await getPresignedUrl(fileName, 'image/jpeg');
+                          if (presignedUrl == null) {
+                            print("❌ presignedUrl이 null임");
+                            return;
+                          }
+
+                          final success = await uploadToS3(presignedUrl, seatImage!);
+                          if (!success) {
+                            print("❌ S3 업로드 실패");
+                            return;
+                          }
+
+                          print("✅ S3 업로드 성공!");
+
+                          final zoneCode = selectedZone;
+                          if (zoneCode == null) {
+                            print("❌ zoneCode가 null임");
+                            return;
+                          }
 
                           final tagCodes = selectedTags.values
                               .map((tag) => tagCodeMap[tag])
                               .whereType<String>()
                               .toList();
 
-
+                          print("📤 업로드 시작");
 
                           await uploadSeatView(
                             journalId: widget.journalId,
                             stadiumSC: widget.stadium,
-                            zoneSC: selectedZone!,
+                            zoneSC: zoneCode,
                             section: sectionController.text.trim(),
                             row: rowController.text.trim(),
-                            tagCodes: selectedTags.values.map((tag) => tagCodeMap[tag]!).toList(),
+                            tagCodes: tagCodes,
                             fileName: fileName,
                           );
 
-
-
-
+                          print("✅ uploadSeatView 완료");
 
                           if (context.mounted) {
                             context.go('/diary');
                           }
                         } : null,
+
 
                         style: ElevatedButton.styleFrom(
                           backgroundColor: isFormValid ? AppColors.primary700 : AppColors.gray200,

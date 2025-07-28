@@ -145,6 +145,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
           hasSeatView = seatViewId != null && seatViewId != 0;
 
           todaySchedule = MyTeamSchedule(
+            gameId: json['gameId'],
             myTeam: data['supportTeamSC'] ?? '',
             opponentTeam: data['opponentTeamSC'] ?? '',
             gameDateTime: data['gameDate'] ?? '',
@@ -734,7 +735,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                     extra: {
                                       'journalId': journalId,
                                       'stadium': todaySchedule!.stadium,
-                                      'gameDateTime': todaySchedule!.gameDateTime,
+                                      'todaySchedule': todaySchedule?.toJson(),
                                     },
                                   );
                                 }
