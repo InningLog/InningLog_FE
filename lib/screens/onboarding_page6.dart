@@ -66,7 +66,7 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
 
   void _saveDebugToken() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('access_token', 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIyIiwiaWF0IjoxNzUzMjA5NzU5LCJleHAiOjE5NjkyMDk3NTl9.xZ-DwvqFR44j69aI29rZl7O82FAyezVnsHlrNh6vphi7N-ET9OPkRTJ_Gnf25DhKyiMkQKW0f1oelywnrwyRcw');
+    await prefs.setString('access_token', 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzUzNjk0NjUwLCJleHAiOjE5Njk2OTQ2NTB9.UpUqyJi7qgIxhsZsyz9HRMr8zk3ALFaR79FxkfYnlOjUTbZaCGH4E0ORiJsvNFZQ9d3PMt0GwEXTcIHGHnEs3Q');
     print('🪪 테스트용 토큰 저장 완료');
   }
 

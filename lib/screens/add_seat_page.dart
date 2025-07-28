@@ -55,7 +55,7 @@ Future<bool> uploadToS3(String presignedUrl, File file) async {
     final res = await http.put(
       Uri.parse(presignedUrl),
       headers: {
-        'Content-Type': 'image/png',
+        'Content-Type': 'image/jpeg',
       },
       body: bytes,
     );
@@ -539,8 +539,8 @@ class _AddSeatPageState extends State<AddSeatPage> {
                         onPressed: isFormValid ? () async {
                           if (seatImage == null || todaySchedule == null) return;
 
-                          final fileName = 'journal_${widget.journalId}_${DateTime.now().millisecondsSinceEpoch}.png';
-                          final presignedUrl = await getPresignedUrl(fileName, 'image/png');
+                          final fileName = 'journal_${widget.journalId}_${DateTime.now().millisecondsSinceEpoch}.jpeg';
+                          final presignedUrl = await getPresignedUrl(fileName, 'image/jpeg');
 
                           if (presignedUrl == null) return;
 
@@ -561,15 +561,18 @@ class _AddSeatPageState extends State<AddSeatPage> {
                               .whereType<String>()
                               .toList();
 
+
+
                           await uploadSeatView(
                             journalId: widget.journalId,
                             stadiumSC: widget.stadium,
                             zoneSC: selectedZone!,
                             section: sectionController.text.trim(),
                             row: rowController.text.trim(),
-                            tagCodes: tagCodes,
+                            tagCodes: selectedTags.values.map((tag) => tagCodeMap[tag]!).toList(),
                             fileName: fileName,
                           );
+
 
 
 

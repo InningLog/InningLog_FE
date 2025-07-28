@@ -382,14 +382,14 @@ Future<void> uploadSeatView({
   final res = await http.post(
     Uri.parse('https://api.inninglog.shop/seatViews/contents'),
     headers: {
-      'Authorization': 'Bearer $token',
+      'Authorization': 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzUzNjk0NjUwLCJleHAiOjE5Njk2OTQ2NTB9.UpUqyJi7qgIxhsZsyz9HRMr8zk3ALFaR79FxkfYnlOjUTbZaCGH4E0ORiJsvNFZQ9d3PMt0GwEXTcIHGHnEs3Q',
       'Content-Type': 'application/json',
     },
     body: jsonEncode(body),
   );
 
-  print('📥 응답 코드: ${res.statusCode}');
-  print('📥 응답 본문: ${res.body}');
+  print('📥 좌석 응답 코드: ${res.statusCode}');
+  print('📥 좌석 응답 본문: ${res.body}');
 }
 
 
