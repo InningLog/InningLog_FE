@@ -654,21 +654,20 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                       journalId: journalId,
                                       ourScore: int.parse(ourScore),
                                       theirScore: int.parse(opponentScore),
-                                      mediaUrl: extractFileName(mediaUrl),
+                                      mediaUrl: mediaUrl ?? '', // 여기 null 방지
                                       emotion: getEmotionKor(selectedEmotionIndex),
                                       reviewText: reviewController.text.trim().isNotEmpty
                                           ? reviewController.text.trim()
                                           : ' ',
-
                                     );
+                                    print('🧪 mediaUrl: $mediaUrl');
+                                    print('🧪 extractFileName(mediaUrl): ${extractFileName(mediaUrl)}');
+
+                                    print('👉 AddSeatPage로 push 시도!');
                                     context.push(
                                       '/addseat',
-                                      extra: {
-                                        'journalId': journalId,
-                                        'stadium': todaySchedule!.stadium,
-                                        'gameDateTime': todaySchedule!.gameDateTime,
-                                      },
                                     );
+
                                     return;
                                   }
 
@@ -729,15 +728,12 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                     print('❌ 업로드 실패로 journalId가 null입니다.');
                                     return;
                                   }
-
+                                  print('👉 AddSeatPage로 push 시도!');
                                   context.push(
                                     '/addseat',
-                                    extra: {
-                                      'journalId': journalId,
-                                      'stadium': todaySchedule!.stadium,
-                                      'todaySchedule': todaySchedule?.toJson(),
-                                    },
+
                                   );
+
                                 }
                                     : null,
 
@@ -784,13 +780,15 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                       journalId: journalId,
                                       ourScore: int.parse(ourScore),
                                       theirScore: int.parse(opponentScore),
-                                      mediaUrl: extractFileName(mediaUrl),
+                                      mediaUrl: mediaUrl ?? '', // 여기 null 방지
                                       emotion: getEmotionKor(selectedEmotionIndex),
                                       reviewText: reviewController.text.trim().isNotEmpty
                                           ? reviewController.text.trim()
                                           : ' ',
-
                                     );
+
+                                    print('🧪 mediaUrl: $mediaUrl');
+                                    print('🧪 extractFileName(mediaUrl): ${extractFileName(mediaUrl)}');
                                     if (context.mounted) context.go('/diary');
                                     return;
                                   }

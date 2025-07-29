@@ -729,107 +729,108 @@ class _DiaryPageState extends State<DiaryPage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showGameConfirmationDialog(context, selectedDate);
+        onPressed: () async {
           final dateToSend = selectedDate ?? DateTime.now();
-          context.push(
-            '/adddiary',
-            extra: {
-              'initialDate': dateToSend,
-              'isEditMode': false,
-              'journalId': null,
-            },
-          );
+          final scheduleData = await fetchScheduleForDate(dateToSend);
+
+          if (scheduleData == null) {
+            // 경기 없을 경우 안내만
+            showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: const Text('경기 없음'),
+                content: const Text('해당 날짜에 경기 일정이 없습니다.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('확인'),
+                  ),
+                ],
+              ),
+            );
+            return;
+          }
+
+          final confirmed = await _showGameConfirmationDialog(context, dateToSend, scheduleData);
+
+          if (confirmed == true) {
+            context.push(
+              '/adddiary',
+              extra: {
+                'initialDate': dateToSend,
+                'isEditMode': false,
+                'journalId': null,
+                'gameInfo': scheduleData, // optional: 전달하고 싶다면
+              },
+            );
+          }
         },
 
-        backgroundColor: AppColors.primary700,
-        shape: const CircleBorder(),
-        child: SvgPicture.asset(
-          'assets/icons/add_diary.svg',
-          width: 56,
-          height: 56,
-          fit: BoxFit.scaleDown,
-        ),
       ),
+
 
 
     );
 
 
   }
-  void _showGameConfirmationDialog(BuildContext context, DateTime? selectedDate) {
-    final dateToSend = selectedDate ?? DateTime.now();
-    final String formattedDate =
-        '${dateToSend.month.toString().padLeft(2, '0')}.${dateToSend.day.toString().padLeft(2, '0')}(${_getWeekday(dateToSend)})';
+  Future<bool> _showGameConfirmationDialog(
+      BuildContext context,
+      DateTime selectedDate,
+      Map<String, dynamic> schedule,
+      ) async {
+    final formattedDate =
+        '${selectedDate.month.toString().padLeft(2, '0')}.${selectedDate.day.toString().padLeft(2, '0')}(${_getWeekday(selectedDate)})';
 
-    // 예시: 두산 vs LG, 18:30, 잠실 야구장
-    // 실제로는 해당 날짜의 경기 정보에서 가져와야 함
-    showDialog(
+    final team1 = teamNameMap[schedule['supportTeamSC']] ?? schedule['supportTeamSC'];
+    final team2 = teamNameMap[schedule['opponentSC']] ?? schedule['opponentSC'];
+    final stadium = stadiumNameMap[schedule['stadiumSC']] ?? schedule['stadiumSC'];
+    final gameTime = schedule['gameDate'].toString().split(' ')[1];
+
+    return await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
+      barrierDismissible: false,
+      builder: (context) {
         return AlertDialog(
           backgroundColor: Colors.white,
           contentPadding: const EdgeInsets.all(0),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           content: Container(
-            width: double.maxFinite,
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 17),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  '직관하신 경기가 맞는지 확인해주세요!',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'Pretendard',
-                  ),
-                ),
+                const Text('직관하신 경기가 맞는지 확인해주세요!',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 20),
+
                 Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 20),
                   decoration: BoxDecoration(
-                    color: AppColors.gray50,
+                    color: const Color(0xFFF8F8F8),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 20),
                   child: Column(
                     children: [
-                      Text(
-                        formattedDate,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      Text(formattedDate, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(team1, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700)),
+                          const SizedBox(width: 12),
+                          const Text('VS',
+                              style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700, color: AppColors.primary700)),
+                          const SizedBox(width: 12),
+                          Text(team2, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700)),
+                        ],
                       ),
-                      const SizedBox(height: 10),
-                      const Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(text: '두산'),
-                            TextSpan(
-                              text: '   VS   ',
-                              style: TextStyle(color: AppColors.primary700),
-                            ),
-                            TextSpan(text: 'LG'),
-                          ],
-                        ),
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        '18:30',
-                        style: TextStyle(fontSize: 14),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        '@ 잠실 종합운동장 잠실야구장',
-                        style: TextStyle(fontSize: 11),
-                      ),
+                      const SizedBox(height: 12),
+                      Text(gameTime, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text('@ $stadium', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
                     ],
                   ),
                 ),
@@ -838,32 +839,26 @@ class _DiaryPageState extends State<DiaryPage> {
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('취소'),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.gray300),
-                          foregroundColor: AppColors.gray700,
+                          side: const BorderSide(color: Color(0xFFA9A9A9)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                          minimumSize: const Size.fromHeight(48),
                         ),
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('취소', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context); // 먼저 닫고
-                          context.push(
-                            '/adddiary',
-                            extra: {
-                              'initialDate': dateToSend,
-                              'isEditMode': false,
-                              'journalId': null,
-                            },
-                          );
-                        },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary700,
+                          backgroundColor: const Color(0xFF94C32C),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                          minimumSize: const Size.fromHeight(48),
                         ),
-                        child: const Text('일지 작성하기'),
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('일지 작성하기',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
                       ),
                     ),
                   ],
@@ -873,8 +868,10 @@ class _DiaryPageState extends State<DiaryPage> {
           ),
         );
       },
-    );
+    ).then((value) => value ?? false);
   }
+
+
 
 
   // 날짜 셀 커스텀 빌더

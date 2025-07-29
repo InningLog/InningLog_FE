@@ -15,6 +15,7 @@ import 'package:inninglog/screens/diary_page.dart';
 import 'package:inninglog/screens/seat_page.dart';
 import 'package:inninglog/screens/board_page.dart';
 import 'package:inninglog/screens/my_page.dart';
+import 'package:inninglog/service/KakaoCallbackPage.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
 import 'package:amplitude_flutter/amplitude.dart';
@@ -23,24 +24,37 @@ import 'dart:io' show Platform;
 import 'analytics/analytics.dart';
 import 'package:inninglog/analytics/amplitude_flutter.dart';
 
+import 'models/home_view.dart';
+
 
 final analytics = AnalyticsService();
 
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  analytics.init();
-
-  // Kakao SDK 초기화
-  KakaoSdk.init(
-    nativeAppKey: '3e0a9528d7ddb6147c97af78f60ab300',
-  );
-
-
-
-  runApp(const InningLogApp());
+  runApp(const InningLogWrapper());
 }
 
+class InningLogWrapper extends StatelessWidget {
+  const InningLogWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        backgroundColor: Colors.white, // 배경색 흰색
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: 430, // 아이폰 기준 고정
+            ),
+            child: const InningLogApp(), // 진짜 앱 내부
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 // void initAmplitude() {
 //   if (kIsWeb || Platform.isAndroid || Platform.isIOS) {
@@ -60,6 +74,7 @@ final GoRouter _router = GoRouter(
   initialLocation: '/splash',
   routes: [
     /// GNB 없는 화면들
+    ///
     GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
     GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
     GoRoute(
@@ -78,20 +93,18 @@ final GoRouter _router = GoRouter(
 
 
 
-    GoRoute(
-      path: '/addseat',
-      builder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>;
-        return AddSeatPage(
-          stadium: extra['stadium'],
-          gameDateTime: extra['gameDateTime'],
-          journalId: extra['journalId'],
-        );
-      },
-    ),
+
+
+
+
+
 
     GoRoute(path: '/onboarding6', builder: (_, __) => const OnboardingPage6()),
 
+    GoRoute(
+      path: '/callback',
+      builder: (context, state) => const KakaoCallbackPage(),
+    ),
 
 
 
@@ -99,9 +112,24 @@ final GoRouter _router = GoRouter(
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
       builder: (context, state, child) {
-        return MainNavigation(child: child); // ✅ 아래에서 정의할 MainNavigation
+        return MainNavigation(child: child);
       },
       routes: [
+        GoRoute(
+          path: '/addseat',
+          builder: (context, state) {
+            final args = state.extra as Map<String, dynamic>; // 👈 이 부분 매우 중요!
+            return AddSeatPage(
+              journalId: args['journalId'],
+              stadium: args['stadium'],
+              todaySchedule: MyTeamSchedule.fromJson(args['todaySchedule']),
+              gameDateTime: args['todaySchedule']['gameDateTime'], // 또는 args['gameDateTime']으로 직접 전달
+            );
+          },
+        ),
+
+
+
         GoRoute(path: '/home', builder: (_, __) => const HomePage()),
         GoRoute(
           path: '/diary',
@@ -144,8 +172,9 @@ class InningLogApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'InningLog',
       debugShowCheckedModeBanner: false,
+      title: 'InningLog',
+      routerConfig: _router,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -154,10 +183,16 @@ class InningLogApp extends StatelessWidget {
       supportedLocales: const [
         Locale('ko', 'KR'),
       ],
-      routerConfig: _router, // go_router 연결
     );
+
+
   }
+
 }
+
+
+
+
 
 
 

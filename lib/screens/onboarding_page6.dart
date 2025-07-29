@@ -56,19 +56,52 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
     'SSG 랜더스',
   ];
 
+
   @override
   void initState() {
     super.initState();
-    _focusNode.addListener(() => setState(() {}));
-    _saveDebugToken();
 
+    final uri = Uri.base;
+    final fragment = uri.fragment; // ← #/onboarding6?nickname=엥&isNewUser=false
+
+    // ✅ '/'로 시작하는 fragment에서 path와 query 분리하기
+    final fragUri = Uri.parse('https://dummy.com$fragment'); // 슬래시가 앞에 바로 붙도록
+
+    final isNewUser = fragUri.queryParameters['isNewUser'];
+    final nickname = fragUri.queryParameters['nickname'];
+    final jwt = fragUri.queryParameters['jwt'];
+
+    print('🟡 fragment: $fragment');
+    print('🟢 정제된 isNewUser: $isNewUser');
+
+    if (jwt != null) {
+      _saveToken(jwt);
+    }
+
+    if (nickname != null) {
+      _nicknameController.text = nickname;
+    }
+
+    if (isNewUser?.toLowerCase().trim() == 'false') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          print('🚪 기존 유저 → 홈으로 리디렉션');
+          context.go('/home');
+        }
+      });
+    }
   }
 
-  void _saveDebugToken() async {
+
+  Future<void> _saveToken(String jwt) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('access_token', 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzUzNjk0NjUwLCJleHAiOjE5Njk2OTQ2NTB9.UpUqyJi7qgIxhsZsyz9HRMr8zk3ALFaR79FxkfYnlOjUTbZaCGH4E0ORiJsvNFZQ9d3PMt0GwEXTcIHGHnEs3Q');
-    print('🪪 테스트용 토큰 저장 완료');
+    await prefs.setString('access_token', jwt);
+    print('🪪 토큰 저장 완료 (Page6)');
   }
+
+
+
+
 
   @override
   void dispose() {

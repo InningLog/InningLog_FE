@@ -11,6 +11,7 @@ import 'package:inninglog/screens/onboarding_content_page.dart';
 import 'package:inninglog/screens/onboarding_page6.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 
 
@@ -28,35 +29,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int _currentPage = 0;
 
-  Future<void> _loginWithKakao() async {
-    try {
-      OAuthToken token;
 
-      if (kIsWeb) {
-        // ✅ 웹일 경우
-        token = await UserApi.instance.loginWithKakaoAccount();
-      } else if (Platform.isAndroid || Platform.isIOS) {
-        // ✅ 모바일일 경우
-        final isInstalled = await isKakaoTalkInstalled();
-        token = isInstalled
-            ? await UserApi.instance.loginWithKakaoTalk()
-            : await UserApi.instance.loginWithKakaoAccount();
-      } else {
-        throw UnsupportedError('이 플랫폼은 지원하지 않음');
-      }
+  void loginWithKakaoWeb() async {
+    if (!kIsWeb) return; // 웹이 아니면 리턴
 
-      // 토큰 저장
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('access_token', token.accessToken);
+    const kakaoLoginUrl =
+        'https://kauth.kakao.com/oauth/authorize'
+        '?response_type=code'
+        '&client_id=293f7036654f2a9155a87e05f84b2d7e'
+        '&redirect_uri=https://api.inninglog.shop/callback';
 
-      print('로그인 성공: ${token.accessToken}');
-      if (!context.mounted) return;
-
-      context.go('/onboarding6'); // GNB 페이지로 이동
-    } catch (error) {
-      print('로그인 실패: $error');
+    final uri = Uri.parse(kakaoLoginUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      print('❌ 카카오 로그인 URL 실행 실패');
     }
   }
+
+
+Future<void> _saveToken(String jwt) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('access_token', jwt);
+  print('🪪 토큰 저장 완료');
+}
+
+
 
   final List<Widget> _pages = const [
     OnboardingPage1(),
@@ -113,6 +111,35 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ),
     );
   }
+
+  // @override
+  // void initState() {
+  //   super.initState();
+  //
+  //   final uri = Uri.base;
+  //   final fragment = uri.fragment; // ← 여기서 파라미터가 옴
+  //   print('🟡 fragment: $fragment');
+  //
+  //   final fragUri = Uri.parse('https://dummy.com/$fragment'); // dummy 붙여서 파싱
+  //   final jwt = fragUri.queryParameters['jwt']; // 카카오 로그인 후 주소에 있을 수도 있음
+  //   final isNewUser = fragUri.queryParameters['isNewUser']; // ✅ 이거 체크
+  //   final nickname = fragUri.queryParameters['nickname'];
+  //
+  //   if (jwt != null) {
+  //     _saveToken(jwt); // 이건 그대로 유지
+  //   }
+  //
+  //   WidgetsBinding.instance.addPostFrameCallback((_) {
+  //     if (!mounted) return;
+  //
+  //     if (isNewUser == 'true') {
+  //       context.go('/onboarding6'); // 신규 회원 → 닉네임/응원팀 선택
+  //     } else {
+  //       context.go('/home'); // 기존 회원 바로 홈
+  //     }
+  //   });
+  // }
+
 
 
 
@@ -183,7 +210,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: GestureDetector(
-                onTap: _loginWithKakao,
+                onTap: loginWithKakaoWeb,
                 child: SvgPicture.asset(
                   'assets/icons/kakao_button.svg',
                   height: 54,

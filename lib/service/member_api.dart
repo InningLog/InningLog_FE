@@ -20,7 +20,7 @@ class MemberApi {
     final response = await http.patch(
       url,
       headers: {
-        'Authorization': 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzUzNjk0NjUwLCJleHAiOjE5Njk2OTQ2NTB9.UpUqyJi7qgIxhsZsyz9HRMr8zk3ALFaR79FxkfYnlOjUTbZaCGH4E0ORiJsvNFZQ9d3PMt0GwEXTcIHGHnEs3Q',
+        'Authorization': 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIyIiwiaWF0IjoxNzUzNzczNjcyLCJleHAiOjE5Njk3NzM2NzJ9.bdULEIN8BfLypjfy7561o7hBr4yZH4YSomao-Dzm7IMEIFJ8nsY7S6mqW13OLN1jfcHWtLJO062Z7-YGvv45Hg',
         'Content-Type': 'application/json',
       },
       body: jsonEncode({'nickname': nickname}),
@@ -60,7 +60,7 @@ class MemberApi {
     final response = await http.patch(
       url,
       headers: {
-        'Authorization': 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzUzNjk0NjUwLCJleHAiOjE5Njk2OTQ2NTB9.UpUqyJi7qgIxhsZsyz9HRMr8zk3ALFaR79FxkfYnlOjUTbZaCGH4E0ORiJsvNFZQ9d3PMt0GwEXTcIHGHnEs3Q',
+        'Authorization': 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIyIiwiaWF0IjoxNzUzNzczNjcyLCJleHAiOjE5Njk3NzM2NzJ9.bdULEIN8BfLypjfy7561o7hBr4yZH4YSomao-Dzm7IMEIFJ8nsY7S6mqW13OLN1jfcHWtLJO062Z7-YGvv45Hg',
         'Content-Type': 'application/json',
       },
       body: jsonEncode({'teamShortCode': teamShortCode}),

@@ -69,23 +69,25 @@ Future<bool> uploadToS3(String presignedUrl, File file) async {
 
 
 
-
 class AddSeatPage extends StatefulWidget {
   final String stadium;
   final String gameDateTime;
   final int journalId;
+  final MyTeamSchedule todaySchedule;
 
   const AddSeatPage({
-    required this.journalId,
     super.key,
+    required this.journalId,
     required this.stadium,
     required this.gameDateTime,
+    required this.todaySchedule,
   });
-
 
   @override
   State<AddSeatPage> createState() => _AddSeatPageState();
 }
+
+
 
 class _AddSeatPageState extends State<AddSeatPage> {
 
@@ -166,9 +168,12 @@ class _AddSeatPageState extends State<AddSeatPage> {
   void initState() {
     super.initState();
     selectedStadiumCode = widget.stadium;
+    todaySchedule = widget.todaySchedule;
     loadTodaySchedule();
     print('✅ todaySchedule 초기값: $todaySchedule');
+
   }
+
 
 
   List<String> get availableZoneCodes {
@@ -183,8 +188,6 @@ class _AddSeatPageState extends State<AddSeatPage> {
   @override
   Widget build(BuildContext context) {
 
-    final args = GoRouterState.of(context).extra as Map<String, dynamic>;
-    final MyTeamSchedule todaySchedule = args['todaySchedule'] as MyTeamSchedule;
 
     return Scaffold(
       backgroundColor: Colors.white,

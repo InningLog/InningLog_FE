@@ -38,23 +38,20 @@ class ApiService {
       'Content-Type': 'application/json',
     };
 
-    final fileNameOnly = extractFileName(mediaUrl);
-
-    final Map<String, dynamic> bodyMap = {
+    // ✅ 무조건 포함
+    final bodyMap = {
       "ourScore": ourScore,
       "theirScore": theirScore,
       "emotion": emotion,
       "review_text": reviewText,
+      "media_url": extractFileName(mediaUrl), // 비어있어도 보내야 함
     };
 
-    // media_url이 비어 있지 않을 때만 포함
-    if (fileNameOnly.isNotEmpty) {
-      bodyMap["media_url"] = fileNameOnly;
-    }
-
     final body = jsonEncode(bodyMap);
+    print('🟡 PATCH 요청 최종 body: $body'); // 여기에 media_url 있어야 함
+    print('🧪 mediaUrl: $mediaUrl');
+    print('🧪 extractFileName(mediaUrl): ${extractFileName(mediaUrl)}');
 
-    print('🟡 PATCH 요청 body: $body');
 
     final response = await http.patch(
       Uri.parse('https://api.inninglog.shop/journals/update/$journalId'),
@@ -68,6 +65,8 @@ class ApiService {
       print('✅ 수정 성공: ${response.body}');
     }
   }
+
+
 
 
 
@@ -498,5 +497,29 @@ Future<List<SeatViewSummary>> fetchDirectSeatViews({
   } catch (e) {
     print('❌ 예외 발생: $e');
     return [];
+  }
+}
+
+Future<Map<String, dynamic>?> fetchScheduleForDate(DateTime date) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('access_token');
+
+  final formattedDate = DateFormat('yyyy-MM-dd').format(date);
+  final url = Uri.parse('https://api.inninglog.shop/journals/schedule?gameDate=$formattedDate');
+
+  final response = await http.get(
+    url,
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    final body = jsonDecode(response.body);
+    return body['data'];
+  } else {
+    print('❌ 경기 일정 조회 실패: ${response.statusCode} ${response.body}');
+    return null;
   }
 }
