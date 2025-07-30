@@ -65,10 +65,18 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/adddiary',
       builder: (context, state) {
-        final selectedDate = state.extra as DateTime?;
-        return AddDiaryPage(initialDate: selectedDate); // 날짜까지 전달!
+        print('✅ AddDiaryPage 빌더 진입!');
+        final extra = state.extra as Map<String, dynamic>;
+        print('🟢 받은 extra: $extra');
+
+        return AddDiaryPage(
+          initialDate: extra['initialDate'], // 작성 모드라면 무시됨
+          isEditMode: extra['isEditMode'] ?? false,
+          journalId: extra['journalId'], // 수정 모드일 때만 필요
+        );
       },
     ),
+
 
     GoRoute(
       path: '/addseat',
@@ -81,6 +89,10 @@ final GoRouter _router = GoRouter(
         );
       },
     ),
+
+
+
+
 
     GoRoute(path: '/onboarding6', builder: (_, __) => const OnboardingPage6()),
 

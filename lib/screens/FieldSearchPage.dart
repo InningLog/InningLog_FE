@@ -36,7 +36,11 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
 
 
   bool get isDirectSearchValid {
-    return selectedZone != null;
+    final hasZone = selectedZone?.isNotEmpty ?? false;
+    final hasSection = sectionController.text.trim().isNotEmpty;
+
+    // 존 또는 구역 중 하나라도 입력했으면 활성화
+    return hasZone || hasSection;
   }
 
   bool get isHashtagSearchValid {
@@ -129,39 +133,39 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                         SizedBox(
                           width: double.infinity,
                           child:DropdownButtonFormField<String>(
-                          dropdownColor: Colors.white,
-                          decoration: InputDecoration(
-                            hintText: '존을 선택하세요.',
-                            hintStyle: const TextStyle(
-                              color: AppColors.gray700,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              fontFamily: 'Pretendard',
+                            dropdownColor: Colors.white,
+                            decoration: InputDecoration(
+                              hintText: '존을 선택하세요.',
+                              hintStyle: const TextStyle(
+                                color: AppColors.gray700,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                fontFamily: 'Pretendard',
+                              ),
+                              filled: true,
+                              fillColor: AppColors.gray100,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(color: AppColors.gray300),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(color: AppColors.gray300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(color: Color(0xFFF94C32C)),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                             ),
-                            filled: true,
-                            fillColor: AppColors.gray100,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: AppColors.gray300),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: AppColors.gray300),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Color(0xFFF94C32C)),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                            value: selectedZone,
+                            items: buildZoneItems(selectedStadiumCode),
+                            onChanged: (value) {
+                              setState(() {
+                                selectedZone = value;
+                              });
+                            },
                           ),
-                          value: selectedZone,
-                          items: buildZoneItems(selectedStadiumCode),
-                          onChanged: (value) {
-                            setState(() {
-                              selectedZone = value;
-                            });
-                          },
-                        ),
                         ),
 
 
@@ -173,6 +177,7 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                             Expanded(
                               child: TextField(
                                 controller: sectionController,
+                                onChanged: (_) => setState(() {}),
                                 textAlign: TextAlign.center,
                                 decoration: InputDecoration(
                                   hintText: 'ex) 314',
@@ -254,33 +259,36 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                           width: double.infinity,
                           height: 54,
                           child: ElevatedButton(
-                              onPressed: isDirectSearchValid
-                                  ? () {
-                                analytics.logEvent('enter_stadium_direct_search', properties: {
-                                  'event_type': 'Custom',
-                                  'component': 'form_submit',
-                                  'zone_name': stadiumZones[selectedStadiumCode]?[selectedZone] ?? selectedZone ?? '',
+
+
+                            onPressed: isDirectSearchValid
+
+                                ? () {
+                              analytics.logEvent('enter_stadium_direct_search', properties: {
+                                'event_type': 'Custom',
+                                'component': 'form_submit',
+                                'zone_name': stadiumZones[selectedStadiumCode]?[selectedZone] ?? selectedZone ?? '',
+                                'section': sectionController.text,
+                                'row': int.tryParse(rowController.text) ?? 0,
+                                'importance': 'High',
+                              });
+                              analytics.logEvent('execute_stadium_search', properties: {
+                                'event_type': 'Custom',
+                                'component': 'btn_click',
+                                'search_type': 'direct',
+                              });
+                              context.pushNamed(
+                                'field_result',
+                                extra: {
+                                  'index': 0,
+                                  'stadiumName': widget.stadiumName,
+                                  'zone': selectedZone,
                                   'section': sectionController.text,
-                                  'row': int.tryParse(rowController.text) ?? 0,
-                                  'importance': 'High',
-                                });
-                                analytics.logEvent('execute_stadium_search', properties: {
-                                  'event_type': 'Custom',
-                                  'component': 'btn_click',
-                                  'search_type': 'direct',
-                                });
-                                context.pushNamed(
-                                  'field_result',
-                                  extra: {
-                                    'index': 0,
-                                    'stadiumName': widget.stadiumName,
-                                    'zone': selectedZone,
-                                    'section': sectionController.text,
-                                    'row': rowController.text,
-                                  },
-                                );
-                              }
-                                  : null,
+                                  'row': rowController.text,
+                                },
+                              );
+                            }
+                                : null,
 
 
                             style: ElevatedButton.styleFrom(

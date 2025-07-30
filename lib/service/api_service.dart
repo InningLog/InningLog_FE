@@ -76,11 +76,16 @@ class ApiService {
         return MyReportResponse(
           totalVisitedGames: 0,
           winGames: 0,
+          loseGames: 0,
+          drawGames: 0,
           winningRateHalPoongRi: 0,
+          teamWinRate :0,
           topBatters: [],
           topPitchers: [],
           bottomBatters: [],
-          bottomPitchers: [],
+          bottomPitchers: [], 
+          nickname: '유저',
+
         ); // 👈 직관 없는 경우
       }
       print('❌ API 오류: ${errorJson['message']}');
@@ -351,3 +356,51 @@ Future<bool> uploadSeatView({
   }
 }
 
+
+Future<Map<String, dynamic>?> fetchScheduleForDate(DateTime date) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('access_token');
+
+  final formattedDate = DateFormat('yyyy-MM-dd').format(date);
+  final url = Uri.parse('https://api.inninglog.shop/journals/schedule?gameDate=$formattedDate');
+
+  final response = await http.get(
+    url,
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    print('❌ 경기 일정 조회 성공: ${response.statusCode} ${response.body}');
+    final body = jsonDecode(response.body);
+    return body['data'];
+  } else {
+    print('❌ 경기 일정 조회 실패: ${response.statusCode} ${response.body}');
+    return null;
+  }
+}
+
+
+Future<JournalDetail?> fetchJournalDetail(int journalId) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('access_token');
+
+  final response = await http.get(
+    Uri.parse('https://api.inninglog.shop/journals/detail/$journalId'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    final json = jsonDecode(response.body);
+    final data = json['data']['jourDetail'];
+    return JournalDetail.fromJson(data); // ✅ 모델로 변환
+  } else {
+    print('❌ 상세 조회 실패: ${response.statusCode}');
+    return null;
+  }
+}

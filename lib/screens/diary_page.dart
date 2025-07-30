@@ -40,7 +40,16 @@ const Map<String, String> stadiumNameMap = {
 
 
 class DiaryPage extends StatefulWidget {
-  const DiaryPage({super.key});
+  final int? journalId;
+  final String? stadium;
+  final DateTime? gameDateTime;
+
+  const DiaryPage({
+    super.key,
+    this.journalId,
+    this.stadium,
+    this.gameDateTime,
+  });
 
   @override
   State<DiaryPage> createState() => _DiaryPageState();
@@ -54,7 +63,7 @@ class _DiaryPageState extends State<DiaryPage> {
   DateTime? selectedDate; //날짜 선택
   DateTime focusedDay = DateTime.now(); // ✅ 현재 보고 있는 달
 
-
+  String baseImageUrl = 'https://inninglog-bucket.s3.ap-northeast-2.amazonaws.com/';
 
   List<Journal> journalList = [];
   bool isLoading = true;
@@ -126,7 +135,7 @@ class _DiaryPageState extends State<DiaryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.white,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
@@ -397,112 +406,127 @@ class _DiaryPageState extends State<DiaryPage> {
 
                                       .map((game) {
                                     final result = getGameResult(game.ourScore, game.theirScore);
-                                    return Container(
-                                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-                                      padding: const EdgeInsets.all(14),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(color: AppColors.gray500),
-                                        color: AppColors.gray50,
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            '${game.gameDate.month}월 ${game.gameDate.day}일 (${_getWeekday(game.gameDate)})',
-                                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Pretendard-Black'),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text('@${stadiumNameMap[game.stadiumSC] ?? game.stadiumSC}',
-                                              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w500, fontFamily: 'Pretendard-Black')),
 
-                                          const SizedBox(height: 8),
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              // 점수 영역
-                                              Row(
-                                                children: [
-                                                  Container(
-                                                    width: 29,
-                                                    height: 29,
-                                                    decoration: BoxDecoration(
-                                                      shape: BoxShape.circle,
-                                                      border: Border.all(
+                                    return GestureDetector(
+                                      onTap: () {
+                                        // 여기에 navigation 처리
+                                        context.push(
+                                          '/adddiary',
+                                          extra: {
+                                            'initialDate': selectedDate,
+                                            'isEditMode': true,
+                                            'journalId': game.journalId,
+                                          },
+                                        );
+                                      },
+
+                                      child:  Container(
+                                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                                        padding: const EdgeInsets.all(14),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: AppColors.gray500),
+                                          color: AppColors.gray50,
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '${game.gameDate.month}월 ${game.gameDate.day}일 (${_getWeekday(game.gameDate)})',
+                                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Pretendard-Black'),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text('@${stadiumNameMap[game.stadiumSC] ?? game.stadiumSC}',
+                                                style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w500, fontFamily: 'Pretendard-Black')),
+
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                // 점수 영역
+                                                Row(
+                                                  children: [
+                                                    Container(
+                                                      width: 29,
+                                                      height: 29,
+                                                      decoration: BoxDecoration(
+                                                        shape: BoxShape.circle,
+                                                        border: Border.all(
+                                                          color: result == '승리'
+                                                              ? AppColors.win
+                                                              : result == '패배'
+                                                              ? AppColors.lose
+                                                              : AppColors.gray600,
+                                                          width: 1,
+                                                        ),
+                                                        color: Colors.transparent,
+                                                      ),
+                                                      alignment: Alignment.center,
+                                                      child: Transform.translate(
+                                                        offset: const Offset(0, -2),
+                                                        child: Text(
+                                                          '${game.ourScore}',
+                                                          style: const TextStyle(
+                                                            fontSize: 22,
+                                                            fontWeight: FontWeight.w400,
+                                                            color: Color(0xFF000000),
+                                                            fontFamily: 'MBC1961GulimOTF',
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    const Text(
+                                                      ':',
+                                                      style: TextStyle(
+                                                        fontSize: 22,
+                                                        fontWeight: FontWeight.w400,
+                                                        fontFamily: 'MBC1961GulimOTF',
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      '${game.theirScore}',
+                                                      style: const TextStyle(
+                                                        fontSize: 22,
+                                                        fontWeight: FontWeight.w400,
+                                                        color: Color(0xFF000000),
+                                                        fontFamily: 'MBC1961GulimOTF',
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+
+                                                // 승/패/무 + 상대팀
+                                                Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                                  children: [
+                                                    Text(
+                                                      result,
+                                                      style: TextStyle(
+                                                        fontSize: 22,
+                                                        fontWeight: FontWeight.w400,
                                                         color: result == '승리'
                                                             ? AppColors.win
                                                             : result == '패배'
                                                             ? AppColors.lose
                                                             : AppColors.gray600,
-                                                        width: 1,
-                                                      ),
-                                                      color: Colors.transparent,
-                                                    ),
-                                                    alignment: Alignment.center,
-                                                    child: Transform.translate(
-                                                      offset: const Offset(0, -2),
-                                                      child: Text(
-                                                        '${game.ourScore}',
-                                                        style: const TextStyle(
-                                                          fontSize: 22,
-                                                          fontWeight: FontWeight.w400,
-                                                          color: Color(0xFF000000),
-                                                          fontFamily: 'MBC1961GulimOTF',
-                                                        ),
+                                                        fontFamily: 'MBC1961GulimOTF',
                                                       ),
                                                     ),
-                                                  ),
-                                                  const SizedBox(width: 6),
-                                                  const Text(
-                                                    ':',
-                                                    style: TextStyle(
-                                                      fontSize: 22,
-                                                      fontWeight: FontWeight.w400,
-                                                      fontFamily: 'MBC1961GulimOTF',
+                                                    Text('vs  ${teamNameMap[game.opponentTeamSC] ?? game.opponentTeamSC}',
+                                                      style: const TextStyle(
+                                                        fontFamily: 'Pretendard-Black',
+                                                        fontSize: 14,
+                                                        fontWeight: FontWeight.w600,
+                                                      ),
                                                     ),
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    '${game.theirScore}',
-                                                    style: const TextStyle(
-                                                      fontSize: 22,
-                                                      fontWeight: FontWeight.w400,
-                                                      color: Color(0xFF000000),
-                                                      fontFamily: 'MBC1961GulimOTF',
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-
-                                              // 승/패/무 + 상대팀
-                                              Column(
-                                                crossAxisAlignment: CrossAxisAlignment.end,
-                                                children: [
-                                                  Text(
-                                                    result,
-                                                    style: TextStyle(
-                                                      fontSize: 22,
-                                                      fontWeight: FontWeight.w400,
-                                                      color: result == '승리'
-                                                          ? AppColors.win
-                                                          : result == '패배'
-                                                          ? AppColors.lose
-                                                          : AppColors.gray600,
-                                                      fontFamily: 'MBC1961GulimOTF',
-                                                    ),
-                                                  ),
-                                                  Text('vs  ${teamNameMap[game.opponentTeamSC] ?? game.opponentTeamSC}',
-                                                    style: const TextStyle(
-                                                      fontFamily: 'Pretendard-Black',
-                                                      fontSize: 14,
-                                                      fontWeight: FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ],
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     );
                                   })
@@ -531,29 +555,29 @@ class _DiaryPageState extends State<DiaryPage> {
                               '승리',
                               selectedFilterCollection,
                                   (value) {
-                                    setState(() {
-                                      selectedFilterCollection = value;
-                                      page = 0;
-                                      journalList.clear();
-                                      hasMore = true;
-                                    });
-                                    loadMoreSummary();
+                                setState(() {
+                                  selectedFilterCollection = value;
+                                  page = 0;
+                                  journalList.clear();
+                                  hasMore = true;
+                                });
+                                loadMoreSummary();
 
-                                  },
+                              },
                             ),
                             _buildFilterButton(
                               '패배',
                               selectedFilterCollection,
                                   (value) {
-                                    setState(() {
-                                      selectedFilterCollection = value;
-                                      page = 0;
-                                      journalList.clear();
-                                      hasMore = true;
-                                    });
-                                    loadMoreSummary();
+                                setState(() {
+                                  selectedFilterCollection = value;
+                                  page = 0;
+                                  journalList.clear();
+                                  hasMore = true;
+                                });
+                                loadMoreSummary();
 
-                                  },
+                              },
                             ),
                             _buildFilterButton(
                               '무승부',
@@ -567,7 +591,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                 });
                                 loadMoreSummary();
 
-                                  },
+                              },
                             ),
 
                           ],
@@ -604,13 +628,14 @@ class _DiaryPageState extends State<DiaryPage> {
                                 return result == selectedFilterCollection;
                               }).toList();
                               final game = filteredGames[index];
+                              print('[📸 이미지 URL] ${game.fullMediaUrl}');
                               return Stack(
                                 children: [
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(10),
                                     // 카드 둥근 모서리
                                     child:Image.network(
-                                      game.mediaUrl,
+                                      game.fullMediaUrl,
                                       fit: BoxFit.cover,
                                       width: double.infinity,
                                       height: double.infinity,
@@ -705,25 +730,150 @@ class _DiaryPageState extends State<DiaryPage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
+        onPressed: () async {
           final dateToSend = selectedDate ?? DateTime.now();
-          context.push('/adddiary', extra: dateToSend);
+          final scheduleData = await fetchScheduleForDate(dateToSend);
+
+          if (scheduleData == null) {
+            // 경기 없을 경우 안내만
+            showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: const Text('경기 없음'),
+                content: const Text('해당 날짜에 경기 일정이 없습니다.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('확인'),
+                  ),
+                ],
+              ),
+            );
+            return;
+          }
+
+          final confirmed = await _showGameConfirmationDialog(context, dateToSend, scheduleData);
+
+          if (confirmed == true) {
+            context.push(
+              '/adddiary',
+              extra: {
+                'initialDate': dateToSend,
+                'isEditMode': false,
+                'journalId': null,
+                'gameInfo': scheduleData, // optional: 전달하고 싶다면
+              },
+            );
+          }
         },
 
-        backgroundColor: AppColors.primary700,
-        shape: const CircleBorder(),
-        child: SvgPicture.asset(
-          'assets/icons/add_diary.svg',
-          width: 56,
-          height: 56,
-          fit: BoxFit.scaleDown,
-        ),
       ),
+
 
 
     );
 
+
   }
+  Future<bool> _showGameConfirmationDialog(
+      BuildContext context,
+      DateTime selectedDate,
+      Map<String, dynamic> schedule,
+      ) async {
+    final formattedDate =
+        '${selectedDate.month.toString().padLeft(2, '0')}.${selectedDate.day.toString().padLeft(2, '0')}(${_getWeekday(selectedDate)})';
+
+    final team1 = teamNameMap[schedule['supportTeamSC']] ?? schedule['supportTeamSC'];
+    final team2 = teamNameMap[schedule['opponentSC']] ?? schedule['opponentSC'];
+    final stadium = stadiumNameMap[schedule['stadiumSC']] ?? schedule['stadiumSC'];
+    final gameTime = schedule['gameDate'].toString().split(' ')[1];
+
+    return await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          contentPadding: const EdgeInsets.all(0),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          content: Container(
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 17),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('직관하신 경기가 맞는지 확인해주세요!',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 20),
+
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8F8F8),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(formattedDate, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(team1, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700)),
+                          const SizedBox(width: 12),
+                          const Text('VS',
+                              style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700, color: AppColors.primary700)),
+                          const SizedBox(width: 12),
+                          Text(team2, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700)),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(gameTime, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text('@ $stadium', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFA9A9A9)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                          minimumSize: const Size.fromHeight(48),
+                        ),
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('취소', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF94C32C),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                          minimumSize: const Size.fromHeight(48),
+                        ),
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('일지 작성하기',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+                      ),
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
+        );
+      },
+    ).then((value) => value ?? false);
+  }
+
+
+
 
   // 날짜 셀 커스텀 빌더
   Widget? _buildDayCell(DateTime date) {
@@ -946,4 +1096,5 @@ Future<DateTime?> showMonthPickerDialog(BuildContext context, DateTime initialDa
       );
     },
   );
+
 }

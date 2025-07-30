@@ -10,7 +10,7 @@ class MyTeamSchedule {
     required this.myTeam,
     required this.opponentTeam,
     required this.stadium,
-    required this.gameDateTime,
+    required this.gameDateTime, required gameId,
   });
 
   Map<String, dynamic> toJson() {
@@ -31,7 +31,7 @@ class MyTeamSchedule {
       myTeam: json['myTeam'],
       opponentTeam: json['opponentTeam'],
       stadium: json['stadium'],
-      gameDateTime: json['gameDateTime'],
+      gameDateTime: json['gameDateTime'], gameId: null,
     );
   }
 }
@@ -113,6 +113,10 @@ class Journal {
     required this.reviewText,
 
   });
+  // ✅ 전체 URL을 만들어주는 getter
+  String get fullMediaUrl =>
+      'https://inninglog-bucket.s3.ap-northeast-2.amazonaws.com/$mediaUrl';
+
 
   factory Journal.fromJson(Map<String, dynamic> json) {
     return Journal(
@@ -165,5 +169,45 @@ class GameInfo {
     );
   }
 
+}
+class JournalDetail {
+  final int journalId;
+  final String gameDate;
+  final String supportTeamSC;
+  final String opponentTeamSC;
+  final int ourScore;
+  final int theirScore;
+  final String stadiumSC;
+  final String emotion;
+  final String mediaUrl;
+  final String reviewText;
+
+  JournalDetail({
+    required this.journalId,
+    required this.gameDate,
+    required this.supportTeamSC,
+    required this.opponentTeamSC,
+    required this.ourScore,
+    required this.theirScore,
+    required this.stadiumSC,
+    required this.emotion,
+    required this.mediaUrl,
+    required this.reviewText,
+  });
+
+  factory JournalDetail.fromJson(Map<String, dynamic> json) {
+    return JournalDetail(
+      journalId: json['journalId'],
+      gameDate: json['gameDate'],
+      supportTeamSC: json['supportTeamSC'],
+      opponentTeamSC: json['opponentTeamSC'],
+      ourScore: json['ourScore'],
+      theirScore: json['theirScore'],
+      stadiumSC: json['stadiumSC'],
+      emotion: json['emotion'],
+      mediaUrl: json['media_url'] ?? '',
+      reviewText: json['review_text'] ?? '',
+    );
+  }
 }
 

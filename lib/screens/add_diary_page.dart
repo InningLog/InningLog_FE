@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:inninglog/service/api_service.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,6 +11,7 @@ import '../app_colors.dart';
 import 'dart:io';
 import '../main.dart';
 import '../models/home_view.dart';
+import '../service/api_service.dart';
 import 'add_seat_page.dart';
 import 'package:http/http.dart' as http;
 import '../service/api_service.dart';
@@ -21,14 +23,24 @@ File? _pickedImage;
 int reviewLength = 0;
 String ourScore = '';
 String opponentScore = '';
+String? fileName;
+bool hasSeatView = false;
 
 
 
 
 class AddDiaryPage extends StatefulWidget {
   final DateTime? initialDate;
+  final bool isEditMode;
+  final int? journalId;
 
-  const AddDiaryPage({super.key, this.initialDate});
+  const AddDiaryPage({
+    super.key,
+    this.initialDate,
+    this.isEditMode = false,
+    this.journalId,
+  });
+
 
 
 
@@ -37,7 +49,14 @@ class AddDiaryPage extends StatefulWidget {
 }
 
 class _AddDiaryPageState extends State<AddDiaryPage> {
+  String? fileName;
   DateTime currentDate = DateTime.now();
+
+  final TextEditingController ourScoreController = TextEditingController();
+  final TextEditingController theirScoreController = TextEditingController();
+
+
+
 
   void _updateScheduleForDate(DateTime date) async {
     final schedule = await loadScheduleFromPrefs(date);
@@ -72,9 +91,82 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
   @override
   void initState() {
     super.initState();
-    currentDate = widget.initialDate ?? DateTime.now();
-    _updateScheduleForDate(currentDate);
+    if (widget.isEditMode && widget.journalId != null) {
+      fetchJournalData(widget.journalId!);
+      print('🟡 initState 실행');
+      print('🟡 isEditMode: ${widget.isEditMode}, journalId: ${widget.journalId}');
+
+
+    } else {
+      currentDate = widget.initialDate ?? DateTime.now();
+      _updateScheduleForDate(currentDate);
+    }
+
+
   }
+
+
+
+  String? mediaUrl;
+
+  Future<void> fetchJournalData(int journalId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('access_token');
+      final response = await http.get(
+        Uri.parse('https://api.inninglog.shop/journals/detail/$journalId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print('👉 받은 데이터: ${response.body}'); // ✅ 여기!
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        final data = json['data']['jourDetail'];
+        // ✅ presigned URL 먼저 await으로 가져오고
+        String? presignedImageUrl = data['media_url'];
+
+        print('📦 journalDetail data: $data');
+        print('🖼️ presignedImageUrl: $presignedImageUrl');
+
+
+
+        setState(() {
+          currentDate = DateTime.tryParse(data['gameDate'] ?? '') ?? DateTime.now();
+          ourScoreController.text = data['ourScore']?.toString() ?? '';
+          theirScoreController.text = data['theirScore']?.toString() ?? ''; // ✅ 이걸로 수정
+          selectedEmotionIndex = getEmotionIndex(data['emotion'] ?? '');
+          reviewController.text = data['review_text'] ?? '';
+          mediaUrl = presignedImageUrl;// 네트워크 URL로 저장
+          final seatViewId = json['data']['seatViewId'];
+          hasSeatView = seatViewId != null && seatViewId != 0;
+
+          todaySchedule = MyTeamSchedule(
+            gameId: json['gameId'],
+            myTeam: data['supportTeamSC'] ?? '',
+            opponentTeam: data['opponentTeamSC'] ?? '',
+            gameDateTime: data['gameDate'] ?? '',
+            stadium: data['stadiumSC'] ?? '',
+          );
+
+        });
+
+        ourScore = ourScoreController.text;
+        opponentScore = theirScoreController.text;
+
+      } else {
+        print('❌ 서버 응답 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ fetchJournalData 에러: $e');
+    }
+  }
+
+
+
   Future<String?> getValidGameId({
     required DateTime date,
     required String myTeam,
@@ -120,6 +212,8 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
     return emotions[index];
   }
 
+
+
   final TextEditingController reviewController = TextEditingController();
 
 
@@ -132,6 +226,14 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
         ourScore?.isNotEmpty == true &&
             opponentScore?.isNotEmpty == true &&
             selectedEmotionIndex != -1;
+
+
+    final bool isSeatButtonEnabled = !widget.isEditMode
+        ? isFormValid  // 작성 모드: 점수, 감정 필수
+        : isFormValid && !hasSeatView; // 수정 모드: 점수 감정 입력 && 아직 좌석 후기 없음
+
+
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -153,13 +255,13 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                       height: 20,
                     ),
                     onPressed: () {
-                  // ✅ Amplitude 이벤트 로깅
-                  analytics.logEvent('click_diary_write_back', properties: {
-                    'event_type': 'Custom',
-                    'component': 'btn_click',
-                    'importance': 'Medium',
-                   });
-                    Navigator.pop(context);
+                      // ✅ Amplitude 이벤트 로깅
+                      analytics.logEvent('click_diary_write_back', properties: {
+                        'event_type': 'Custom',
+                        'component': 'btn_click',
+                        'importance': 'Medium',
+                      });
+                      Navigator.pop(context);
                     },
                   ),
                   const SizedBox(width: 0),
@@ -201,15 +303,19 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                         width: double.infinity,
                         padding: const EdgeInsets.only(left: 16, right: 16, bottom: 19),
                         decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.gray300),
+                          border: Border.all( color: widget.isEditMode ? AppColors.primary400 : AppColors.gray300, ),// ✅ 조건 분기),
                           borderRadius: BorderRadius.circular(12),
                         ),
+
                         child: Column(
                           children: [
+
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                IconButton(
+                                widget.isEditMode
+                                    ? const SizedBox(width: 48,height: 48) // 아이콘 없을 때 공간 유지
+                                    : IconButton(
                                   onPressed: _goToPreviousDay,
                                   icon: SvgPicture.asset(
                                     'assets/icons/month_left.svg',
@@ -225,7 +331,9 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                     fontFamily: 'Pretendard',
                                   ),
                                 ),
-                                IconButton(
+                                widget.isEditMode
+                                    ? const SizedBox(width: 48) // 오른쪽도 동일
+                                    : IconButton(
                                   onPressed: _goToNextDay,
                                   icon: SvgPicture.asset(
                                     'assets/icons/month_right.svg',
@@ -235,6 +343,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                 ),
                               ],
                             ),
+
                             const SizedBox(height: 12),
                             if (todaySchedule == null)
 
@@ -338,6 +447,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           _scoreInputField(
+                            controller: ourScoreController,
                             hintText: '우리팀 스코어',
                             onChanged: (value) {
                               setState(() {
@@ -351,6 +461,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               });
 
                             },
+                            isEditable: !widget.isEditMode,
                           ),
                           const Text(
                             'VS',
@@ -362,6 +473,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                             ),
                           ),
                           _scoreInputField(
+                            controller: theirScoreController,
                             hintText: '상대팀 스코어',
                             onChanged: (value) {
                               setState(() {
@@ -375,6 +487,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               });
 
                             },
+                            isEditable: !widget.isEditMode,
                           ),
                         ],
                       ),
@@ -411,10 +524,12 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                           SizedBox(
                             height: 192,
                             width: 360,// 감정 아이콘 전체 높이 (아이콘 크기에 따라 조절)
+
                             child: GridView.count(
                               crossAxisCount: 3,
                               crossAxisSpacing: 12,
                               mainAxisSpacing: 12,
+
                               physics: const NeverScrollableScrollPhysics(),
                               childAspectRatio: 112 / 90, // ✅ 카드 너비/높이 비율
                               children: List.generate(6, (index) => _emotionIcon(index)),
@@ -439,11 +554,13 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                       const SizedBox(height: 8),
                       // 사진 업로드
                       DiaryImagePicker(
+                        initialImageUrl: mediaUrl,
                         onImageSelected: (image) {
                           setState(() {
                             _pickedImage = image;
                           });
                         },
+                        enabled: !widget.isEditMode,
                       ),
 
 
@@ -472,6 +589,10 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                             controller: reviewController,
                             maxLines: 4,
                             maxLength: 132,
+                            enabled: !widget.isEditMode,
+                            style: TextStyle(
+                              color: widget.isEditMode ? Colors.black : Colors.black, // ✅ 글자색
+                            ),
                             onChanged: (value) {
                               setState(() {
                                 reviewLength = value.length;
@@ -493,6 +614,12 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                                 borderSide: const BorderSide(color: AppColors.gray300),
+                              ),
+                              disabledBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: AppColors.gray300, // 수정 모드일 때 border
+                                ),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -529,7 +656,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                       const SizedBox(height: 16),
 
 
-
+                      if (!widget.isEditMode)
                       // 버튼 2개
                       Column(
                         children: [
@@ -538,9 +665,25 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               width: 360,
                               height: 54,
                               child: ElevatedButton(
-                                onPressed: isFormValid ? () async {
-                                  print('🟢 [작성완료 버튼] 클릭됨');
+                                onPressed: isSeatButtonEnabled? () async {
 
+                                  if (widget.isEditMode) {
+                                    final journalId = widget.journalId!;
+
+
+                                    context.push(
+                                      '/addseat',
+                                      extra: {
+                                        'journalId': journalId,
+                                        'stadium': todaySchedule!.stadium,
+                                        'gameDateTime': todaySchedule!.gameDateTime,
+                                      },
+                                    );
+
+                                    return;
+                                  }
+
+                                  // 작성 모드 → S3 업로드 → 업로드 API 호출 → /addseat로 이동
                                   analytics.logEvent('write_diary_review', properties: {
                                     'event_type': 'Custom',
                                     'component': 'form_submit',
@@ -551,21 +694,17 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                   analytics.logEvent('click_seat_review_write_start', properties: {
                                     'event_type': 'Custom',
                                     'component': 'btn_click',
-                                    //'diary_id': diaryId,
                                     'importance': 'High',
                                   });
-
 
                                   if (todaySchedule == null) {
                                     print('❗ 오늘 경기 정보가 없습니다.');
                                     return;
                                   }
 
-                                  String? fileName;
-
                                   if (_pickedImage != null) {
                                     fileName = 'journal_${DateTime.now().millisecondsSinceEpoch}.jpeg';
-                                    final presignedUrl = await getPresignedUrl(fileName, 'image/jpeg');
+                                    final presignedUrl = await getPresignedUrl(fileName!, 'image/jpeg');
                                     if (presignedUrl == null) return;
                                     final uploaded = await uploadImageToS3(presignedUrl, _pickedImage!);
                                     if (!uploaded) return;
@@ -591,15 +730,17 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                     theirScore: int.parse(opponentScore),
                                     fileName: fileName ?? '',
                                     emotion: getEmotionKor(selectedEmotionIndex),
-                                    reviewText: reviewController.text.trim(),
-                                  );
+                                    reviewText: reviewController.text.trim().isNotEmpty
+                                        ? reviewController.text.trim()
+                                        : ' ',
 
+                                  );
 
                                   if (journalId == null) {
                                     print('❌ 업로드 실패로 journalId가 null입니다.');
                                     return;
                                   }
-
+                                  print('👉 AddSeatPage로 push 시도!');
                                   context.push(
                                     '/addseat',
                                     extra: {
@@ -607,18 +748,20 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                       'stadium': todaySchedule!.stadium,
                                       'gameDateTime': todaySchedule!.gameDateTime,
                                     },
+
                                   );
 
+                                }
+                                    : null,
 
-                                } : null,
 
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor:
-                                  isFormValid ? AppColors.primary700 : AppColors.gray200,
+                                  isSeatButtonEnabled ? AppColors.primary700 : AppColors.gray200,
                                   foregroundColor: Colors.black,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(30),
-                                    side: isFormValid
+                                    side:  isSeatButtonEnabled
                                         ? const BorderSide(color: AppColors.primary700)
                                         : BorderSide.none,
                                   ),
@@ -626,7 +769,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                 child: Text(
                                   '좌석 후기 작성하기',
                                   style: TextStyle(
-                                    color: isFormValid ? Colors.white : AppColors.gray700,
+                                    color:  isSeatButtonEnabled ? Colors.white : AppColors.gray700,
                                     fontWeight: FontWeight.w700,
                                     fontSize: 16,
                                   ),
@@ -643,8 +786,23 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                             height: 54,
                             child: ElevatedButton(
                               // 작성 완료 버튼 내부
-                              onPressed: isFormValid ? () async {
+                              onPressed: widget.isEditMode || isFormValid
+                                  ? () async {
                                 print('🟢 [작성완료 버튼] 클릭됨');
+
+                                if (widget.isEditMode) {
+                                  print('🟡 수정 모드 진입');
+                                  final journalId = widget.journalId!;
+
+
+                                  print('🧪 mediaUrl: $mediaUrl');
+                                  print('🧪 extractFileName(mediaUrl): ${extractFileName(mediaUrl)}');
+                                  if (context.mounted) context.go('/diary');
+                                  return;
+                                }
+
+                                // ✅ 작성 모드 로직
+                                print('🟡 작성 모드 진입');
 
                                 analytics.logEvent('write_diary_review', properties: {
                                   'event_type': 'Custom',
@@ -656,10 +814,8 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                 analytics.logEvent('complete_diary_write', properties: {
                                   'event_type': 'Custom',
                                   'component': 'btn_click',
-                                  //'diary_id': diaryId,
                                   'importance': 'High',
                                 });
-
 
                                 if (todaySchedule == null) {
                                   print('❗ 오늘 경기 정보가 없습니다.');
@@ -667,7 +823,6 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                 }
 
                                 String? fileName;
-
                                 if (_pickedImage != null) {
                                   fileName = 'journal_${DateTime.now().millisecondsSinceEpoch}.jpeg';
                                   final presignedUrl = await getPresignedUrl(fileName, 'image/jpeg');
@@ -687,13 +842,32 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                   return;
                                 }
 
+                                final journalId = await ApiService.uploadJournal(
+                                  gameId: gameId,
+                                  gameDateTime: DateTime.parse(todaySchedule!.gameDateTime),
+                                  stadiumShortCode: todaySchedule!.stadium,
+                                  opponentTeamShortCode: todaySchedule!.opponentTeam,
+                                  ourScore: int.parse(ourScore),
+                                  theirScore: int.parse(opponentScore),
+                                  fileName: fileName ?? '',
+                                  emotion: getEmotionKor(selectedEmotionIndex),
+                                  reviewText: reviewController.text.trim().isNotEmpty
+                                      ? reviewController.text.trim()
+                                      : ' ',
 
+                                );
 
-                                print('✅ 전체 업로드 성공!');
-                                if (context.mounted) {
-                                  context.go('/diary');
+                                if (journalId == null) {
+                                  print('❌ 업로드 실패로 journalId가 null입니다.');
+                                  return;
                                 }
-                              } : null,
+
+                                if (context.mounted) {
+                                  context.go('/diary'); // 👈 extra 없이도 기본 화면으로
+                                }
+                              }
+                                  : null,
+
 
 
 
@@ -712,7 +886,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                 ),
                               ),
                               child: Text(
-                                '작성 완료',
+                                widget.isEditMode ? '수정 완료' : '작성 완료',
                                 style: TextStyle(
                                   color:
                                   isFormValid ? AppColors.primary700 : AppColors.gray700,
@@ -757,6 +931,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
 
     return GestureDetector(
       onTap: () {
+        if (widget.isEditMode) return; // 👉 수정 모드일 때 클릭 막기
         setState(() {
           selectedEmotionIndex = index;
         });
@@ -807,13 +982,17 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
 
 Widget _scoreInputField({
   required String hintText,
-  required Function(String) onChanged,
+  required TextEditingController controller,
+  required ValueChanged<String> onChanged,
+  required bool isEditable,
 }) {
   return SizedBox(
     width: 140,
     height: 40,
     child: TextField(
       onChanged: onChanged,
+      readOnly: !isEditable,
+
       textAlign: TextAlign.center,
       style: const TextStyle(
         fontSize: 16,
@@ -821,6 +1000,8 @@ Widget _scoreInputField({
         fontFamily: 'Pretendard',
       ),
       keyboardType: TextInputType.number,
+      controller: controller,
+
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: const TextStyle(
@@ -853,8 +1034,11 @@ Widget _scoreInputField({
 //사진 가져오기
 class DiaryImagePicker extends StatefulWidget {
   final void Function(File image) onImageSelected;
+  final String? initialImageUrl;
+  final bool enabled;
 
-  const DiaryImagePicker({super.key, required this.onImageSelected});
+  const DiaryImagePicker({super.key, required this.onImageSelected,  this.initialImageUrl,this.enabled = true,});
+
 
   @override
   State<DiaryImagePicker> createState() => _DiaryImagePickerState();
@@ -862,10 +1046,21 @@ class DiaryImagePicker extends StatefulWidget {
 
 class _DiaryImagePickerState extends State<DiaryImagePicker> {
   File? _pickedImage;
+  String? _initialImageUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialImageUrl = widget.initialImageUrl; // ✅ 이거 추가
+  }
+
+
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+
+
 
     if (image != null) {
       final file = File(image.path);
@@ -884,11 +1079,52 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
   }
 
 
+
+
   @override
   Widget build(BuildContext context) {
+    Widget content;
+
+    if (_pickedImage != null) {
+      content = ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.file(
+          _pickedImage!,
+          fit: BoxFit.fitWidth,
+          width: double.infinity,
+        ),
+      );
+    } else if (_initialImageUrl != null && _initialImageUrl!.isNotEmpty) {
+      content = ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          _initialImageUrl!,
+          fit: BoxFit.fitWidth,
+          width: double.infinity,
+          errorBuilder: (_, __, ___) {
+            print('❌ 이미지 로드 실패!');
+            return const Icon(Icons.broken_image);
+          },
+        ),
+      );
+    } else {
+      content = Padding(
+        padding: const EdgeInsets.symmetric(vertical: 36),
+        child: Center(
+          child: SvgPicture.asset(
+            "assets/icons/camera_icon.svg",
+            width: 28.3,
+            height: 28.3,
+          ),
+        ),
+      );
+    }
+    print('📸 DiaryImagePicker _initialImageUrl: $_initialImageUrl');
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque, // ✅ 터치가 빈 공간에도 반응하도록 설정
-      onTap: _pickImage, // ✅ 이게 실행돼야 갤러리 열림
+      onTap: widget.enabled ? _pickImage : null,
+      // ✅ 이게 실행돼야 갤러리 열림
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
@@ -976,10 +1212,37 @@ Future<MyTeamSchedule?> loadScheduleFromPrefs(DateTime date) async {
 
 }
 
+int getEmotionIndex(String emotion) {
+  const emotions = ['짜릿함', '감동', '흡족', '답답함', '아쉬움', '분노'];
+  return emotions.indexOf(emotion);
+}
+
+Widget buildMediaWidget(String mediaUrl) {
+  if (mediaUrl.isEmpty) {
+    return const Text('이미지가 없습니다');
+  } else if (mediaUrl.startsWith('http')) {
+    return Image.network(
+      mediaUrl,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
+    );
+  } else {
+    final file = File(mediaUrl);
+    if (!file.existsSync()) {
+      return const Icon(Icons.broken_image);
+    }
+    return Image.file(
+      file,
+      fit: BoxFit.cover,
+    );
+  }
+}
 
 
-
-
-
-
+String extractFileName(String? url) {
+  if (url == null || url.isEmpty) return '';
+  final uri = Uri.parse(url);
+  final segments = uri.pathSegments;
+  return segments.isNotEmpty ? segments.last : '';
+}
 

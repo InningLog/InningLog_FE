@@ -42,20 +42,28 @@ class Player {
 class MyReportResponse {
   final int totalVisitedGames;
   final int winGames;
+  final int loseGames;
+  final int drawGames;
   final double winningRateHalPoongRi;
+  final double teamWinRate;
   final List<Player> topBatters;
   final List<Player> topPitchers;
   final List<Player> bottomBatters;
   final List<Player> bottomPitchers;
+  final String nickname;
 
   MyReportResponse({
     required this.totalVisitedGames,
     required this.winGames,
+    required this.loseGames,
+    required this.drawGames,
     required this.winningRateHalPoongRi,
+    required this.teamWinRate,
     required this.topBatters,
     required this.topPitchers,
     required this.bottomBatters,
     required this.bottomPitchers,
+    required this.nickname,
   });
 
 
@@ -66,11 +74,15 @@ class MyReportResponse {
     return MyReportResponse(
       totalVisitedGames: json['totalVisitedGames'],
       winGames: json['winGames'],
+      loseGames: json['loseGames'],
+      drawGames: json['drawGames'],
       winningRateHalPoongRi: json['myWeaningRate'] / 1000,
+      teamWinRate: json['teamWinRate'].toDouble(),
       topBatters: parsePlayers(json['topBatters']),
       topPitchers: parsePlayers(json['topPitchers']),
       bottomBatters: parsePlayers(json['bottomBatters']),
       bottomPitchers: parsePlayers(json['bottomPitchers']),
+      nickname : json['nickname'],
 
     );
   }
@@ -113,7 +125,7 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
 
 
   // 유저 정보 더미 데이터
-  final String nickname = '디디';
+  final String nickname = '유저';
   final String teamShortCode = 'NC';
 
 
@@ -143,6 +155,10 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
         reportData.topPitchers.isNotEmpty && reportData.topBatters.isNotEmpty;
     final hasBottomPlayers =
         reportData.bottomPitchers.isNotEmpty && reportData.bottomBatters.isNotEmpty;
+    final myRate = reportData.winningRateHalPoongRi;
+    final teamRate = reportData.teamWinRate;
+    final diff = (myRate - teamRate).abs(); // 차이 절댓값
+    final comparison = myRate > teamRate ? '높아요' : '낮아요';
 
 
     if (report == null) {
@@ -219,38 +235,38 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
                   fit: BoxFit.contain,
                 ),
                 const SizedBox(height: 40),
-            Text.rich(
-              TextSpan(
-                text: '직관 기록이 ',
-                style: const TextStyle(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'Pretendard',
-                  color: Colors.black, // 기본 텍스트 색상
-                ),
-                children: [
+                Text.rich(
                   TextSpan(
-                    text: '3회',
-                    style: TextStyle(
-                      color: AppColors.primary700,
-                      fontWeight: FontWeight.w700,
+                    text: '직관 기록이 ',
+                    style: const TextStyle(
                       fontSize: 19,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Pretendard',
+                      color: Colors.black, // 기본 텍스트 색상
                     ),
+                    children: [
+                      TextSpan(
+                        text: '3회',
+                        style: TextStyle(
+                          color: AppColors.primary700,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 19,
+                        ),
+                      ),
+                      const TextSpan(
+                        text: ' 이상 있어야\n리포트를 확인할 수 있어요!',
+                      ),
+                    ],
                   ),
-                  const TextSpan(
-                    text: ' 이상 있어야\n리포트를 확인할 수 있어요!',
-                  ),
-                ],
-              ),
-              textAlign: TextAlign.center,
-            ),
+                  textAlign: TextAlign.center,
+                ),
                 Text(
                   '현재:${reportData.totalVisitedGames}회' ,
                   style: TextStyle(
-                  color: AppColors.gray700,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 19,
-                ),
+                    color: AppColors.gray700,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 19,
+                  ),
                 )
               ],
             ),
@@ -399,7 +415,7 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
                                     ),
                                   ),
                                   Text(
-                                    '${reportData.winGames}승 7패 1무',
+                                    '${reportData.winGames}승 ${reportData.loseGames}패 ${reportData.drawGames}무',
                                     style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700,
@@ -419,12 +435,12 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
                     const SizedBox(height: 16),
 
                     /// 그래프 비교 박스
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary50,
-                    border: Border.all(color: AppColors.gray400),
-                    borderRadius: BorderRadius.circular(8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary50,
+                        border: Border.all(color: AppColors.gray400),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -439,28 +455,31 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
                           ),
                           const SizedBox(height: 12),
                           _buildBar(label: '내 직관 승률',
-                              value: reportData.winningRateHalPoongRi,
-                              color: AppColors.primary300,),
+                            value: reportData.winningRateHalPoongRi,
+                            color: AppColors.primary300,),
                           const SizedBox(height: 10),
                           _buildBar(label: '팀 승률',
-                              value: 0.405,
+                              value:reportData.teamWinRate,
                               color: AppColors.primary300),
                           const SizedBox(height: 12),
                           Center(
                             child: Text(
-                              '$nickname님의 직관 승률이 팀 승률보다 ${reportData.winningRateHalPoongRi} 낮아요.',
-                              //이거 나중에 꼭 수정 필요
+                              '${reportData.nickname}님의 직관 승률이 팀 승률보다 '
+                                  '${(myRate - teamRate).abs().toStringAsFixed(3)}% $comparison.',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontFamily: 'Pretendard',
-                                fontWeight: FontWeight.w400
+                                fontWeight: FontWeight.w400,
                               ),
                               textAlign: TextAlign.center,
                             ),
+
+
+
                           ),
                         ],
                       ),
-                ),
+                    ),
 
                     const SizedBox(height: 20),
 
@@ -536,19 +555,19 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
           Container(
             width: 66,
             child: Transform.translate(
-          offset: const Offset(-6, 0),
-            child: Text(
+              offset: const Offset(-6, 0),
+              child: Text(
 
-              label,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 12,
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w600,
-                letterSpacing: -0.12,
+                label,
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.12,
+                ),
               ),
             ),
-          ),
           ),
           const SizedBox(width: 6),
           //프로그레스 바 디자인
