@@ -66,6 +66,8 @@ class InningLogWrapper extends StatelessWidget {
 // }
 
 
+
+
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -73,6 +75,8 @@ final GoRouter _router = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/splash',
   routes: [
+
+
     /// GNB 없는 화면들
     ///
     GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
@@ -80,7 +84,7 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/adddiary',
       builder: (context, state) {
-        print('✅ AddDiaryPage 빌더 진입!');
+        print('✅ AdDiaryPage 빌더 진입!');
         final extra = state.extra as Map<String, dynamic>;
         print('🟢 받은 extra: $extra');
         return AddDiaryPage(
@@ -90,6 +94,22 @@ final GoRouter _router = GoRouter(
         );
       },
     ),
+
+    GoRoute(
+      path: '/addseat',
+      builder: (context, state) {
+        print('✅ AddDiaryseat 빌더 진입!');
+        final extra = state.extra as Map<String, dynamic>;
+        print('🟢 받은 extra: $extra');
+        return AddSeatPage(
+          stadium: extra['stadium'],
+          gameDateTime: extra['gameDateTime'],
+          journalId: extra['journalId'],
+        );
+      },
+    ),
+
+
 
 
 
@@ -115,20 +135,6 @@ final GoRouter _router = GoRouter(
         return MainNavigation(child: child);
       },
       routes: [
-        GoRoute(
-          path: '/addseat',
-          builder: (context, state) {
-            final args = state.extra as Map<String, dynamic>; // 👈 이 부분 매우 중요!
-            return AddSeatPage(
-              journalId: args['journalId'],
-              stadium: args['stadium'],
-              todaySchedule: MyTeamSchedule.fromJson(args['todaySchedule']),
-              gameDateTime: args['todaySchedule']['gameDateTime'], // 또는 args['gameDateTime']으로 직접 전달
-            );
-          },
-        ),
-
-
 
         GoRoute(path: '/home', builder: (_, __) => const HomePage()),
         GoRoute(
@@ -189,13 +195,6 @@ class InningLogApp extends StatelessWidget {
   }
 
 }
-
-
-
-
-
-
-
 
 // 각 카테고리 정의
 final Map<String, List<String>> tagCategories = {

@@ -666,6 +666,11 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                     print('👉 AddSeatPage로 push 시도!');
                                     context.push(
                                       '/addseat',
+                                      extra: {
+                                        'journalId': journalId,
+                                        'stadium': todaySchedule!.stadium,
+                                        'gameDateTime': todaySchedule!.gameDateTime,
+                                      },
                                     );
 
                                     return;
@@ -731,6 +736,11 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                   print('👉 AddSeatPage로 push 시도!');
                                   context.push(
                                     '/addseat',
+                                    extra: {
+                                      'journalId': journalId,
+                                      'stadium': todaySchedule!.stadium,
+                                      'gameDateTime': todaySchedule!.gameDateTime,
+                                    },
 
                                   );
 
