@@ -12,6 +12,7 @@ import 'package:collection/collection.dart';
 import '../main.dart';
 
 
+
 const Map<String, String> teamNameMap = {
   'LG': 'LG',
   'OB': '두산',
@@ -29,13 +30,19 @@ const Map<String, String> teamNameMap = {
 const Map<String, String> stadiumNameMap = {
   'JAM': '잠실 야구장',
   'GOC': '고척 스카이돔',
-  'INC': '랜더스필드',
-  'DAE': '한화생명 볼파크',
-  'DAU': '라이온즈 파크',
+  'ICN': '랜더스필드',
+  'DJN': '한화생명 볼파크',
+  'DAE': '라이온즈 파크',
   'SUW': '위즈파크',
-  'SAJ': '사직 야구장',
+  'BUS': '사직 야구장',
   'GWJ': '챔피언스 월드',
   'CHW': 'NC 파크',
+};
+
+const Map<String, String> resultFilterToScore = {
+  '승리': '승',
+  '패배': '패',
+  '무승부': '무승부',
 };
 
 
@@ -372,7 +379,8 @@ class _DiaryPageState extends State<DiaryPage> {
                                   ),
 
                                   onDaySelected: (selectedDay, focusedDay) {
-                                    setState(() {
+                                    setState((){
+
                                       // 같은 날짜를 다시 클릭하면 취소
                                       if (selectedDate != null &&
                                           DateTime.utc(selectedDate!.year, selectedDate!.month, selectedDate!.day) ==
@@ -416,7 +424,16 @@ class _DiaryPageState extends State<DiaryPage> {
                                     final result = getGameResult(game.ourScore, game.theirScore);
 
                                     return GestureDetector(
-                                      onTap: () {
+                                      onTap: () async {
+
+                                        await analytics.logEvent(
+                                          'click_diary_calendar_diary',
+                                          properties: {
+                                            'component': 'btn_click',
+                                            'diary_id': game.journalId.toString(), // UUID 또는 int → 문자열
+                                            'importance': 'Medium',
+                                          },
+                                        );
                                         // 여기에 navigation 처리
                                         context.push(
                                           '/adddiary',
@@ -615,16 +632,13 @@ class _DiaryPageState extends State<DiaryPage> {
                           child: GridView.builder(
                             controller: _scrollController,
                             itemCount: journalList.where((game) {
-                              print('🔥 journalList 길이: ${journalList.length}');
-                              for (var j in journalList) {
-                                print('🖼️ ${j.journalId} - ${j.mediaUrl}');
-                              }
-                              if (selectedFilterCollection == null) {
-                                return true; // 전체 보여주기
-                              }
-                              final result = getGameResult(game.ourScore, game.theirScore);
-                              return result == selectedFilterCollection;
+                              if (selectedFilterCollection == null) return true;
+                              final filterScore = resultFilterToScore[selectedFilterCollection!];
+                              return game.resultScore != null && game.resultScore == filterScore;
                             }).length,
+
+
+
                             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2, // 2개씩 보여주기 (Figma처럼)
                               crossAxisSpacing: 22,
@@ -633,21 +647,22 @@ class _DiaryPageState extends State<DiaryPage> {
                             ),
                             itemBuilder: (context, index) {
                               final filteredGames = journalList.where((game) {
-                                final result = getGameResult(game.ourScore, game.theirScore);
-                                return selectedFilterCollection == null || result == selectedFilterCollection;
+                                if (selectedFilterCollection == null) return true;
+                                final filterScore = resultFilterToScore[selectedFilterCollection!];
+                                return game.resultScore != null && game.resultScore == filterScore;
                               }).toList();
+
+
+
 
 
                               final game = filteredGames[index];
                               final imageUrl = game.mediaUrl;
                               final hasImage = imageUrl.isNotEmpty && imageUrl.startsWith('http');
 
-                              final result = (game.ourScore != null && game.theirScore != null)
-                                  ? getGameResult(game.ourScore, game.theirScore)
-                                  : '';
+                              final result = game.resultScore ?? '';
+                              final shortResult = result == '무승부' ? '무' : result;
 
-                              final shortResult = _shortenResult(result);
-                              print('🧪 ${game.journalId} → $result / $shortResult');
 
                               final imageWidget = hasImage
                                   ? Image.network(
@@ -667,7 +682,27 @@ class _DiaryPageState extends State<DiaryPage> {
                                 height: double.infinity,
                               );
 
-                              return Stack(
+                              return GestureDetector(
+                                  onTap: () async {
+                                    await analytics.logEvent(
+                                      'click_diary_from_collection',
+                                      properties: {
+                                        'component': 'btn_click',
+                                        'diary_id': game.journalId.toString(),
+                                        'importance': 'Medium',
+                                      },
+                                    );
+
+                                context.push(
+                                  '/adddiary',
+                                  extra: {
+                                    'initialDate': game.gameDate,
+                                    'isEditMode': true,
+                                    'journalId': game.journalId,
+                                  },
+                                );
+                              },
+                              child : Stack(
                                 children: [
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(10),
@@ -709,6 +744,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                       ),
                                     ),
                                   ),
+                                  const SizedBox(height: 5),
                                   Positioned(
                                     top: 165,
                                     bottom: 19,
@@ -752,6 +788,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                     ),
                                   ),
                                 ],
+                              ),
                               );
                             },
 
@@ -770,8 +807,20 @@ class _DiaryPageState extends State<DiaryPage> {
           ],
         ),
       ),
+
+
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
+
+          await analytics.logEvent(
+            'view_diary_write_popup',
+            properties: {
+              'component': 'page_view',
+              'match_team': 'opponentTeam',
+              'is_favorite_team_match': true,
+              'importance': 'High',
+            },
+          );
           final dateToSend = selectedDate ?? DateTime.now();
           final scheduleData = await fetchScheduleForDate(dateToSend);
 
@@ -796,6 +845,14 @@ class _DiaryPageState extends State<DiaryPage> {
           final confirmed = await _showGameConfirmationDialog(context, dateToSend, scheduleData);
 
           if (confirmed == true) {
+
+            await analytics.logEvent(
+              'click_diary_write_start',
+              properties: {
+                'component': 'btn_click',
+                'importance': 'High',
+              },
+            );
             context.push(
               '/adddiary',
               extra: {
@@ -1147,3 +1204,4 @@ const Map<String, String> emotionImageMap = {
   '분노': 'assets/images/angry.jpg',
   // 필요한 만큼 추가
 };
+

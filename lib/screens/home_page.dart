@@ -216,12 +216,28 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _goToPreviousDay() {
+    analytics.logEvent(
+      'click_home_team_schedule',
+      properties: {
+        'component': 'btn_click',
+        'direction': 'prev',
+        'importance': 'Medium',
+      },
+    );
     setState(() {
       currentDate = currentDate.subtract(const Duration(days: 1));
     });
   }
 
   void _goToNextDay() {
+    analytics.logEvent(
+      'click_home_team_schedule',
+      properties: {
+        'component': 'btn_click',
+        'direction': 'next',
+        'importance': 'Medium',
+      },
+    );
     setState(() {
       currentDate = currentDate.add(const Duration(days: 1));
     });
@@ -493,8 +509,19 @@ class _HomePageState extends State<HomePage> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal:0),
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
+
+                      await analytics.logEvent(
+                        'click_home_ticket_button',
+                        properties: {
+                          'component': 'btn_click',
+                          'ticket_provider': _getTicketProviderName,
+                          'importance': 'Low',
+                        },
+                      );
+
                       openTicketUrl(teamShortCode); // 이 변수는 현재 'LG' 같은 코드로 정의돼 있음
+
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary50,
@@ -532,4 +559,11 @@ String getImageForRate(double rate) {
   if (rate <= 0.5) return 'assets/images/bori50.jpg';
   if (rate <= 0.7) return 'assets/images/bori70.jpg';
   return 'assets/images/bori100.jpg';
+}
+String _getTicketProviderName(String url) {
+  if (url.contains('ticket.interpark.com')) return '인터파크';
+  if (url.contains('ticketlink.co.kr')) return '티켓링크';
+  if (url.contains('ncdinos.com')) return 'NC 다이노스';
+  if (url.contains('giantsclub.com')) return '롯데 자이언츠';
+  return '기타';
 }

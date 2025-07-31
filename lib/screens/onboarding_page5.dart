@@ -36,7 +36,7 @@ class OnboardingPage5 extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 35),
-          SvgPicture.asset('assets/images/onboard_5.svg', height: 282),
+          SvgPicture.asset('assets/images/onboard_4.jpg', height: 282),
         ],
       ),
     );

@@ -66,7 +66,7 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
 
   void _saveDebugToken() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('access_token', 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIyIiwiaWF0IjoxNzUzMjA5NzU5LCJleHAiOjE5NjkyMDk3NTl9.xZ-DwvqFR44j69aI29rZl7O82FAyezVnsHlrNh6vphi7N-ET9OPkRTJ_Gnf25DhKyiMkQKW0f1oelywnrwyRcw');
+    await prefs.setString('access_token', 'token');
     print('🪪 테스트용 토큰 저장 완료');
   }
 
@@ -219,7 +219,24 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
                     'action': 'setup_complete',
                   });
 
+                  await analytics.logEvent(
+                    'enter_onboarding_nickname',
+                    properties:{
+                      'component': 'form_submit',
+                      'nickname_length': nickname.length,
+                      'nickname_value': nickname,
+                      'importance': 'Medium',
+                    },
+                  );
 
+                  await analytics.logEvent(
+                    'select_onboarding_team',
+                    properties: {
+                      'component': 'btn_click',
+                      'team_name': selectedTeam,
+                      'importance': 'Medium',
+                    },
+                  );
 
 
                   try {

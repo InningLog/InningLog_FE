@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../app_colors.dart';
+import '../main.dart';
 import '../service/api_service.dart';
 import 'dart:io';
 import 'dart:typed_data';
@@ -317,8 +318,19 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
                       width: 10,
                       height: 20,
                     ),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () async {
+                      await analytics.logEvent(
+                        'click_home_report_back',
+                        properties: {
+                          'component': 'btn_click',
+                          'previous_page': 'home', // 필요 시 동적으로 바꾸기
+                          'importance': 'Medium',
+                        },
+                      );
+                      Navigator.pop(context);
+                    },
                   ),
+
                   const SizedBox(width: 0),
                   const Text(
                     '홈',
@@ -524,7 +536,7 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
 
                     /// 공유 버튼
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 25), // 좌우 여백만 줌
+                      padding: const EdgeInsets.symmetric(horizontal: 25),
                       child: SizedBox(
                         height: 50,
                         width: 340,
@@ -535,7 +547,18 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
                               borderRadius: BorderRadius.circular(36),
                             ),
                           ),
-                          onPressed: _captureAndSave,
+                          onPressed: () async {
+                            await analytics.logEvent(
+                              'click_home_report_share',
+                              properties: {
+                                'component': 'btn_click',
+                                'share_method': 'capture',
+                                'importance': 'High',
+                              },
+                            );
+
+                            _captureAndSave(); // 실제 공유 함수 실행
+                          },
                           child: const Text(
                             '내 직관 리포트 공유하기',
                             style: TextStyle(
@@ -548,6 +571,7 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
                         ),
                       ),
                     ),
+
 
 
                     const SizedBox(height: 32),

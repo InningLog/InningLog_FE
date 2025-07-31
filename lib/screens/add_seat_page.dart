@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:inninglog/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../main.dart';
 import '../service/api_service.dart';
 import '../models/home_view.dart';
 import '../service/api_service.dart';
@@ -342,6 +343,7 @@ class _AddSeatPageState extends State<AddSeatPage> {
                       }).toList(),
 
                       onChanged: (value) {
+
                         setState(() => selectedZone = value);
                       },
                     ),
@@ -542,6 +544,61 @@ class _AddSeatPageState extends State<AddSeatPage> {
                       height: 54,
                       child: ElevatedButton(
                         onPressed: isFormValid ? () async {
+
+                          await analytics.logEvent(
+                            'select_seat_zone',
+                            properties: {
+                              'component': 'btn_click',
+                              'seat_zone': selectedZone,
+                              'importance': 'High',
+                            },
+                          );
+
+                          await analytics.logEvent(
+                            'enter_seat_section_row',
+                            properties: {
+                              'component': 'form_submit',
+                              'section': sectionController.text,
+                              'row': rowController.text,
+                              'importance': 'High',
+                            },
+                          );
+
+                          await analytics.logEvent(
+                            'upload_seat_photo',
+                            properties: {
+                              'component': 'event',
+                              'photo_count': '1',
+                              'importance': 'High',
+                            },
+                          );
+
+                          await analytics.logEvent(
+                            'select_seat_hashtag',
+                            properties: {
+                              'component': 'btn_click',
+                              'hashtag_cheering': selectedTags['응원'],         // 예: '일어남'
+                              'hashtag_sunlight': selectedTags['햇빛'],
+                              'hashtag_roof': selectedTags['지붕'],
+                              'hashtag_view_obstruction': selectedTags['시야 방해'],
+                              'hashtag_seat_space': selectedTags['좌석 공간'],
+                              'importance': 'High',
+                            },
+                          );
+
+
+                          await analytics.logEvent(
+                            'complete_seat_review',
+                            properties: {
+                              'component': 'btn_click',
+                              'diary_id': widget.journalId,
+                              'importance': 'High',
+                            },
+                          );
+
+
+
+
                           if (seatImage == null || todaySchedule == null) return;
 
                           final fileName = 'journal_${widget.journalId}_${DateTime.now().millisecondsSinceEpoch}.png';

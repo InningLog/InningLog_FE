@@ -235,6 +235,7 @@ Future<List<Journal>> fetchJournalSummary({
     if (resultScore != null) 'resultScore': resultScore,
   };
 
+
   final uri = Uri.https('api.inninglog.shop', '/journals/summary', queryParams);
 
   final response = await http.get(
@@ -244,10 +245,13 @@ Future<List<Journal>> fetchJournalSummary({
     },
   );
 
+
+
   if (response.statusCode == 200) {
     print('[🐛 응답 JSON] ${response.body}');
     final jsonData = jsonDecode(response.body);
     final List content = jsonData['data']['content'];
+
     return content.map((j) => Journal.fromJson(j)).toList();
   } else {
     throw Exception('요청 실패: ${response.statusCode}');

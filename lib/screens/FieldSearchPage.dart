@@ -503,6 +503,15 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
     final isSelected = _selectedIndex == index;
     return GestureDetector(
       onTap: () {
+        analytics.logEvent(
+          'change_stadium_search_tab',
+          properties: {
+            'component': 'btn_click',
+            'tab_type': index == 0 ? 'direct' : 'hashtag',
+            'importance': 'High',
+          },
+        );
+
         setState(() {
           _selectedIndex = index;
         });

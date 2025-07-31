@@ -11,6 +11,8 @@ import 'package:inninglog/screens/onboarding_content_page.dart';
 import 'package:inninglog/screens/onboarding_page6.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 
 
 
@@ -28,50 +30,47 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int _currentPage = 0;
 
-  Future<void> _loginWithKakao() async {
-    try {
-      OAuthToken token;
 
-      if (kIsWeb) {
-        // ✅ 웹일 경우
-        token = await UserApi.instance.loginWithKakaoAccount();
-      } else if (Platform.isAndroid || Platform.isIOS) {
-        // ✅ 모바일일 경우
-        final isInstalled = await isKakaoTalkInstalled();
-        token = isInstalled
-            ? await UserApi.instance.loginWithKakaoTalk()
-            : await UserApi.instance.loginWithKakaoAccount();
-      } else {
-        throw UnsupportedError('이 플랫폼은 지원하지 않음');
-      }
+  void loginWithKakaoWeb() async {
+    if (!kIsWeb) return; // 웹이 아니면 리턴
 
-      // 토큰 저장
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('access_token', token.accessToken);
+    const kakaoLoginUrl =
+        'https://kauth.kakao.com/oauth/authorize'
+        '?response_type=code'
+        '&client_id=293f7036654f2a9155a87e05f84b2d7e'
+        '&redirect_uri=https://api.inninglog.shop/callback';
 
-      print('로그인 성공: ${token.accessToken}');
-      if (!context.mounted) return;
-
-      context.go('/onboarding6'); // GNB 페이지로 이동
-    } catch (error) {
-      print('로그인 실패: $error');
+    final uri = Uri.parse(kakaoLoginUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      print('❌ 카카오 로그인 URL 실행 실패');
     }
   }
+
+
+  Future<void> _saveToken(String jwt) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('access_token', jwt);
+    print('🪪 토큰 저장 완료');
+  }
+
+
 
   final List<Widget> _pages = const [
     OnboardingPage1(),
     OnboardingContentPage(
-      image: 'assets/images/onboard_2.svg',
+      image: 'assets/images/onboard_1.jpg',
       title: '나의 직관 통계,',
       desc: '직관 리포트',
     ),
     OnboardingContentPage(
-      image: 'assets/images/onboard_3.svg',
+      image: 'assets/images/onboard_2.jpg',
       title: '직관의 추억을',
       desc: '일지 쓰기',
     ),
     OnboardingContentPage(
-      image: 'assets/images/onboard_4.svg',
+      image: 'assets/images/onboard_3.jpg',
       title: '구장 별 좌석을 보고 싶을 땐,',
       desc: '구장 보기',
     ),
@@ -113,6 +112,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ),
     );
   }
+
+
 
 
 
@@ -183,20 +184,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: GestureDetector(
-                onTap: _loginWithKakao,
+                onTap: loginWithKakaoWeb,
                 child: SvgPicture.asset(
                   'assets/icons/kakao_button.svg',
                   height: 54,
                 ),
               ),
             ),
-          // //로그인 시발 터져서
-          // ElevatedButton(
-          //   onPressed: skipLoginForDebug,
-          //   child: const Text('카카오 없이 시작하기 (디버그용)'),
-          // ),
-
-
 
 
           const SizedBox(height: 30),
@@ -205,22 +199,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // //로그인 시발 터져서
-  // Future<void> skipLoginForDebug() async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //
-  //   // ✅ 테스트용 토큰 (실제로 API 호출이 되려면 유효한 토큰이어야 함)
-  //   await prefs.setString('access_token', 'test-token-for-user-2');
-  //
-  //   // ✅ userId 직접 저장 (필요한 경우)
-  //   await prefs.setInt('user_id', 2);
-  //
-  //   print('🛠️ 테스트 유저로 로그인 우회 완료');
-  //
-  //   // ✅ 원하는 화면으로 이동
-  //   if (!context.mounted) return;
-  //   context.go('/home');
-  // }
+
 
 
 

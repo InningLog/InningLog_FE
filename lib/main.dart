@@ -32,11 +32,6 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   analytics.init();
 
-  // Kakao SDK 초기화
-  KakaoSdk.init(
-    nativeAppKey: '3e0a9528d7ddb6147c97af78f60ab300',
-  );
-
 
 
   runApp(const InningLogApp());
