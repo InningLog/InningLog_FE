@@ -7,15 +7,23 @@ class BoardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
-          children: const [
-            CommonHeader(title: '커뮤니티'),
+          children: [
+            const CommonHeader(title: '커뮤니티'),
 
+            Expanded(
+              child: Image.asset(
+                'assets/images/developing_image.jpg',
+                width: 274,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 }
+
 

@@ -98,6 +98,7 @@ class Journal {
   final String stadiumSC;
   final String mediaUrl;
   final String reviewText;
+  final String emotion;
 
 
   Journal({
@@ -111,11 +112,9 @@ class Journal {
     required this.stadiumSC,
     required this.mediaUrl,
     required this.reviewText,
+    required this.emotion,
 
   });
-  // ✅ 전체 URL을 만들어주는 getter
-  String get fullMediaUrl =>
-      'https://inninglog-bucket.s3.ap-northeast-2.amazonaws.com/$mediaUrl';
 
 
   factory Journal.fromJson(Map<String, dynamic> json) {
@@ -127,8 +126,10 @@ class Journal {
       gameDate: DateTime.tryParse(json['gameDate'] ?? '') ?? DateTime.now(),
       supportTeamSC: json['supportTeamSC'] ?? '팀 정보 없음',
       opponentTeamSC: json['opponentTeamSC'] ?? '팀 정보 없음',
-      stadiumSC: json['stadiumSC'] ?? '구장 정보 없음', mediaUrl: '',
+      stadiumSC: json['stadiumSC'] ?? '구장 정보 없음',
+      mediaUrl: json['media_url'] ?? '',
       reviewText: json['review_text'] ?? '',
+      emotion: json['emotion'] ?? '감정 없음',
     );
   }
 
@@ -210,4 +211,90 @@ class JournalDetail {
     );
   }
 }
+
+
+
+class SeatView {
+  final int seatViewId;
+  final String viewMediaUrl;
+
+  SeatView({
+    required this.seatViewId,
+    required this.viewMediaUrl,
+  });
+
+  factory SeatView.fromJson(Map<String, dynamic> json) {
+    return SeatView(
+      seatViewId: json['seatViewId'],
+      viewMediaUrl: json['viewMediaUrl'],
+    );
+  }
+}
+
+class SeatViewDetail {
+  final int seatViewId;
+  final String viewMediaUrl;
+  final SeatInfo? seatInfo;
+  final List<EmotionTag>? emotionTags;
+
+  SeatViewDetail({
+    required this.seatViewId,
+    required this.viewMediaUrl,
+    this.seatInfo,
+    this.emotionTags,
+  });
+
+  factory SeatViewDetail.fromJson(Map<String, dynamic> json) {
+    return SeatViewDetail(
+      seatViewId: json['seatViewId'],
+      viewMediaUrl: json['viewMediaUrl'],
+      seatInfo: json['seatInfo'] != null ? SeatInfo.fromJson(json['seatInfo']) : null,
+      emotionTags: (json['emotionTags'] as List<dynamic>?)
+          ?.map((e) => EmotionTag.fromJson(e))
+          .toList(),
+    );
+  }
+}
+
+
+class SeatInfo {
+  final String zoneName;
+  final String zoneShortCode;
+  final String section;
+  final String seatRow;
+  final String stadiumName;
+
+  SeatInfo({
+    required this.zoneName,
+    required this.zoneShortCode,
+    required this.section,
+    required this.seatRow,
+    required this.stadiumName,
+  });
+
+  factory SeatInfo.fromJson(Map<String, dynamic> json) {
+    return SeatInfo(
+      zoneName: json['zoneName'],
+      zoneShortCode: json['zoneShortCode'],
+      section: json['section'],
+      seatRow: json['seatRow'],
+      stadiumName: json['stadiumName'],
+    );
+  }
+}
+
+class EmotionTag {
+  final String code;
+  final String label;
+
+  EmotionTag({required this.code, required this.label});
+
+  factory EmotionTag.fromJson(Map<String, dynamic> json) {
+    return EmotionTag(
+      code: json['code'],
+      label: json['label'],
+    );
+  }
+}
+
 

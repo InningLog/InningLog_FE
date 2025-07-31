@@ -2,6 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../app_colors.dart';
 import '../service/api_service.dart';
+import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:flutter/rendering.dart';
+
+
+
 
 class Player {
   final int playerId;
@@ -89,6 +99,8 @@ class MyReportResponse {
 
 }
 
+
+
 class HomeDetailPage extends StatefulWidget {
   const HomeDetailPage({super.key});
 
@@ -98,6 +110,10 @@ class HomeDetailPage extends StatefulWidget {
 
 class _HomeDetailPageState extends State<HomeDetailPage> {
   MyReportResponse? report;
+
+  final GlobalKey _captureKey = GlobalKey();
+
+
 
   @override
   void initState() {
@@ -145,6 +161,8 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
   };
 
 
+
+
   @override
   Widget build(BuildContext context) {
     final Color teamColor = teamColors[teamShortCode] ?? AppColors.primary700;
@@ -169,111 +187,113 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
     }
 
 
-    //전체 직관 횟수가 3회 미만인 경우
-    if (reportData.totalVisitedGames < 2) {
-      return Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Container(
-                  height: 72,
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  alignment: Alignment.center,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        padding: EdgeInsets.zero,
-                        icon: SvgPicture.asset(
-                          'assets/icons/back_but.svg',
-                          width: 10,
-                          height: 20,
-                        ),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      const SizedBox(width: 0),
-                      const Text(
-                        '홈',
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w400,
-                          letterSpacing: -0.26,
-                          color: Color(0xFF272727),
-                          fontFamily: 'MBC1961GulimOTF',
-                        ),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        padding: EdgeInsets.zero,
-                        icon: SvgPicture.asset(
-                          'assets/icons/Alarm.svg',
-                          width: 18.05,
-                        ),
-                        onPressed: () {},
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 121),
-                Text(
-                  '직관 기록이 부족해요!',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'Pretendard',
-                  ),
-                ),
-                const SizedBox(height: 40),
 
-                Image.asset(
-                  'assets/images/bori_no_report.jpg',
-                  width: 108,
-                  height: 108,
-                  fit: BoxFit.contain,
-                ),
-                const SizedBox(height: 40),
-                Text.rich(
-                  TextSpan(
-                    text: '직관 기록이 ',
-                    style: const TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'Pretendard',
-                      color: Colors.black, // 기본 텍스트 색상
-                    ),
-                    children: [
-                      TextSpan(
-                        text: '3회',
-                        style: TextStyle(
-                          color: AppColors.primary700,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 19,
-                        ),
-                      ),
-                      const TextSpan(
-                        text: ' 이상 있어야\n리포트를 확인할 수 있어요!',
-                      ),
-                    ],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                Text(
-                  '현재:${reportData.totalVisitedGames}회' ,
-                  style: TextStyle(
-                    color: AppColors.gray700,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 19,
-                  ),
-                )
-              ],
-            ),
-          ),
-        ),
-      );
-    }
+
+    // //전체 직관 횟수가 3회 미만인 경우
+    // if (reportData.totalVisitedGames < 2) {
+    //   return Scaffold(
+    //     backgroundColor: Colors.white,
+    //     body: SafeArea(
+    //       child: Center(
+    //         child: Column(
+    //           mainAxisAlignment: MainAxisAlignment.start,
+    //           children: [
+    //             Container(
+    //               height: 72,
+    //               padding: const EdgeInsets.symmetric(vertical: 10),
+    //               alignment: Alignment.center,
+    //               child: Row(
+    //                 crossAxisAlignment: CrossAxisAlignment.center,
+    //                 children: [
+    //                   IconButton(
+    //                     padding: EdgeInsets.zero,
+    //                     icon: SvgPicture.asset(
+    //                       'assets/icons/back_but.svg',
+    //                       width: 10,
+    //                       height: 20,
+    //                     ),
+    //                     onPressed: () => Navigator.pop(context),
+    //                   ),
+    //                   const SizedBox(width: 0),
+    //                   const Text(
+    //                     '홈',
+    //                     style: TextStyle(
+    //                       fontSize: 26,
+    //                       fontWeight: FontWeight.w400,
+    //                       letterSpacing: -0.26,
+    //                       color: Color(0xFF272727),
+    //                       fontFamily: 'MBC1961GulimOTF',
+    //                     ),
+    //                   ),
+    //                   const Spacer(),
+    //                   IconButton(
+    //                     padding: EdgeInsets.zero,
+    //                     icon: SvgPicture.asset(
+    //                       'assets/icons/Alarm.svg',
+    //                       width: 18.05,
+    //                     ),
+    //                     onPressed: () {},
+    //                   ),
+    //                 ],
+    //               ),
+    //             ),
+    //             const SizedBox(height: 121),
+    //             Text(
+    //               '직관 기록이 부족해요!',
+    //               style: TextStyle(
+    //                 fontSize: 24,
+    //                 fontWeight: FontWeight.w700,
+    //                 fontFamily: 'Pretendard',
+    //               ),
+    //             ),
+    //             const SizedBox(height: 40),
+    //
+    //             Image.asset(
+    //               'assets/images/bori_no_report.jpg',
+    //               width: 108,
+    //               height: 108,
+    //               fit: BoxFit.contain,
+    //             ),
+    //             const SizedBox(height: 40),
+    //             Text.rich(
+    //               TextSpan(
+    //                 text: '직관 기록이 ',
+    //                 style: const TextStyle(
+    //                   fontSize: 19,
+    //                   fontWeight: FontWeight.w700,
+    //                   fontFamily: 'Pretendard',
+    //                   color: Colors.black, // 기본 텍스트 색상
+    //                 ),
+    //                 children: [
+    //                   TextSpan(
+    //                     text: '3회',
+    //                     style: TextStyle(
+    //                       color: AppColors.primary700,
+    //                       fontWeight: FontWeight.w700,
+    //                       fontSize: 19,
+    //                     ),
+    //                   ),
+    //                   const TextSpan(
+    //                     text: ' 이상 있어야\n리포트를 확인할 수 있어요!',
+    //                   ),
+    //                 ],
+    //               ),
+    //               textAlign: TextAlign.center,
+    //             ),
+    //             Text(
+    //               '현재:${reportData.totalVisitedGames}회' ,
+    //               style: TextStyle(
+    //                 color: AppColors.gray700,
+    //                 fontWeight: FontWeight.w700,
+    //                 fontSize: 19,
+    //               ),
+    //             )
+    //           ],
+    //         ),
+    //       ),
+    //     ),
+    //   );
+    // }
 
     // 3회 이상이면 기존 리포트 화면 반환
     return Scaffold(
@@ -324,7 +344,9 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
             ),
 
             // ✅ 본문 시작
-            Expanded(
+        Expanded(
+          child: RepaintBoundary(
+            key: _captureKey,
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 15),
                 child: Column(
@@ -513,7 +535,7 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
                               borderRadius: BorderRadius.circular(36),
                             ),
                           ),
-                          onPressed: () {},
+                          onPressed: _captureAndSave,
                           child: const Text(
                             '내 직관 리포트 공유하기',
                             style: TextStyle(
@@ -532,6 +554,7 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
                   ],
                 ),
               ),
+            ),
             ),
           ],
         ),
@@ -714,6 +737,26 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
       ),
     );
   }
+  Future<void> _captureAndSave() async {
+    try {
+      RenderRepaintBoundary boundary = _captureKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final pngBytes = byteData!.buffer.asUint8List();
+
+      final directory = await getTemporaryDirectory();
+      final filePath = '${directory.path}/my_report.png';
+      final file = File(filePath);
+      await file.writeAsBytes(pngBytes);
+
+      // 예시: 공유하기
+      await Share.shareXFiles([XFile(filePath)], text: '나의 직관 리포트 📊');
+
+    } catch (e) {
+      print('❌ 캡쳐 실패: $e');
+    }
+  }
+
 
 }
 
@@ -740,3 +783,4 @@ String getCaptionForRate(double rate) {
     return '지는 게\n무슨 기분이지';
   }
 }
+

@@ -51,6 +51,7 @@ class AddDiaryPage extends StatefulWidget {
 class _AddDiaryPageState extends State<AddDiaryPage> {
   String? fileName;
   DateTime currentDate = DateTime.now();
+  String? writtenStadiumCode;
 
   final TextEditingController ourScoreController = TextEditingController();
   final TextEditingController theirScoreController = TextEditingController();
@@ -91,10 +92,10 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
   @override
   void initState() {
     super.initState();
+
     if (widget.isEditMode && widget.journalId != null) {
       fetchJournalData(widget.journalId!);
-      print('🟡 initState 실행');
-      print('🟡 isEditMode: ${widget.isEditMode}, journalId: ${widget.journalId}');
+
 
 
     } else {
@@ -130,14 +131,12 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
         String? presignedImageUrl = data['media_url'];
 
         print('📦 journalDetail data: $data');
-        print('🖼️ presignedImageUrl: $presignedImageUrl');
-
 
 
         setState(() {
           currentDate = DateTime.tryParse(data['gameDate'] ?? '') ?? DateTime.now();
           ourScoreController.text = data['ourScore']?.toString() ?? '';
-          theirScoreController.text = data['theirScore']?.toString() ?? ''; // ✅ 이걸로 수정
+          theirScoreController.text = data['theirScore']?.toString() ?? '';
           selectedEmotionIndex = getEmotionIndex(data['emotion'] ?? '');
           reviewController.text = data['review_text'] ?? '';
           mediaUrl = presignedImageUrl;// 네트워크 URL로 저장
@@ -215,7 +214,6 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
 
 
   final TextEditingController reviewController = TextEditingController();
-
 
 
 
@@ -558,6 +556,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                         onImageSelected: (image) {
                           setState(() {
                             _pickedImage = image;
+
                           });
                         },
                         enabled: !widget.isEditMode,
@@ -720,11 +719,11 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                     print('❌ 유효한 경기 ID를 찾을 수 없음');
                                     return;
                                   }
-
+                                  writtenStadiumCode = todaySchedule!.stadium;
                                   final int? journalId = await ApiService.uploadJournal(
                                     gameId: gameId,
                                     gameDateTime: DateTime.parse(todaySchedule!.gameDateTime),
-                                    stadiumShortCode: todaySchedule!.stadium,
+                                    stadiumShortCode: writtenStadiumCode!,
                                     opponentTeamShortCode: todaySchedule!.opponentTeam,
                                     ourScore: int.parse(ourScore),
                                     theirScore: int.parse(opponentScore),
@@ -740,12 +739,13 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                     print('❌ 업로드 실패로 journalId가 null입니다.');
                                     return;
                                   }
-                                  print('👉 AddSeatPage로 push 시도!');
+                                  print('📍 화면 전환 → journalId: $journalId, stadium: $writtenStadiumCode, gameTime: ${todaySchedule!.gameDateTime}');
+
                                   context.push(
                                     '/addseat',
                                     extra: {
                                       'journalId': journalId,
-                                      'stadium': todaySchedule!.stadium,
+                                      'stadium': writtenStadiumCode, // ✅ 여기 수정
                                       'gameDateTime': todaySchedule!.gameDateTime,
                                     },
 
@@ -1037,8 +1037,12 @@ class DiaryImagePicker extends StatefulWidget {
   final String? initialImageUrl;
   final bool enabled;
 
-  const DiaryImagePicker({super.key, required this.onImageSelected,  this.initialImageUrl,this.enabled = true,});
-
+  const DiaryImagePicker({
+    super.key,
+    required this.onImageSelected,
+    this.initialImageUrl,
+    this.enabled = true,
+  });
 
   @override
   State<DiaryImagePicker> createState() => _DiaryImagePickerState();
@@ -1046,21 +1050,83 @@ class DiaryImagePicker extends StatefulWidget {
 
 class _DiaryImagePickerState extends State<DiaryImagePicker> {
   File? _pickedImage;
-  String? _initialImageUrl;
 
   @override
-  void initState() {
-    super.initState();
-    _initialImageUrl = widget.initialImageUrl; // ✅ 이거 추가
+  Widget build(BuildContext context) {
+    Widget? content;
+
+    // 1. 갤러리에서 사진을 선택한 경우
+    if (_pickedImage != null) {
+      content = ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.file(
+          _pickedImage!,
+          fit: BoxFit.fitWidth,
+          width: double.infinity,
+        ),
+      );
+    }
+    // 2. 수정 모드에서 initialImageUrl이 있을 경우
+    else if (!widget.enabled &&
+        widget.initialImageUrl != null &&
+        widget.initialImageUrl!.isNotEmpty) {
+      content = ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          widget.initialImageUrl!,
+          fit: BoxFit.fitWidth,
+          width: double.infinity,
+          // ✅ 여기서 실패했을 경우 기본 업로드 UI를 보여줌
+          errorBuilder: (context, error, stackTrace) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 36),
+              child: Center(
+                child: SvgPicture.asset(
+                  "assets/icons/camera_icon.svg",
+                  width: 28.3,
+                  height: 28.3,
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    }
+    else {
+      // 그 외 (작성 모드 && 아직 사진 없음) → 기본 UI 보여줌
+      content = _buildDefaultUploadBox();
+    }
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.enabled ? _pickImage : null,
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFD9D9D9)),
+          color: const Color(0xFFF5F5F5),
+        ),
+        child: content,
+      ),
+    );
   }
-
-
+  Widget _buildDefaultUploadBox() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 36),
+      child: Center(
+        child: SvgPicture.asset(
+          "assets/icons/camera_icon.svg",
+          width: 28.3,
+          height: 28.3,
+        ),
+      ),
+    );
+  }
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
-
-
 
     if (image != null) {
       final file = File(image.path);
@@ -1072,89 +1138,13 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
       analytics.logEvent('upload_diary_photo', properties: {
         'event_type': 'Custom',
         'component': 'event',
-        'photo_count': 1, // UT에서는 1장만 업로드하므로 고정
+        'photo_count': 1,
         'importance': 'High',
       });
     }
   }
-
-
-
-
-  @override
-  Widget build(BuildContext context) {
-    Widget content;
-
-    if (_pickedImage != null) {
-      content = ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.file(
-          _pickedImage!,
-          fit: BoxFit.fitWidth,
-          width: double.infinity,
-        ),
-      );
-    } else if (_initialImageUrl != null && _initialImageUrl!.isNotEmpty) {
-      content = ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.network(
-          _initialImageUrl!,
-          fit: BoxFit.fitWidth,
-          width: double.infinity,
-          errorBuilder: (_, __, ___) {
-            print('❌ 이미지 로드 실패!');
-            return const Icon(Icons.broken_image);
-          },
-        ),
-      );
-    } else {
-      content = Padding(
-        padding: const EdgeInsets.symmetric(vertical: 36),
-        child: Center(
-          child: SvgPicture.asset(
-            "assets/icons/camera_icon.svg",
-            width: 28.3,
-            height: 28.3,
-          ),
-        ),
-      );
-    }
-    print('📸 DiaryImagePicker _initialImageUrl: $_initialImageUrl');
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque, // ✅ 터치가 빈 공간에도 반응하도록 설정
-      onTap: widget.enabled ? _pickImage : null,
-      // ✅ 이게 실행돼야 갤러리 열림
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFD9D9D9)),
-          color: const Color(0xFFF5F5F5),
-        ),
-        child: _pickedImage == null
-            ? Padding(
-          padding: const EdgeInsets.symmetric(vertical: 36),
-          child: Center(
-            child: SvgPicture.asset(
-              "assets/icons/camera_icon.svg",
-              width: 28.3,
-              height: 28.3,
-            ),
-          ),
-        )
-            : ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.file(
-            _pickedImage!,
-            fit: BoxFit.fitWidth,
-            width: double.infinity,
-          ),
-        ),
-      ),
-    );
-  }
 }
+
 
 Future<String?> getPresignedUrl(String fileName, String contentType) async {
 
@@ -1192,7 +1182,6 @@ Future<bool> uploadImageToS3(String presignedUrl, File file) async {
     body: bytes,
   );
 
-  print('📤 S3 업로드 응답 코드: ${response.statusCode}');
   return response.statusCode == 200;
 }
 

@@ -44,6 +44,7 @@ class DiaryPage extends StatefulWidget {
   final String? stadium;
   final DateTime? gameDateTime;
 
+
   const DiaryPage({
     super.key,
     this.journalId,
@@ -66,6 +67,9 @@ class _DiaryPageState extends State<DiaryPage> {
   String baseImageUrl = 'https://inninglog-bucket.s3.ap-northeast-2.amazonaws.com/';
 
   List<Journal> journalList = [];
+
+
+
   bool isLoading = true;
 
   //인피니트 스크롤
@@ -101,6 +105,8 @@ class _DiaryPageState extends State<DiaryPage> {
 
   Future<void> loadMoreSummary() async {
     setState(() => isLoadingMore = true);
+
+    // ✅ 서버에 필터 적용해서 가져옴 (API가 지원한다면)
     final newList = await fetchJournalSummary(
       page: page,
       resultScore: selectedFilterCollection,
@@ -113,6 +119,8 @@ class _DiaryPageState extends State<DiaryPage> {
       isLoadingMore = false;
     });
   }
+
+
 
 
   // 승/패/무 판단 함수
@@ -607,6 +615,10 @@ class _DiaryPageState extends State<DiaryPage> {
                           child: GridView.builder(
                             controller: _scrollController,
                             itemCount: journalList.where((game) {
+                              print('🔥 journalList 길이: ${journalList.length}');
+                              for (var j in journalList) {
+                                print('🖼️ ${j.journalId} - ${j.mediaUrl}');
+                              }
                               if (selectedFilterCollection == null) {
                                 return true; // 전체 보여주기
                               }
@@ -621,48 +633,80 @@ class _DiaryPageState extends State<DiaryPage> {
                             ),
                             itemBuilder: (context, index) {
                               final filteredGames = journalList.where((game) {
-                                if (selectedFilterCollection == null) {
-                                  return true;
-                                }
                                 final result = getGameResult(game.ourScore, game.theirScore);
-                                return result == selectedFilterCollection;
+                                return selectedFilterCollection == null || result == selectedFilterCollection;
                               }).toList();
+
+
                               final game = filteredGames[index];
-                              print('[📸 이미지 URL] ${game.fullMediaUrl}');
+                              final imageUrl = game.mediaUrl;
+                              final hasImage = imageUrl.isNotEmpty && imageUrl.startsWith('http');
+
+                              final result = (game.ourScore != null && game.theirScore != null)
+                                  ? getGameResult(game.ourScore, game.theirScore)
+                                  : '';
+
+                              final shortResult = _shortenResult(result);
+                              print('🧪 ${game.journalId} → $result / $shortResult');
+
+                              final imageWidget = hasImage
+                                  ? Image.network(
+                                imageUrl,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                                errorBuilder: (context, error, stackTrace) {
+                                  print('❌ 이미지 에러: $error');
+                                  return const Icon(Icons.broken_image);
+                                },
+                              )
+                                  : Image.asset(
+                                emotionImageMap[game.emotion] ?? 'assets/images/smile.jpg',
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                              );
+
                               return Stack(
                                 children: [
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(10),
-                                    // 카드 둥근 모서리
-                                    child:Image.network(
-                                      game.fullMediaUrl,
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                      height: double.infinity,
-                                      errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image)),
+                                    child: imageWidget,
+                                  ),
+                                  // ✅ 그라데이션 오버레이 추가
+                                  Positioned.fill(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            Colors.transparent,
+                                            Colors.black.withOpacity(0.4),
+                                          ],
+                                        ),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
                                     ),
-
-
                                   ),
                                   Positioned(
                                     top: 8,
                                     left: 8,
                                     child: Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 3, vertical: 129),//자동패딩 8
+                                      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 129),
                                       decoration: BoxDecoration(
                                         color: Colors.black.withOpacity(0),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Text(
-                                        _shortenResult(getGameResult(game.ourScore, game.theirScore)),
-                                        style: TextStyle(
+                                        shortResult,
+                                        style: const TextStyle(
                                           color: AppColors.gray50,
                                           fontSize: 26,
                                           fontWeight: FontWeight.w400,
                                           fontFamily: 'MBC1961GulimOTF',
                                         ),
                                       ),
-
                                     ),
                                   ),
                                   Positioned(
@@ -674,23 +718,20 @@ class _DiaryPageState extends State<DiaryPage> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        SizedBox(height: 5),
-
+                                        const SizedBox(height: 5),
                                         Text(
-
                                           '${game.gameDate.month}/${game.gameDate.day}(${_getWeekday(game.gameDate)})',
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             color: AppColors.gray50,
                                             fontSize: 9,
                                             fontFamily: 'Pretendard_Black',
                                             fontWeight: FontWeight.w700,
                                             height: 1.1,
-
                                           ),
                                         ),
                                         Text(
                                           'vs  ${teamNameMap[game.opponentTeamSC] ?? game.opponentTeamSC}',
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             color: AppColors.gray50,
                                             fontSize: 9,
                                             fontFamily: 'Pretendard_Black',
@@ -700,12 +741,11 @@ class _DiaryPageState extends State<DiaryPage> {
                                         ),
                                         Text(
                                           '@${stadiumNameMap[game.stadiumSC] ?? game.stadiumSC}',
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             color: AppColors.gray50,
                                             fontSize: 9,
                                             fontFamily: 'Pretendard_Black',
                                             fontWeight: FontWeight.w700,
-
                                           ),
                                         ),
                                       ],
@@ -714,6 +754,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                 ],
                               );
                             },
+
                           ),
                         ),
                       ),
@@ -949,17 +990,14 @@ class _DiaryPageState extends State<DiaryPage> {
 
     return GestureDetector(
       onTap: () {
-        onFilterChanged(isSelected ? null : label);
+        onFilterChanged(isSelected ? null : label); // ✅ 콜백 사용하도록 수정
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 44),
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: borderColor,
-            width: 1,
-          ),
+          border: Border.all(color: borderColor, width: 1),
         ),
         child: Text(
           label,
@@ -975,6 +1013,7 @@ class _DiaryPageState extends State<DiaryPage> {
       ),
     );
   }
+
 
 
   // 탭바 버튼
@@ -1098,3 +1137,13 @@ Future<DateTime?> showMonthPickerDialog(BuildContext context, DateTime initialDa
   );
 
 }
+
+const Map<String, String> emotionImageMap = {
+  '짜릿함': 'assets/images/electric.jpg',
+  '감동': 'assets/images/touched.jpg',
+  '흡족' : 'assets/images/smile.jpg',
+  '답답함' : 'assets/images/ohmy.jpg',
+  '아쉬움': 'assets/images/sad.jpg',
+  '분노': 'assets/images/angry.jpg',
+  // 필요한 만큼 추가
+};

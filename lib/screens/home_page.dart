@@ -32,11 +32,11 @@ const Map<String, String> teamNameMap = {
 const Map<String, String> stadiumNameMap = {
   'JAM': '잠실 야구장',
   'GOC': '고척 스카이돔',
-  'INC': '랜더스필드',
-  'DAE': '한화생명 볼파크',
-  'DAU': '라이온즈 파크',
+  'ICN': '랜더스필드',
+  'DJN': '한화생명 볼파크',
+  'DAE': '라이온즈 파크',
   'SUW': '위즈파크',
-  'SAJ': '사직 야구장',
+  'BUS': '사직 야구장',
   'GWJ': '챔피언스 월드',
   'CHW': 'NC 파크',
 };

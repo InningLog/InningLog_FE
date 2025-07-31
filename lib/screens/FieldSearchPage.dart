@@ -34,6 +34,7 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
     '좌석 공간': ['#아주_넓음', '#넓음', '#보통', '#좁음'],
   };
 
+  bool get isJamsil => widget.stadiumName == '잠실 야구장';
 
   bool get isDirectSearchValid {
     final hasZone = selectedZone?.isNotEmpty ?? false;
@@ -50,8 +51,9 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
 
   @override
   Widget build(BuildContext context) {
-    print("📍 stadiumName: ${widget.stadiumName}");
-    print("📍 selectedStadiumCode: $selectedStadiumCode");
+    final bool isJamsil = widget.stadiumName == '잠실 야구장';
+
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -97,6 +99,7 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
               ),
             ),
 
+
             // 상단 탭바
             Container(
               height: 42,
@@ -107,6 +110,14 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                 ],
               ),
             ),
+
+            if (!isJamsil)
+              Expanded(
+                child: Center(
+                  child: Image.asset( 'assets/images/developing_image.jpg',),
+                ),
+              )
+            else
 
             // 본문 영역
             Expanded(

@@ -245,6 +245,7 @@ Future<List<Journal>> fetchJournalSummary({
   );
 
   if (response.statusCode == 200) {
+    print('[🐛 응답 JSON] ${response.body}');
     final jsonData = jsonDecode(response.body);
     final List content = jsonData['data']['content'];
     return content.map((j) => Journal.fromJson(j)).toList();
@@ -330,31 +331,37 @@ Future<bool> uploadSeatView({
 
   final url = Uri.parse('https://api.inninglog.shop/seatViews/contents');
 
+  final body = {
+    'journalId': journalId,
+    'stadiumShortCode': stadiumSC,
+    'zoneShortCode': zoneSC,
+    'section': section,
+    'seatRow': row,
+    'emotionTagCodes': tagCodes,
+    'fileName': fileName,
+  };
+
+  print('📤 좌석 시야 업로드 요청 바디: ${jsonEncode(body)}');
+
   final response = await http.post(
     url,
     headers: {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
     },
-    body: jsonEncode({
-      'journalId': journalId,
-      'stadiumShortCode': stadiumSC,
-      'zoneShortCode': zoneSC,
-      'section': section,
-      'seatRow': row,
-      'emotionTagCodes': tagCodes,
-      'fileName': fileName,
-    }),
+    body: jsonEncode(body),
   );
 
   if (response.statusCode == 200) {
     print('✅ 좌석 시야 업로드 성공');
     return true;
   } else {
-    print('❌ 좌석 시야 업로드 실패: ${response.body}');
+    print('❌ 좌석 시야 업로드 실패: ${response.statusCode}');
+    print('❌ 응답 내용: ${response.body}');
     return false;
   }
 }
+
 
 
 Future<Map<String, dynamic>?> fetchScheduleForDate(DateTime date) async {
@@ -395,6 +402,7 @@ Future<JournalDetail?> fetchJournalDetail(int journalId) async {
     },
   );
 
+
   if (response.statusCode == 200) {
     final json = jsonDecode(response.body);
     final data = json['data']['jourDetail'];
@@ -404,3 +412,97 @@ Future<JournalDetail?> fetchJournalDetail(int journalId) async {
     return null;
   }
 }
+
+Future<List<String>> fetchSeatViews({
+  required String stadiumShortCode,
+  String? zoneShortCode,
+  String? section,
+  String? seatRow,
+  int page = 0,
+  int size = 10,
+}) async {
+  // 빈 문자열이면 null로 간주
+  final cleanedZone = (zoneShortCode != null && zoneShortCode.trim().isNotEmpty)
+      ? zoneShortCode.trim()
+      : null;
+  final cleanedSection = (section != null && section.trim().isNotEmpty) ? section.trim() : null;
+  final cleanedRow = (seatRow != null && seatRow.trim().isNotEmpty) ? seatRow.trim() : null;
+
+  final uri = Uri.https('api.inninglog.shop', '/seatViews/normal/gallery', {
+    'stadiumShortCode': stadiumShortCode,
+    if (cleanedZone != null) 'zoneShortCode': cleanedZone,
+    if (cleanedSection != null) 'section': cleanedSection,
+    if (cleanedRow != null) 'seatRow': cleanedRow,
+    'page': '$page',
+    'size': '$size',
+  });
+  print('🧩 전달된 zoneShortCode: "$zoneShortCode"');
+  print('📦 최종 요청 URI: $uri');
+
+
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('access_token');
+
+  final res = await http.get(uri, headers: {
+    'Authorization': 'Bearer $token',
+  });
+
+  if (res.statusCode == 200) {
+    final json = jsonDecode(res.body);
+    final List<dynamic> contents = json['data']['content'];
+    return contents.map<String>((item) => item['viewMediaUrl'] as String).toList();
+  } else {
+    throw Exception('좌석 시야 조회 실패: ${res.body}');
+  }
+}
+
+
+Future<List<SeatView>> fetchSeatViewsByHashtag({
+  required String stadiumShortCode,
+  required List<String> hashtagCodes,
+  int page = 0,
+  int size = 10,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('access_token');
+
+  final uri = Uri.https('api.inninglog.shop', '/seatViews/hashtag/gallery', {
+    'stadiumShortCode': stadiumShortCode,
+    'hashtagCodes': hashtagCodes,
+    'page': '$page',
+    'size': '$size',
+  });
+
+  final res = await http.get(uri, headers: {
+    'Authorization': 'Bearer $token',
+  });
+
+  if (res.statusCode == 200) {
+    final json = jsonDecode(res.body);
+    final List<dynamic> contents = json['data']['content'];
+    return contents.map((item) => SeatView.fromJson(item)).toList();
+  } else {
+    throw Exception('해시태그 좌석 조회 실패: ${res.body}');
+  }
+}
+
+
+Future<SeatViewDetail> fetchSeatViewDetail(int seatViewId) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('access_token');
+
+  final uri = Uri.https('api.inninglog.shop', '/seatViews/$seatViewId');
+  final res = await http.get(uri, headers: {
+    'Authorization': 'Bearer $token',
+  });
+
+  if (res.statusCode == 200) {
+    final json = jsonDecode(res.body);
+    final data = json['data'];
+
+    return SeatViewDetail.fromJson(data);
+  } else {
+    throw Exception('좌석 시야 상세 조회 실패: ${res.body}');
+  }
+}
+

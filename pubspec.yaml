@@ -32,6 +32,11 @@ dependencies:
   collection: ^1.17.1
   month_picker_dialog: ^6.0.3
   http: ^1.4.0
+  path_provider: ^2.1.2
+  share_plus: ^7.2.1
+
+
+
 
 
 dev_dependencies:
@@ -49,27 +54,7 @@ flutter:
 
   assets:
     - assets/icons/
-    - assets/images/KakaoTalk_20250611_184301449.jpg
-    - assets/images/KakaoTalk_20250611_184301449_01.jpg
-    - assets/images/KakaoTalk_20250611_184301449_03.jpg
-    - assets/images/KakaoTalk_20250611_184301449_04.jpg
-    - assets/images/KakaoTalk_20250611_184301449_05.jpg
-    - assets/images/KakaoTalk_20250611_184301449_06.jpg
-    - assets/icons/splash_green.svg
-    - assets/icons/splash_white.svg
-    - assets/icons/bori.svg
-    - assets/images/onboard_2.svg
-    - assets/images/onboard_3.svg
-    - assets/images/onboard_4.svg
-    - assets/images/onboard_5.svg
-    - assets/images/bori.jpg
-    - assets/images/bori_onboard.jpg
-    - assets/images/bori30.jpg
-    - assets/images/bori50.jpg
-    - assets/images/bori70.jpg
-    - assets/images/bori100.jpg
-    - assets/images/bori_no_report.jpg
-    - assets/images/bori_sleepy.jpg
+    - assets/images/
 
 
 

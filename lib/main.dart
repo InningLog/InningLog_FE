@@ -7,6 +7,7 @@ import 'package:inninglog/navigation/main_navigation.dart';
 import 'package:inninglog/screens/add_diary_page.dart';
 import 'package:inninglog/screens/add_seat_page.dart';
 import 'package:inninglog/screens/field_hashtag_filter_sheet.dart';
+import 'package:inninglog/screens/seat_detail_page.dart';
 import 'package:inninglog/screens/onboarding_page6.dart';
 import 'package:inninglog/screens/splash_screen.dart';
 import 'package:inninglog/screens/onboarding_screen.dart';
@@ -129,6 +130,24 @@ final GoRouter _router = GoRouter(
           },
         ),
 
+        GoRoute(
+          path: '/seat_detail',
+          name: 'seat_detail',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>;
+            final int seatViewId = extra['seatViewId'];
+            final String imageUrl = extra['imageUrl'];
+
+            return SeatDetailPage(
+              seatViewId: seatViewId,
+              imageUrl: imageUrl,
+            );
+          },
+        ),
+
+
+
+
 
 
       ],
@@ -141,9 +160,9 @@ class InningLogApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'InningLog',
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
+      home: const ResponsiveWrapper(),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -152,7 +171,42 @@ class InningLogApp extends StatelessWidget {
       supportedLocales: const [
         Locale('ko', 'KR'),
       ],
-      routerConfig: _router, // go_router 연결
+    );
+  }
+}
+
+class ResponsiveWrapper extends StatelessWidget {
+  const ResponsiveWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const aspectRatio = 9 / 16;
+
+        double maxHeight = constraints.maxHeight;
+        double calculatedWidth = maxHeight * aspectRatio;
+
+        return Center(
+          child: Container(
+            width: calculatedWidth,
+            height: maxHeight,
+            color: Colors.white,
+            child: MaterialApp.router(
+              routerConfig: _router,
+              debugShowCheckedModeBanner: false,
+              localizationsDelegates: const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [
+                Locale('ko', 'KR'),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

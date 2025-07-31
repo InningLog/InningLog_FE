@@ -153,19 +153,24 @@ class _AddSeatPageState extends State<AddSeatPage> {
 
   //버튼 활성화 조건
   bool get isFormValid {
-    final hasZoneOrSection =
-        (selectedZone != null && selectedZone!.isNotEmpty) ||
-            sectionController.text.trim().isNotEmpty;
+    final hasZone = selectedZone != null && selectedZone!.isNotEmpty;
+    final hasSection = sectionController.text.trim().isNotEmpty;
+    final hasRow = rowController.text.trim().isNotEmpty;
+    final hasImage = seatImage != null;
 
-    return hasZoneOrSection && seatImage != null;
+    return hasZone && hasSection && hasRow && hasImage;
   }
+
 
 
   @override
   void initState() {
     super.initState();
+    print('🧾 AddSeatPage 전달된 stadium: ${widget.stadium}');
+
     selectedStadiumCode = widget.stadium;
     loadTodaySchedule();
+
   }
 
 
@@ -563,7 +568,7 @@ class _AddSeatPageState extends State<AddSeatPage> {
 
                           await uploadSeatView(
                             journalId: widget.journalId,
-                            stadiumSC: todaySchedule!.stadium,
+                            stadiumSC: widget.stadium,
                             zoneSC: selectedZone!,
                             section: sectionController.text.trim(),
                             row: rowController.text.trim(),
@@ -571,7 +576,14 @@ class _AddSeatPageState extends State<AddSeatPage> {
                             fileName: fileName,
                           );
 
-
+                          print('📦 uploadSeatView 호출 인자:');
+                          print('  journalId: ${widget.journalId}');
+                          print('  stadiumSC: ${ widget.stadium}');
+                          print('  zoneSC: ${selectedZone!}');
+                          print('  section: ${sectionController.text.trim()}');
+                          print('  row: ${rowController.text.trim()}');
+                          print('  tagCodes: $tagCodes');
+                          print('  fileName: $fileName');
 
 
                           if (context.mounted) {

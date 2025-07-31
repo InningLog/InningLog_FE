@@ -7,14 +7,21 @@ class MyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
-          children: const [
-            CommonHeader(title: '마이페이지'),
-            // 여기에 캘린더나 탭바 등 추가
+          children: [
+            const CommonHeader(title: '마이페이지'),
+            Expanded(
+              child: Image.asset(
+                'assets/images/developing_image.jpg',
+                width: 274,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 }
+

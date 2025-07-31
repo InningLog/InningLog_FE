@@ -79,56 +79,56 @@ class SeatPage extends StatelessWidget {
 
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15.25),
-                child: GridView.builder(
-                  itemCount: teamStadiums.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 20,
-                    mainAxisSpacing: 20,
-                    childAspectRatio: 106.5 / 153,
-                  ),
-                  itemBuilder: (context, index) {
-                    final stadium = teamStadiums[index];
-                    return GestureDetector(
-                      onTap: () {
-                        analytics.logEvent('select_stadium', properties: {
-                          'event_type': 'Custom',
-                          'component': 'btn_click',
-                          'stadium_name':stadium.stadiumNameShort,
-                          'importance': 'High',
-                        });
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => FieldSearchPage(stadiumName: stadium.stadiumName),
-                          ),
-                        );
-                      },
-
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SvgPicture.asset(
-                            stadium.assetPath,
-                            width: 100,
-                            height: 130,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            stadium.teamName,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'Pretendard',
+                  padding: const EdgeInsets.symmetric(horizontal: 15.25),
+                  child: GridView.builder(
+                    itemCount: teamStadiums.length,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 20,
+                      mainAxisSpacing: 20,
+                      childAspectRatio: 106.5 / 153,
+                    ),
+                    itemBuilder: (context, index) {
+                      final stadium = teamStadiums[index];
+                      return GestureDetector(
+                        onTap: () {
+                          analytics.logEvent('select_stadium', properties: {
+                            'event_type': 'Custom',
+                            'component': 'btn_click',
+                            'stadium_name':stadium.stadiumNameShort,
+                            'importance': 'High',
+                          });
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => FieldSearchPage(stadiumName: stadium.stadiumName),
                             ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                )
+                          );
+                        },
+
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SvgPicture.asset(
+                              stadium.assetPath,
+                              width: 100,
+                              height: 130,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              stadium.teamName,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                fontFamily: 'Pretendard',
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  )
 
               ),
             ),
