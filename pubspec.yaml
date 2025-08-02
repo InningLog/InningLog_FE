@@ -57,6 +57,10 @@ flutter:
     - assets/icons/
     - assets/images/
     - .env
+    - assets/images/onboard_1.jpg
+    - assets/images/onboard_2.jpg
+    - assets/images/onboard_3.jpg
+    - assets/images/onboard_4.jpg
 
 
 

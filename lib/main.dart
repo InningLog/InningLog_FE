@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:inninglog/navigation/main_navigation.dart';
 import 'package:inninglog/screens/add_diary_page.dart';
 import 'package:inninglog/screens/add_seat_page.dart';
+import 'package:inninglog/screens/bridge_page.dart';
 import 'package:inninglog/screens/field_hashtag_filter_sheet.dart';
 import 'package:inninglog/screens/seat_detail_page.dart';
 import 'package:inninglog/screens/onboarding_page6.dart';
@@ -20,6 +21,7 @@ import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
 import 'package:amplitude_flutter/amplitude.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io' show Platform;
 import 'analytics/analytics.dart';
 import 'package:inninglog/analytics/amplitude_flutter.dart';
@@ -36,22 +38,10 @@ Future<void> main() async {
   analytics.init();
   await dotenv.load();
 
-  KakaoSdk.init(
-    nativeAppKey: dotenv.env['KAKAO_NATIVE_APP_KEY']!,
-  );
-
   runApp(const InningLogApp());
 }
 
 
-// void initAmplitude() {
-//   if (kIsWeb || Platform.isAndroid || Platform.isIOS) {
-//     amplitude.init("821c8925a751c008310e896ad437b1bc");
-//     amplitude.trackingSessionEvents(true);
-//   } else {
-//     print("⚠️ Amplitude is not supported on this platform.");
-//   }
-// }
 
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -59,8 +49,16 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 final GoRouter _router = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/splash',
+  initialLocation: kIsWeb
+      ? '/${Uri.base.fragment.split('?').firstOrNull ?? 'splash'}'
+      : '/splash',
+
   routes: [
+    GoRoute(
+      path: '/',
+      redirect: (_, __) => '/splash',
+    ),
+
     /// GNB 없는 화면들
     GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
     GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
@@ -79,6 +77,40 @@ final GoRouter _router = GoRouter(
       },
     ),
 
+    GoRoute(
+      path: '/authredirect',
+      builder: (context, state) {
+        final uri = Uri.base;
+        final accessToken = uri.queryParameters['accessToken'];
+        final isNewUser = uri.queryParameters['isNewUser'];
+
+        print('📍 AuthRedirect 진입');
+        print('🪪 accessToken: $accessToken');
+        print('🆕 isNewUser: $isNewUser');
+
+        if (accessToken != null) {
+          SharedPreferences.getInstance().then((prefs) async {
+            await prefs.setString('access_token', accessToken);
+            debugPrint('✅ accessToken 저장 완료');
+
+            // context.go()는 다음 프레임에서 실행되도록 해야 함
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (isNewUser == 'true') {
+                context.go('/onboarding6');
+              } else {
+                context.go('/home');
+              }
+            });
+          });
+        }
+
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
+      },
+    ),
+
+
 
     GoRoute(
       path: '/addseat',
@@ -92,6 +124,45 @@ final GoRouter _router = GoRouter(
       },
     ),
 
+    // GoRoute(
+    //   path: '/home',
+    //   builder: (context, state) {
+    //     // 🔍 URL Fragment 직접 파싱
+    //     final fragment = Uri.base.fragment; // ex: "/home?isNewUser=false&jwt=..."
+    //     final parsed = Uri.parse(fragment);
+    //     final jwt = parsed.queryParameters['jwt'];
+    //     final isNewUser = parsed.queryParameters['isNewUser'];
+    //
+    //     debugPrint('🧩 fragment: $fragment');
+    //     debugPrint('🔐 jwt: $jwt');
+    //     debugPrint('🆕 isNewUser: $isNewUser');
+    //
+    //     if (jwt != null) {
+    //       SharedPreferences.getInstance().then((prefs) {
+    //         prefs.setString('access_token', jwt);
+    //         debugPrint('✅ JWT 저장 완료');
+    //       });
+    //     }
+    //
+    //     // 분기 이동
+    //     WidgetsBinding.instance.addPostFrameCallback((_) {
+    //       if (isNewUser == 'true') {
+    //         context.go('/onboarding6');
+    //       } else {
+    //         context.go('/home');
+    //       }
+    //     });
+    //
+    //     return const Scaffold(
+    //       body: Center(child: CircularProgressIndicator()),
+    //     );
+    //   },
+    // ),
+
+    GoRoute(
+      path: '/bridge',
+      builder: (context, state) => const BridgePage(),
+    ),
 
 
 
@@ -161,9 +232,27 @@ class InningLogApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
+      routerConfig: _router,
       debugShowCheckedModeBanner: false,
-      home: const ResponsiveWrapper(),
+      builder: (context, child) {
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            const aspectRatio = 9 / 16;
+            double maxHeight = constraints.maxHeight;
+            double calculatedWidth = maxHeight * aspectRatio;
+
+            return Center(
+              child: Container(
+                width: calculatedWidth,
+                height: maxHeight,
+                color: Colors.white,
+                child: child,
+              ),
+            );
+          },
+        );
+      },
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -172,42 +261,6 @@ class InningLogApp extends StatelessWidget {
       supportedLocales: const [
         Locale('ko', 'KR'),
       ],
-    );
-  }
-}
-
-class ResponsiveWrapper extends StatelessWidget {
-  const ResponsiveWrapper({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const aspectRatio = 9 / 16;
-
-        double maxHeight = constraints.maxHeight;
-        double calculatedWidth = maxHeight * aspectRatio;
-
-        return Center(
-          child: Container(
-            width: calculatedWidth,
-            height: maxHeight,
-            color: Colors.white,
-            child: MaterialApp.router(
-              routerConfig: _router,
-              debugShowCheckedModeBanner: false,
-              localizationsDelegates: const [
-                GlobalMaterialLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-              ],
-              supportedLocales: const [
-                Locale('ko', 'KR'),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }

@@ -12,6 +12,7 @@ import 'package:inninglog/screens/onboarding_page6.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:html' as html;
 
 
 
@@ -30,9 +31,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int _currentPage = 0;
 
+  @override
+  void initState() {
+    super.initState();
+
+    // if (kIsWeb) {
+    //   WidgetsBinding.instance.addPostFrameCallback((_) {
+    //     handleWebLoginRedirect(context);
+    //   });
+    // }
+  }
 
   void loginWithKakaoWeb() async {
     if (!kIsWeb) return; // 웹이 아니면 리턴
+
+    // 👉 로그인 시작 마킹
+    html.window.sessionStorage['login_in_progress'] = 'true';
+
 
     const kakaoLoginUrl =
         'https://kauth.kakao.com/oauth/authorize'
@@ -40,12 +55,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         '&client_id=293f7036654f2a9155a87e05f84b2d7e'
         '&redirect_uri=https://api.inninglog.shop/callback';
 
-    final uri = Uri.parse(kakaoLoginUrl);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      print('❌ 카카오 로그인 URL 실행 실패');
-    }
+    html.window.location.href = kakaoLoginUrl;
+
+    // final uri = Uri.parse(kakaoLoginUrl);
+    // if (await canLaunchUrl(uri)) {
+    //   await launchUrl(uri, mode: LaunchMode.externalApplication);
+    // } else {
+    //   print('❌ 카카오 로그인 URL 실행 실패');
+    // }
   }
 
 
@@ -116,10 +133,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
 
 
+    @override
+    Widget build(BuildContext context) {
+      if (kIsWeb && html.window.sessionStorage['login_in_progress'] == 'true') {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          html.window.sessionStorage.remove('login_in_progress');
+          handleWebLoginRedirect(context);
+        });
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+    }
+
+      return Scaffold(
       backgroundColor: AppColors.primary50,
       body: Column(
         children: [
@@ -199,6 +223,31 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  void handleWebLoginRedirect(BuildContext context) async {
+    if (!kIsWeb) return;
+
+    final uri = Uri.parse(html.window.location.href);
+    final isNewUser = uri.queryParameters['isNewUser'];
+    final jwt = uri.queryParameters['accessToken']; // ✅ 주의: 'jwt'가 아니라 'accessToken'
+
+    print('🔁 URL: $uri');
+    print('🪪 토큰: $jwt');
+    print('🆕 신규유저: $isNewUser');
+
+    if (jwt != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('access_token', jwt);
+      print('✅ access_token 저장 완료');
+    }
+
+    if (isNewUser == 'true') {
+      context.go('/onboarding6');
+    } else if (isNewUser == 'false') {
+      context.go('/home');
+    } else {
+      print('❌ isNewUser 파라미터 없음');
+    }
+  }
 
 
 

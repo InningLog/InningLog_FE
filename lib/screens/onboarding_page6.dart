@@ -10,6 +10,14 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:inninglog/service/member_api.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+
+import 'dart:convert';
+import 'package:flutter/material.dart';
+
+/// 🧩 웹에서만 dart:html import
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 
 
 
@@ -62,7 +70,43 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
     _focusNode.addListener(() => setState(() {}));
     _saveDebugToken();
 
+    if (kIsWeb) {
+      handleWebLoginRedirectFromOnboarding6(context);
+    }
+
   }
+
+  void handleWebLoginRedirectFromOnboarding6(BuildContext context) async {
+    final currentUrl = html.window.location.href;
+    if (!currentUrl.contains('/callback')) return;
+
+    try {
+      final response = await html.HttpRequest.request(currentUrl, method: 'GET');
+      final authorizationHeader = response.getResponseHeader('Authorization');
+      final token = authorizationHeader?.replaceFirst('Bearer ', '');
+
+      if (token != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', token);
+        print('🪪 토큰 저장 완료: $token');
+      }
+
+      final json = jsonDecode(response.responseText!);
+      final isNewUser = json['data']['newMember'];
+
+      if (isNewUser == false) {
+        context.go('/home'); // 기존 유저는 바로 홈으로
+      } else {
+        print('🧑‍🎓 신규 유저, Onboarding6 진행 계속');
+        // 그대로 페이지 유지 (Onboarding6 UI 보여주기)
+      }
+
+      html.window.history.replaceState(null, '', '/');
+    } catch (e) {
+      print('⚠️ 로그인 처리 실패: $e');
+    }
+  }
+
 
   void _saveDebugToken() async {
     final prefs = await SharedPreferences.getInstance();

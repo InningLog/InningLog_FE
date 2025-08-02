@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../app_colors.dart';
 import '../main.dart';
@@ -49,6 +50,7 @@ class HomePage extends StatefulWidget {
 
 
 
+
 // //연동 -> api_service.dart에서 API 불러오기
 //   static Future<HomeData?> fetchHomeData() async {
 //     final url = Uri.parse('https://api.inninglog.shop/home/view');
@@ -87,12 +89,36 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    fetchMyWeaningRate();
-    fetchData();// 기존 API 호출
 
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final fragment = Uri.base.fragment;
+      debugPrint('🌐 full fragment: $fragment'); // → "/home?accessToken=..."
 
+      final parsedUri = Uri.parse(fragment.startsWith('/') ? fragment : '/$fragment');
 
+      final accessToken = parsedUri.queryParameters['accessToken'];
+      final isNewUser = parsedUri.queryParameters['isNewUser'];
+
+      debugPrint('🧩 Parsed accessToken: $accessToken');
+      debugPrint('🧩 Parsed isNewUser: $isNewUser');
+
+      if (accessToken != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', accessToken);
+        debugPrint('✅ accessToken 저장 완료');
+
+        if (isNewUser?.toLowerCase() == 'true') {
+          context.go('/onboarding6');
+        } else {
+          context.go('/home');
+        }
+      } else {
+        debugPrint('❌ accessToken 없음 — 온보딩으로 이동');
+        context.go('/diary');
+      }
+    });
   }
+
   void saveScheduleToPrefs(MyTeamSchedule schedule) async {
     final prefs = await SharedPreferences.getInstance();
     final gameDate = DateTime.parse(schedule.gameDateTime);

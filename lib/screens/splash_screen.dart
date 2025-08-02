@@ -18,14 +18,52 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   bool _switched = false;
-
   @override
   void initState() {
+
     super.initState();
-    _startSplashLogic();
+
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final uri = Uri.base;
+      // ✅ 브릿지 경로인 경우 → 스플래시 동작 스킵 (웹 한정)
+      final isBridge = uri.fragment.startsWith('/bridge');
+
+      if (isBridge) {
+        debugPrint('🌉 /bridge 경로 → Splash 생략');
+        return;
+      }
+
+      final accessToken = uri.queryParameters['accessToken'];
+      final isNewUser = uri.queryParameters['isNewUser'];
+      debugPrint('🌐 accessToken: $accessToken');
+      debugPrint('🌐 isNewUser: $isNewUser');
+
+
+
+      if (accessToken != null) {
+        // 🔐 토큰 저장
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', accessToken);
+        debugPrint('✅ accessToken 저장 완료');
+
+        // 🧭 신규 유저 여부에 따라 라우팅
+        if (isNewUser == 'true') {
+          context.go('/onboarding6');
+        } else {
+          context.go('/home');
+        }
+
+        return; // 아래 온보딩 체크 로직 건너뜀
+      }
+
+      // 💡 평소처럼 스플래시 애니메이션 + 온보딩 여부 체크
+      await _startSplashLogic();
+    });
   }
 
-  void _startSplashLogic() async {
+
+  Future<void>  _startSplashLogic() async {
     await Future.delayed(const Duration(milliseconds: 1500));
     if (mounted) {
       setState(() {

@@ -12,10 +12,25 @@ class ApiService {
   static const String baseUrl = 'https://api.inninglog.shop';
 
 
-  static Future<http.Response> getHomeView() async {
+  static Future<http.Response?> getHomeView() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+
+    if (token == null) {
+      print('❌ 토큰 없음');
+      return null;
+    }
+
     final url = Uri.parse('$baseUrl/home/view');
-    return await http.get(url);
+    return await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
   }
+
 
 
   static Future<HomeData?> fetchHomeData() async {
