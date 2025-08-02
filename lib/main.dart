@@ -6,10 +6,11 @@ import 'package:go_router/go_router.dart';
 import 'package:inninglog/navigation/main_navigation.dart';
 import 'package:inninglog/screens/add_diary_page.dart';
 import 'package:inninglog/screens/add_seat_page.dart';
-import 'package:inninglog/screens/bridge_page.dart';
 import 'package:inninglog/screens/field_hashtag_filter_sheet.dart';
+import 'package:inninglog/screens/login_page.dart';
 import 'package:inninglog/screens/seat_detail_page.dart';
 import 'package:inninglog/screens/onboarding_page6.dart';
+import 'package:inninglog/screens/signup_page.dart';
 import 'package:inninglog/screens/splash_screen.dart';
 import 'package:inninglog/screens/onboarding_screen.dart';
 import 'package:inninglog/screens/home_page.dart';
@@ -41,17 +42,14 @@ Future<void> main() async {
   runApp(const InningLogApp());
 }
 
-
-
-
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 final GoRouter _router = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: kIsWeb
-      ? '/${Uri.base.fragment.split('?').firstOrNull ?? 'splash'}'
-      : '/splash',
+  initialLocation: '/',
+
+
 
   routes: [
     GoRoute(
@@ -62,6 +60,8 @@ final GoRouter _router = GoRouter(
     /// GNB 없는 화면들
     GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
     GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
+    GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
+    GoRoute(path: '/signup', builder: (_, __) => const SignupPage()),
     GoRoute(
       path: '/adddiary',
       builder: (context, state) {
@@ -73,39 +73,6 @@ final GoRouter _router = GoRouter(
           initialDate: extra['initialDate'], // 작성 모드라면 무시됨
           isEditMode: extra['isEditMode'] ?? false,
           journalId: extra['journalId'], // 수정 모드일 때만 필요
-        );
-      },
-    ),
-
-    GoRoute(
-      path: '/authredirect',
-      builder: (context, state) {
-        final uri = Uri.base;
-        final accessToken = uri.queryParameters['accessToken'];
-        final isNewUser = uri.queryParameters['isNewUser'];
-
-        print('📍 AuthRedirect 진입');
-        print('🪪 accessToken: $accessToken');
-        print('🆕 isNewUser: $isNewUser');
-
-        if (accessToken != null) {
-          SharedPreferences.getInstance().then((prefs) async {
-            await prefs.setString('access_token', accessToken);
-            debugPrint('✅ accessToken 저장 완료');
-
-            // context.go()는 다음 프레임에서 실행되도록 해야 함
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (isNewUser == 'true') {
-                context.go('/onboarding6');
-              } else {
-                context.go('/home');
-              }
-            });
-          });
-        }
-
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
         );
       },
     ),
@@ -124,45 +91,7 @@ final GoRouter _router = GoRouter(
       },
     ),
 
-    // GoRoute(
-    //   path: '/home',
-    //   builder: (context, state) {
-    //     // 🔍 URL Fragment 직접 파싱
-    //     final fragment = Uri.base.fragment; // ex: "/home?isNewUser=false&jwt=..."
-    //     final parsed = Uri.parse(fragment);
-    //     final jwt = parsed.queryParameters['jwt'];
-    //     final isNewUser = parsed.queryParameters['isNewUser'];
-    //
-    //     debugPrint('🧩 fragment: $fragment');
-    //     debugPrint('🔐 jwt: $jwt');
-    //     debugPrint('🆕 isNewUser: $isNewUser');
-    //
-    //     if (jwt != null) {
-    //       SharedPreferences.getInstance().then((prefs) {
-    //         prefs.setString('access_token', jwt);
-    //         debugPrint('✅ JWT 저장 완료');
-    //       });
-    //     }
-    //
-    //     // 분기 이동
-    //     WidgetsBinding.instance.addPostFrameCallback((_) {
-    //       if (isNewUser == 'true') {
-    //         context.go('/onboarding6');
-    //       } else {
-    //         context.go('/home');
-    //       }
-    //     });
-    //
-    //     return const Scaffold(
-    //       body: Center(child: CircularProgressIndicator()),
-    //     );
-    //   },
-    // ),
 
-    GoRoute(
-      path: '/bridge',
-      builder: (context, state) => const BridgePage(),
-    ),
 
 
 

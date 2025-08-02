@@ -20,13 +20,10 @@ class _SplashScreenState extends State<SplashScreen> {
   bool _switched = false;
   @override
   void initState() {
-
     super.initState();
-
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final uri = Uri.base;
-      // ✅ 브릿지 경로인 경우 → 스플래시 동작 스킵 (웹 한정)
       final isBridge = uri.fragment.startsWith('/bridge');
 
       if (isBridge) {
@@ -39,31 +36,26 @@ class _SplashScreenState extends State<SplashScreen> {
       debugPrint('🌐 accessToken: $accessToken');
       debugPrint('🌐 isNewUser: $isNewUser');
 
-
-
       if (accessToken != null) {
-        // 🔐 토큰 저장
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('access_token', accessToken);
         debugPrint('✅ accessToken 저장 완료');
 
-        // 🧭 신규 유저 여부에 따라 라우팅
         if (isNewUser == 'true') {
           context.go('/onboarding6');
         } else {
           context.go('/home');
         }
-
-        return; // 아래 온보딩 체크 로직 건너뜀
+        return;
       }
 
-      // 💡 평소처럼 스플래시 애니메이션 + 온보딩 여부 체크
+      // ✅ 여기서만 실행해야 함
       await _startSplashLogic();
     });
   }
 
 
-  Future<void>  _startSplashLogic() async {
+  Future<void> _startSplashLogic() async {
     await Future.delayed(const Duration(milliseconds: 1500));
     if (mounted) {
       setState(() {
@@ -75,20 +67,23 @@ class _SplashScreenState extends State<SplashScreen> {
 
     final prefs = await SharedPreferences.getInstance();
 
-    // 개발 중 계속 온보딩 보게 하려면 false)
-    await prefs.setBool('hasSeenOnboarding', false);
+    final token = prefs.getString('access_token');
+    if (token != null) {
+      context.go('/home');
+      return;
+    }
 
+    //배포할 때 빼기
     final hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
-
     if (!mounted) return;
 
-    // ✅ go_router 사용한 화면 전환
     if (hasSeenOnboarding) {
       context.go('/home');
     } else {
       context.go('/onboarding');
     }
   }
+
 
 
   @override
@@ -131,3 +126,4 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
+

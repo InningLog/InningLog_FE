@@ -12,7 +12,7 @@ class OnboardingPage1 extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const SizedBox(height: 139),
+          const SizedBox(height: 39),
           const Text(
             '나만의 야구기록,\n이닝로그에 오신 걸\n환영합니다!',
             textAlign: TextAlign.center,

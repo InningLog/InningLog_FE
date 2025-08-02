@@ -1,0 +1,218 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:inninglog/app_colors.dart';
+
+class SignupPage extends StatefulWidget {
+  const SignupPage({super.key});
+
+  @override
+  State<SignupPage> createState() => _SignupPageState();
+}
+
+class _SignupPageState extends State<SignupPage> {
+  final TextEditingController _idController = TextEditingController();
+  final TextEditingController _pwController = TextEditingController();
+
+  bool _isButtonEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _idController.addListener(_validateInput);
+    _pwController.addListener(_validateInput);
+  }
+
+  void _validateInput() {
+    setState(() {
+      _isButtonEnabled = _idController.text.trim().isNotEmpty &&
+          _pwController.text.trim().isNotEmpty;
+    });
+  }
+
+  @override
+  void dispose() {
+    _idController.dispose();
+    _pwController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+                  onPressed: () {
+                    context.pop(); // 뒤로가기
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '회원 가입하고 시작해요!',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Pretendard',
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Image.asset(
+                'assets/images/bori_onboard.jpg',
+                height: 112.5,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(height: 40),
+              TextField(
+                controller: _idController,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: AppColors.primary50,
+                  hintText: '아이디',
+                  hintStyle: const TextStyle(
+                    color: Color(0xFF747475),
+                    fontFamily: 'Pretendard',
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: Colors.black,
+                      width: 1.5,
+                    ),
+                  ),
+                  contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: EdgeInsets.only(left: 4),
+                  child: Text(
+                    '* 6~12자리 영문, 숫자로 입력해 주세요',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF747475),
+                      fontWeight: FontWeight.w300,
+                      fontFamily: 'Pretendard',
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: ElevatedButton(
+                  onPressed: () {
+                    // TODO: 아이디 중복확인 기능
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFD9D9D9),
+                    foregroundColor: Colors.black,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    minimumSize: const Size(100, 32),
+                  ),
+                  child: const Text(
+                    '중복 확인',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'Pretendard',
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _pwController,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: AppColors.primary50,
+                  hintText: '비밀 번호',
+                  hintStyle: const TextStyle(
+                    color: Color(0xFF747475),
+                    fontFamily: 'Pretendard',
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: Colors.black,
+                      width: 1.5,
+                    ),
+                  ),
+                  contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: EdgeInsets.only(left: 4),
+                  child: Text(
+                    '* 숫자 4자리로 입력해 주세요',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF747475),
+                      fontWeight: FontWeight.w300,
+                      fontFamily: 'Pretendard',
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _isButtonEnabled ? () {} : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _isButtonEnabled
+                        ? AppColors.primary700
+                        : const Color(0xFFD3D3D3),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: const Color(0xFFD9D9D9),
+                    disabledForegroundColor: Colors.white,
+                  ),
+                  child: const Text(
+                    '회원 가입',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Pretendard',
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

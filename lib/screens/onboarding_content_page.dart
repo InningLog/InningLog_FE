@@ -25,7 +25,7 @@ class OnboardingContentPage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const SizedBox(height: 77),
+            const SizedBox(height: 57),
             Text(
               title,
               textAlign: TextAlign.center,
@@ -46,8 +46,16 @@ class OnboardingContentPage extends StatelessWidget {
                 fontFamily: 'MBC1961GulimOTF',
               ),
             ),
-            const SizedBox(height: 35),
-            SvgPicture.asset(image, height: 282),
+            const SizedBox(height: 25),
+            Image.asset(
+              image,
+              height: 238,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return const Text('❌ 이미지 로딩 실패');
+              },
+            ),
+
           ],
         ),
       ),
