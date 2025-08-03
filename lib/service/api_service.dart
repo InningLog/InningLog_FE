@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,72 +16,62 @@ class ApiService {
 
   static Future<http.Response?> getHomeView() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
+    final memberId = prefs.getInt('member_id');
 
-    if (token == null) {
-      print('❌ 토큰 없음');
+    if (memberId == null) {
+      print('❌ memberId 없음');
       return null;
     }
 
-    final url = Uri.parse('$baseUrl/home/view');
+    final url = Uri.parse('$baseUrl/home/view?memberId=$memberId');
+
     return await http.get(
       url,
       headers: {
-        'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
     );
   }
 
 
-
   static Future<HomeData?> fetchHomeData() async {
-
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
+    final memberId = prefs.getInt('member_id'); // 🔑 SharedPreferences에 저장된 memberId 사용
 
-    print('🔐 저장된 토큰: $token');
-
-
-    if (token == null) {
-      print('❌ 토큰 없음');
+    if (memberId == null) {
+      print('❌ memberId 없음');
       return null;
     }
 
-    final url = Uri.parse('$baseUrl/home/view');
-    final response = await http.get(
-      url,
-      headers: {
-        'Authorization': 'Bearer $token', // 하드코딩 말고 이걸 써야 함
-        'Content-Type': 'application/json',
-      },
-    );
+    final url = Uri.parse(
+        '$baseUrl/home/view?memberId=$memberId'); // 🧭 쿼리 파라미터로 전달
+
+    final response = await http.get(url); // 🔓 Authorization 헤더 제거
 
     if (response.statusCode == 200) {
       final jsonBody = json.decode(response.body);
       return HomeData.fromJson(jsonBody['data']);
+    } else if (response.statusCode == 404) {
+      print('❌ 존재하지 않는 회원입니다');
+      return null;
     } else {
-      print('❌ API 오류: ${response.statusCode}');
+      print('❌ API 오류: ${response.statusCode} - ${response.body}');
       return null;
     }
   }
 
+
   static Future<MyReportResponse?> fetchMyReport() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
+    final memberId = prefs.getInt('member_id');
 
-    if (token == null) {
-      print('❌ 토큰 없음');
+    if (memberId == null) {
+      print('❌ memberId 없음');
       return null;
     }
 
-    final url = Uri.parse('$baseUrl/report/main');
-    final response = await http.get(
-      url,
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
-    );
+    final url = Uri.parse('$baseUrl/report/main?memberId=$memberId');
+    final response = await http.get(url);
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
@@ -94,20 +86,17 @@ class ApiService {
           loseGames: 0,
           drawGames: 0,
           winningRateHalPoongRi: 0,
-          teamWinRate :0,
+          teamWinRate: 0,
           topBatters: [],
           topPitchers: [],
           bottomBatters: [],
-          bottomPitchers: [], 
+          bottomPitchers: [],
           nickname: '유저',
-
-        ); // 👈 직관 없는 경우
+        );
       }
       print('❌ API 오류: ${errorJson['message']}');
       return null;
     }
-
-
   }
 
   // static Future<GameInfoResponse?> fetchGameInfo(String gameId) async {
@@ -129,8 +118,10 @@ class ApiService {
   // }
 
 
-  static Future<String?> getPresignedUrl(String fileName, String contentType) async {
-    final url = Uri.parse('$baseUrl/s3/journal/presigned?fileName=$fileName&contentType=$contentType');
+  static Future<String?> getPresignedUrl(String fileName,
+      String contentType) async {
+    final url = Uri.parse(
+        '$baseUrl/s3/journal/presigned?fileName=$fileName&contentType=$contentType');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -142,9 +133,8 @@ class ApiService {
     }
   }
 
-  static Future<bool> uploadImageToS3(String presignedUrl, File file) async {
-    final bytes = await file.readAsBytes();
 
+  Future<bool> uploadImageToS3(String presignedUrl, Uint8List bytes) async {
     final response = await http.put(
       Uri.parse(presignedUrl),
       headers: {
@@ -153,11 +143,13 @@ class ApiService {
       body: bytes,
     );
 
-    print('📤 S3 업로드 응답 코드: ${response.statusCode}');
     return response.statusCode == 200;
   }
 
- static Future<int?> uploadJournal({
+
+
+
+  static Future<int?> uploadJournal({
     required String gameId,
     required String fileName,
     required String stadiumShortCode,
@@ -169,109 +161,118 @@ class ApiService {
     required String reviewText,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
-    print('🪪 저장된 토큰: $token');
+    final memberId = prefs.getInt('member_id');
+
+    if (memberId == null) {
+      print('❌ memberId 없음');
+      return null;
+    }
 
     final bodyData = {
+      "memberId": memberId, // ✅ 추가됨
       "gameId": gameId,
       "gameDate": DateFormat('yyyy-MM-dd HH:mm').format(gameDateTime),
       "stadiumSC": stadiumShortCode,
       "opponentTeamSC": opponentTeamShortCode,
       "ourScore": ourScore,
       "theirScore": theirScore,
-      "fileName": fileName,
       "emotion": emotion,
       "review_text": reviewText,
+      if (fileName != null && fileName.isNotEmpty) "fileName": fileName,
     };
 
     print('📤 보낼 바디: ${jsonEncode(bodyData)}');
 
+    final uri = Uri.parse('$baseUrl/journals/contents?memberId=$memberId');
+
     final response = await http.post(
-      Uri.parse('$baseUrl/journals/contents'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
+      uri,
+      headers: { 'Content-Type': 'application/json' },
       body: jsonEncode(bodyData),
     );
+
 
     print('📡 응답 코드: ${response.statusCode}');
     print('📦 응답 바디: ${response.body}');
 
-    if (response.statusCode == 200) {
+    if (response.statusCode == 201) {
       final json = jsonDecode(response.body);
-      print('📡 응답 코드: ${response.statusCode}');
-      print('📦 응답 바디: ${response.body}');
-
       final data = json['data'];
-      final journalId = data['journalId']; // 🔍 요 부분!
-
+      final journalId = data['journalId'];
       return journalId;
     } else {
       print('❌ 일지 업로드 실패: ${response.body}');
+      return null;
     }
   }
-}
 
-Future<List<Journal>> fetchJournalCalendar({String? resultScore}) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('access_token');
 
-  if (token == null) throw Exception('No token found');
+  static Future<List<Journal>> fetchJournalCalendar(
+      {String? resultScore}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final memberId = prefs.getInt('member_id');
 
-  final uri = Uri.parse('https://api.inninglog.shop/journals/calendar${resultScore != null ? '?resultScore=$resultScore' : ''}');
-  final response = await http.get(
-    uri,
-    headers: {
-      'Authorization': 'Bearer $token',
-    },
-  );
+    if (memberId == null) throw Exception('No memberId found');
 
-  if (response.statusCode == 200) {
-    final jsonData = jsonDecode(response.body)['data'] as List;
-    return jsonData.map((e) => Journal.fromJson(e)).toList();
-  } else {
-    print('❌ 응답 실패: ${response.statusCode} - ${response.body}');
-    throw Exception('Failed to fetch calendar');
+    // 📌 쿼리 파라미터 구성
+    final queryParams = {
+      'memberId': memberId.toString(),
+      if (resultScore != null) 'resultScore': resultScore,
+    };
+
+    final uri = Uri.https(
+      'api.inninglog.shop',
+      '/journals/calendar',
+      queryParams,
+    );
+
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body)['data'] as List;
+      return jsonData.map((e) => Journal.fromJson(e)).toList();
+    } else {
+      print('❌ 응답 실패: ${response.statusCode} - ${response.body}');
+      throw Exception('Failed to fetch calendar');
+    }
   }
-}
-
-Future<List<Journal>> fetchJournalSummary({
-  String? resultScore,
-  int page = 0,
-  int size = 10,
-}) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('access_token');
-
-  final queryParams = {
-    'page': '$page',
-    'size': '$size',
-    if (resultScore != null) 'resultScore': resultScore,
-  };
 
 
-  final uri = Uri.https('api.inninglog.shop', '/journals/summary', queryParams);
+  static Future<List<Journal>> fetchJournalSummary({
+    String? resultScore,
+    int page = 0,
+    int size = 10,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final memberId = prefs.getInt('member_id');
 
-  final response = await http.get(
-    uri,
-    headers: {
-      'Authorization': 'Bearer $token',
-    },
-  );
+    if (memberId == null) {
+      throw Exception('No memberId found');
+    }
 
+    final queryParams = {
+      'memberId': memberId.toString(), // ✅ memberId 추가
+      'page': '$page',
+      'size': '$size',
+      if (resultScore != null) 'resultScore': resultScore,
+    };
 
+    final uri = Uri.https(
+        'api.inninglog.shop', '/journals/summary', queryParams);
 
-  if (response.statusCode == 200) {
-    print('[🐛 응답 JSON] ${response.body}');
-    final jsonData = jsonDecode(response.body);
-    final List content = jsonData['data']['content'];
+    final response = await http.get(uri);
 
-    return content.map((j) => Journal.fromJson(j)).toList();
-  } else {
-    throw Exception('요청 실패: ${response.statusCode}');
+    if (response.statusCode == 200) {
+      print('[🐛 응답 JSON] ${response.body}');
+      final jsonData = jsonDecode(response.body);
+      final List content = jsonData['data']['content'];
+
+      return content.map((j) => Journal.fromJson(j)).toList();
+    } else {
+      throw Exception('요청 실패: ${response.statusCode}');
+    }
   }
-}
+
 
 // Future<GameInfo?> fetchGameInfo(String gameId) async {
 //   final prefs = await SharedPreferences.getInstance();
@@ -298,230 +299,225 @@ Future<List<Journal>> fetchJournalSummary({
 //   }
 // }
 
-Future<GameInfo?> fetchGameInfoByGameId(String gameId) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('access_token');
+  Future<GameInfo?> fetchGameInfoByGameId(String gameId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final memberId = prefs.getString('member_id');
 
-  final url = Uri.parse('https://api.inninglog.shop/journals/contents?gameId=$gameId');
-  final response = await http.get(
-    url,
-    headers: {
-      'Authorization': 'Bearer $token',
-    },
-  );
+    if (memberId == null) {
+      print('❌ memberId 없음');
+      return null;
+    }
 
-  if (response.statusCode == 200) {
-    final json = jsonDecode(response.body);
-    final data = json['data'];
-    return GameInfo.fromJournalContentJson(data);
-  } else {
-    print('❌ 경기 정보 조회 실패: ${response.body}');
-    return null;
+    final url = Uri.parse(
+        'https://api.inninglog.shop/journals/contents?gameId=$gameId&memberId=$memberId');
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      final data = json['data'];
+      return GameInfo.fromJournalContentJson(data);
+    } else {
+      print('❌ 경기 정보 조회 실패: ${response.body}');
+      return null;
+    }
   }
-}
 
 
-
-
-Future<bool> uploadToS3(String presignedUrl, File file) async {
-  final bytes = await file.readAsBytes();
-  final res = await http.put(
-    Uri.parse(presignedUrl),
-    headers: {'Content-Type': 'image/jpeg'},
-    body: bytes,
-  );
-  return res.statusCode == 200;
-}
-
-
-
-Future<bool> uploadSeatView({
-  required int journalId,
-  required String stadiumSC,
-  required String zoneSC,
-  required String section,
-  required String row,
-  required List<String> tagCodes,
-  required String fileName,
-}) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('access_token'); // JWT 토큰
-  if (token == null) return false;
-
-  final url = Uri.parse('https://api.inninglog.shop/seatViews/contents');
-
-  final body = {
-    'journalId': journalId,
-    'stadiumShortCode': stadiumSC,
-    'zoneShortCode': zoneSC,
-    'section': section,
-    'seatRow': row,
-    'emotionTagCodes': tagCodes,
-    'fileName': fileName,
-  };
-
-  print('📤 좌석 시야 업로드 요청 바디: ${jsonEncode(body)}');
-
-  final response = await http.post(
-    url,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    },
-    body: jsonEncode(body),
-  );
-
-  if (response.statusCode == 200) {
-    print('✅ 좌석 시야 업로드 성공');
-    return true;
-  } else {
-    print('❌ 좌석 시야 업로드 실패: ${response.statusCode}');
-    print('❌ 응답 내용: ${response.body}');
-    return false;
+  Future<bool> uploadToS3(String presignedUrl, File file) async {
+    final bytes = await file.readAsBytes();
+    final res = await http.put(
+      Uri.parse(presignedUrl),
+      headers: {'Content-Type': 'image/jpeg'},
+      body: bytes,
+    );
+    return res.statusCode == 200;
   }
-}
 
 
+  static Future<bool> uploadSeatView({
+    required int journalId,
+    required String stadiumSC,
+    required String zoneSC,
+    required String section,
+    required String row,
+    required List<String> tagCodes,
+    required String fileName,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final memberId = prefs.getInt('member_id');
+    if (memberId == null) return false;
 
-Future<Map<String, dynamic>?> fetchScheduleForDate(DateTime date) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('access_token');
+    final url = Uri.parse('https://api.inninglog.shop/seatViews/contents');
 
-  final formattedDate = DateFormat('yyyy-MM-dd').format(date);
-  final url = Uri.parse('https://api.inninglog.shop/journals/schedule?gameDate=$formattedDate');
+    final body = {
+      'memberId': memberId, // ✅ 추가됨
+      'journalId': journalId,
+      'stadiumShortCode': stadiumSC,
+      'zoneShortCode': zoneSC,
+      'section': section,
+      'seatRow': row,
+      'emotionTagCodes': tagCodes,
+      'fileName': fileName,
+    };
 
-  final response = await http.get(
-    url,
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-  );
+    print('📤 좌석 시야 업로드 요청 바디: ${jsonEncode(body)}');
 
-  if (response.statusCode == 200) {
-    print('❌ 경기 일정 조회 성공: ${response.statusCode} ${response.body}');
-    final body = jsonDecode(response.body);
-    return body['data'];
-  } else {
-    print('❌ 경기 일정 조회 실패: ${response.statusCode} ${response.body}');
-    return null;
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200) {
+      print('✅ 좌석 시야 업로드 성공');
+      return true;
+    } else {
+      print('❌ 좌석 시야 업로드 실패: ${response.statusCode}');
+      print('❌ 응답 내용: ${response.body}');
+      return false;
+    }
   }
-}
 
 
-Future<JournalDetail?> fetchJournalDetail(int journalId) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('access_token');
+  static Future<Map<String, dynamic>?> fetchScheduleForDate(
+      DateTime date) async {
+    final prefs = await SharedPreferences.getInstance();
+    final memberId = prefs.getInt('member_id');
+    if (memberId == null) return null;
 
-  final response = await http.get(
-    Uri.parse('https://api.inninglog.shop/journals/detail/$journalId'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-  );
+    final formattedDate = DateFormat('yyyy-MM-dd').format(date);
+    final url = Uri.parse(
+      'https://api.inninglog.shop/journals/schedule?memberId=$memberId&gameDate=$formattedDate',
+    );
 
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
 
-  if (response.statusCode == 200) {
-    final json = jsonDecode(response.body);
-    final data = json['data']['jourDetail'];
-    return JournalDetail.fromJson(data); // ✅ 모델로 변환
-  } else {
-    print('❌ 상세 조회 실패: ${response.statusCode}');
-    return null;
+    if (response.statusCode == 200) {
+      print('✅ 경기 일정 조회 성공: ${response.statusCode} ${response.body}');
+      final body = jsonDecode(response.body);
+      return body['data'];
+    } else {
+      print('❌ 경기 일정 조회 실패: ${response.statusCode} ${response.body}');
+      return null;
+    }
   }
-}
-
-Future<List<String>> fetchSeatViews({
-  required String stadiumShortCode,
-  String? zoneShortCode,
-  String? section,
-  String? seatRow,
-  int page = 0,
-  int size = 10,
-}) async {
-  // 빈 문자열이면 null로 간주
-  final cleanedZone = (zoneShortCode != null && zoneShortCode.trim().isNotEmpty)
-      ? zoneShortCode.trim()
-      : null;
-  final cleanedSection = (section != null && section.trim().isNotEmpty) ? section.trim() : null;
-  final cleanedRow = (seatRow != null && seatRow.trim().isNotEmpty) ? seatRow.trim() : null;
-
-  final uri = Uri.https('api.inninglog.shop', '/seatViews/normal/gallery', {
-    'stadiumShortCode': stadiumShortCode,
-    if (cleanedZone != null) 'zoneShortCode': cleanedZone,
-    if (cleanedSection != null) 'section': cleanedSection,
-    if (cleanedRow != null) 'seatRow': cleanedRow,
-    'page': '$page',
-    'size': '$size',
-  });
-  print('🧩 전달된 zoneShortCode: "$zoneShortCode"');
-  print('📦 최종 요청 URI: $uri');
 
 
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('access_token');
+  Future<JournalDetail?> fetchJournalDetail(int journalId) async {
+    final response = await http.get(
+      Uri.parse('https://api.inninglog.shop/journals/detail/$journalId'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
 
-  final res = await http.get(uri, headers: {
-    'Authorization': 'Bearer $token',
-  });
-
-  if (res.statusCode == 200) {
-    final json = jsonDecode(res.body);
-    final List<dynamic> contents = json['data']['content'];
-    return contents.map<String>((item) => item['viewMediaUrl'] as String).toList();
-  } else {
-    throw Exception('좌석 시야 조회 실패: ${res.body}');
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      final data = json['data']['jourDetail'];
+      return JournalDetail.fromJson(data);
+    } else {
+      print('❌ 상세 조회 실패: ${response.statusCode}');
+      return null;
+    }
   }
-}
 
 
-Future<List<SeatView>> fetchSeatViewsByHashtag({
-  required String stadiumShortCode,
-  required List<String> hashtagCodes,
-  int page = 0,
-  int size = 10,
-}) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('access_token');
+  static Future<List<String>> fetchSeatViews({
+    required String stadiumShortCode,
+    String? zoneShortCode,
+    String? section,
+    String? seatRow,
+    int page = 0,
+    int size = 10,
+  }) async {
+    final cleanedZone = (zoneShortCode != null && zoneShortCode
+        .trim()
+        .isNotEmpty)
+        ? zoneShortCode.trim()
+        : null;
+    final cleanedSection = (section != null && section
+        .trim()
+        .isNotEmpty)
+        ? section.trim()
+        : null;
+    final cleanedRow = (seatRow != null && seatRow
+        .trim()
+        .isNotEmpty)
+        ? seatRow.trim()
+        : null;
 
-  final uri = Uri.https('api.inninglog.shop', '/seatViews/hashtag/gallery', {
-    'stadiumShortCode': stadiumShortCode,
-    'hashtagCodes': hashtagCodes,
-    'page': '$page',
-    'size': '$size',
-  });
+    final uri = Uri.https('api.inninglog.shop', '/seatViews/normal/gallery', {
+      'stadiumShortCode': stadiumShortCode,
+      if (cleanedZone != null) 'zoneShortCode': cleanedZone,
+      if (cleanedSection != null) 'section': cleanedSection,
+      if (cleanedRow != null) 'seatRow': cleanedRow,
+      'page': '$page',
+      'size': '$size',
+    });
 
-  final res = await http.get(uri, headers: {
-    'Authorization': 'Bearer $token',
-  });
+    print('🧩 전달된 zoneShortCode: "$zoneShortCode"');
+    print('📦 최종 요청 URI: $uri');
 
-  if (res.statusCode == 200) {
-    final json = jsonDecode(res.body);
-    final List<dynamic> contents = json['data']['content'];
-    return contents.map((item) => SeatView.fromJson(item)).toList();
-  } else {
-    throw Exception('해시태그 좌석 조회 실패: ${res.body}');
+    final res = await http.get(uri); // ❌ 토큰 없이 요청
+
+    if (res.statusCode == 200) {
+      final json = jsonDecode(res.body);
+      final List<dynamic> contents = json['data']['content'];
+      return contents
+          .map<String>((item) => item['viewMediaUrl'] as String)
+          .toList();
+    } else {
+      throw Exception('좌석 시야 조회 실패: ${res.body}');
+    }
   }
-}
 
 
-Future<SeatViewDetail> fetchSeatViewDetail(int seatViewId) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('access_token');
+  static Future<List<SeatView>> fetchSeatViewsByHashtag({
+    required String stadiumShortCode,
+    required List<String> hashtagCodes,
+    int page = 0,
+    int size = 10,
+  }) async {
+    final uri = Uri.https('api.inninglog.shop', '/seatViews/hashtag/gallery', {
+      'stadiumShortCode': stadiumShortCode,
+      'hashtagCodes': hashtagCodes.join(','), // ✅ List → String으로 변환
+      'page': '$page',
+      'size': '$size',
+    });
 
-  final uri = Uri.https('api.inninglog.shop', '/seatViews/$seatViewId');
-  final res = await http.get(uri, headers: {
-    'Authorization': 'Bearer $token',
-  });
+    final res = await http.get(uri); // ❌ Authorization 헤더 제거
 
-  if (res.statusCode == 200) {
-    final json = jsonDecode(res.body);
-    final data = json['data'];
-
-    return SeatViewDetail.fromJson(data);
-  } else {
-    throw Exception('좌석 시야 상세 조회 실패: ${res.body}');
+    if (res.statusCode == 200) {
+      final json = jsonDecode(res.body);
+      final List<dynamic> contents = json['data']['content'];
+      return contents.map((item) => SeatView.fromJson(item)).toList();
+    } else {
+      throw Exception('해시태그 좌석 조회 실패: ${res.body}');
+    }
   }
-}
 
+
+  static Future<SeatViewDetail> fetchSeatViewDetail(int seatViewId) async {
+    final uri = Uri.https('api.inninglog.shop', '/seatViews/$seatViewId');
+
+    final res = await http.get(uri); // ❌ 토큰 제거
+
+    if (res.statusCode == 200) {
+      final json = jsonDecode(res.body);
+      final data = json['data'];
+
+      return SeatViewDetail.fromJson(data);
+    } else {
+      throw Exception('좌석 시야 상세 조회 실패: ${res.body}');
+    }
+  }
+
+}

@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inninglog/app_colors.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -35,6 +40,116 @@ class _SignupPageState extends State<SignupPage> {
     _pwController.dispose();
     super.dispose();
   }
+
+
+  Future<void> _checkDuplicateID() async {
+    final userID = _idController.text.trim();
+    if (userID.isEmpty) return;
+
+    final uri = Uri.parse('https://api.inninglog.shop/auth/check-id?userID=$userID');
+
+    try {
+      final response = await http.get(uri);
+      if (response.statusCode == 200) {
+        final isDuplicate = json.decode(response.body) as bool;
+        if (isDuplicate) {
+          _showDialog('이미 사용 중인 아이디입니다.');
+        } else {
+          _showDialog('사용 가능한 아이디입니다!');
+        }
+      } else {
+        _showDialog('서버 오류가 발생했습니다. 다시 시도해주세요.');
+      }
+    } catch (e) {
+      _showDialog('네트워크 오류가 발생했습니다. ($e)');
+    }
+  }
+
+  void _showDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+  }
+  Future<void> _signup() async {
+    final userID = _idController.text.trim();
+    final password = _pwController.text.trim();
+
+    if (userID.isEmpty || password.isEmpty) return;
+
+    final uri = Uri.parse('https://api.inninglog.shop/auth/signup');
+    final body = {
+      'userID': userID,
+      'password': password,
+    };
+
+    try {
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        // ✅ 자동 로그인 시도
+        await _loginAfterSignup(userID, password);
+      }
+
+      else if (response.statusCode == 400) {
+        final resBody = jsonDecode(response.body);
+        if (resBody['code'] == 'EXIST_USERID') {
+          _showDialog('이미 존재하는 아이디입니다.');
+        } else {
+          _showDialog('회원가입 실패: ${resBody['message']}');
+        }
+      } else {
+        _showDialog('알 수 없는 오류가 발생했습니다. (${response.statusCode})');
+      }
+    } catch (e) {
+      _showDialog('네트워크 오류가 발생했습니다. ($e)');
+    }
+  }
+
+  Future<void> _loginAfterSignup(String userID, String password) async {
+    final uri = Uri.parse('https://api.inninglog.shop/auth/login');
+    final body = {
+      'userID': userID,
+      'password': password,
+    };
+
+    try {
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        final json = jsonDecode(response.body);
+        final token = json['token'];
+        final memberId = json['memberId'];
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', token);
+        await prefs.setInt('member_id', memberId);
+
+        context.go('/onboarding6');
+      } else {
+        _showDialog('회원가입 후 자동 로그인에 실패했습니다.');
+      }
+    } catch (e) {
+      _showDialog('네트워크 오류: $e');
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -118,9 +233,8 @@ class _SignupPageState extends State<SignupPage> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: _checkDuplicateID,
                     // TODO: 아이디 중복확인 기능
-                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFD9D9D9),
                     foregroundColor: Colors.black,
@@ -187,7 +301,7 @@ class _SignupPageState extends State<SignupPage> {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _isButtonEnabled ? () {} : null,
+                  onPressed: _isButtonEnabled ? _signup : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _isButtonEnabled
                         ? AppColors.primary700
@@ -216,3 +330,4 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 }
+

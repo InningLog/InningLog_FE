@@ -137,12 +137,11 @@ class _HomePageState extends State<HomePage> {
 
   void fetchMyWeaningRate() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
-    if (token == null) return;
+    final memberId = prefs.getInt('member_id');
+    if (memberId == null) return;
 
     final response = await http.get(
-      Uri.parse('https://api.inninglog.shop/report/main'),
-      headers: {'Authorization': 'Bearer $token'},
+      Uri.parse('https://api.inninglog.shop/report/main?memberId=$memberId'),
     );
 
     print('📡 응답 상태: ${response.statusCode}');
@@ -160,7 +159,7 @@ class _HomePageState extends State<HomePage> {
       if (errorCode == 'NO_VISITED_GAME') {
         print('📭 직관 기록 없음');
         setState(() {
-          myWeaningRate = 0; // 또는 null 대신 0으로 표시
+          myWeaningRate = 0;
         });
       } else {
         print('❌ 알 수 없는 400 오류: ${errorJson['message']}');
@@ -169,6 +168,7 @@ class _HomePageState extends State<HomePage> {
       print('❌ 기타 오류: ${response.statusCode}');
     }
   }
+
 
 
 

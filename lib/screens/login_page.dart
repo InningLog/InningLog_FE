@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inninglog/app_colors.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -29,6 +33,65 @@ class _LoginPageState extends State<LoginPage> {
               _pwController.text.trim().isNotEmpty;
     });
   }
+
+  Future<void> _login() async {
+    final userID = _idController.text.trim();
+    final password = _pwController.text.trim();
+
+    if (userID.isEmpty || password.isEmpty) return;
+
+    final uri = Uri.parse('https://api.inninglog.shop/auth/login');
+    final body = {
+      'userID': userID,
+      'password': password,
+    };
+
+    try {
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final memberId = data['memberId'];
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('member_id', memberId); // ✅ 멤버 ID 저장
+
+        context.go('/home'); // 👈 홈이 아니라 온보딩6으로 가야지
+// 라우트 이름은 상황에 따라 수정 가능
+      } else if (response.statusCode == 400) {
+        final error = jsonDecode(response.body);
+        if (error['code'] == 'INVALID_PASSWORD') {
+          _showDialog('비밀번호가 일치하지 않습니다.');
+        } else {
+          _showDialog('로그인 실패: ${error['message']}');
+        }
+      } else {
+        _showDialog('알 수 없는 오류가 발생했습니다. (${response.statusCode})');
+      }
+    } catch (e) {
+      _showDialog('네트워크 오류가 발생했습니다. ($e)');
+    }
+  }
+
+  void _showDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   @override
   void dispose() {
@@ -156,7 +219,7 @@ class _LoginPageState extends State<LoginPage> {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _isButtonEnabled ? () {} : null,
+                  onPressed: _isButtonEnabled ? _login : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _isButtonEnabled
                         ? AppColors.primary700

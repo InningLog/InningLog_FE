@@ -100,7 +100,7 @@ class _DiaryPageState extends State<DiaryPage> {
 
   Future<void> loadCalendar() async {
     try {
-      final result = await fetchJournalCalendar(resultScore: selectedFilterCalendar);
+      final result = await ApiService.fetchJournalCalendar(resultScore: selectedFilterCalendar);
       setState(() {
         journalList = result;
         isLoading = false;
@@ -114,7 +114,7 @@ class _DiaryPageState extends State<DiaryPage> {
     setState(() => isLoadingMore = true);
 
     // ✅ 서버에 필터 적용해서 가져옴 (API가 지원한다면)
-    final newList = await fetchJournalSummary(
+    final newList = await ApiService.fetchJournalSummary(
       page: page,
       resultScore: selectedFilterCollection,
     );
@@ -810,6 +810,9 @@ class _DiaryPageState extends State<DiaryPage> {
 
 
       floatingActionButton: FloatingActionButton(
+
+
+
         onPressed: () async {
 
           await analytics.logEvent(
@@ -822,25 +825,25 @@ class _DiaryPageState extends State<DiaryPage> {
             },
           );
           final dateToSend = selectedDate ?? DateTime.now();
-          final scheduleData = await fetchScheduleForDate(dateToSend);
+          final scheduleData = await ApiService.fetchScheduleForDate(dateToSend);
 
           if (scheduleData == null) {
-            // 경기 없을 경우 안내만
-            showDialog(
+            await showDialog(
               context: context,
-              builder: (_) => AlertDialog(
+              builder: (context) => AlertDialog(
                 title: const Text('경기 없음'),
                 content: const Text('해당 날짜에 경기 일정이 없습니다.'),
                 actions: [
                   TextButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Navigator.of(context).pop(), // ← context 안전하게 처리
                     child: const Text('확인'),
                   ),
                 ],
               ),
             );
-            return;
+            return; // 여기에 정확히 return 필요!
           }
+
 
           final confirmed = await _showGameConfirmationDialog(context, dateToSend, scheduleData);
 
@@ -864,12 +867,22 @@ class _DiaryPageState extends State<DiaryPage> {
             );
           }
         },
-
+        backgroundColor: AppColors.primary700,
+        elevation: 6,
+        shape: const CircleBorder(),
+        child: Padding(
+          padding: const EdgeInsets.all(0), // 여백 줄여서 SVG 더 크게 보이게
+          child: SvgPicture.asset(
+            'assets/icons/add_diary.svg',
+            width: 36,
+            height: 36,
+          ),
+        ),
       ),
 
 
+      );
 
-    );
 
 
   }

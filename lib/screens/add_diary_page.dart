@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -16,6 +17,9 @@ import 'add_seat_page.dart';
 import 'package:http/http.dart' as http;
 import '../service/api_service.dart';
 import 'home_page.dart';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart'; // kIsWeb
+
 
 
 File? _pickedImage;
@@ -113,25 +117,27 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
   Future<void> fetchJournalData(int journalId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('access_token');
+      final memberId = prefs.getInt('member_id');
+      if (memberId == null) {
+        print('❌ memberId 없음');
+        return;
+      }
+
       final response = await http.get(
-        Uri.parse('https://api.inninglog.shop/journals/detail/$journalId'),
+        Uri.parse('https://api.inninglog.shop/journals/detail/$journalId?memberId=$memberId'),
         headers: {
-          'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
 
-      print('👉 받은 데이터: ${response.body}'); // ✅ 여기!
+      print('👉 받은 데이터: ${response.body}');
 
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         final data = json['data']['jourDetail'];
-        // ✅ presigned URL 먼저 await으로 가져오고
         String? presignedImageUrl = data['media_url'];
 
         print('📦 journalDetail data: $data');
-
 
         setState(() {
           currentDate = DateTime.tryParse(data['gameDate'] ?? '') ?? DateTime.now();
@@ -139,7 +145,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
           theirScoreController.text = data['theirScore']?.toString() ?? '';
           selectedEmotionIndex = getEmotionIndex(data['emotion'] ?? '');
           reviewController.text = data['review_text'] ?? '';
-          mediaUrl = presignedImageUrl;// 네트워크 URL로 저장
+          mediaUrl = presignedImageUrl;
           final seatViewId = json['data']['seatViewId'];
           hasSeatView = seatViewId != null && seatViewId != 0;
 
@@ -150,12 +156,10 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
             gameDateTime: data['gameDate'] ?? '',
             stadium: data['stadiumSC'] ?? '',
           );
-
         });
 
         ourScore = ourScoreController.text;
         opponentScore = theirScoreController.text;
-
       } else {
         print('❌ 서버 응답 실패: ${response.statusCode}');
       }
@@ -176,24 +180,25 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
     final gameId2 = '${formattedDate}${myTeam}${opponentTeam}0';
 
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
-    final headers = {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    };
+    final memberId = prefs.getInt('member_id');
+    if (memberId == null) {
+      print('❌ memberId 없음');
+      return null;
+    }
 
-    final baseUri = 'https://api.inninglog.shop/journals/contents?gameId=';
-
+    final baseUri = 'https://api.inninglog.shop/journals/contents';
 
     // gameId1 확인
-    final res1 = await http.get(Uri.parse('$baseUri$gameId1'), headers: headers);
+    final uri1 = Uri.parse('$baseUri?gameId=$gameId1&memberId=$memberId');
+    final res1 = await http.get(uri1);
     if (res1.statusCode == 200) {
       print('✅ 유효한 gameId 찾음: $gameId1');
       return gameId1;
     }
 
     // gameId2 확인
-    final res2 = await http.get(Uri.parse('$baseUri$gameId2'), headers: headers);
+    final uri2 = Uri.parse('$baseUri?gameId=$gameId2&memberId=$memberId');
+    final res2 = await http.get(uri2);
     if (res2.statusCode == 200) {
       print('✅ 유효한 gameId 찾음: $gameId2');
       return gameId2;
@@ -702,12 +707,18 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                   }
 
                                   if (_pickedImage != null) {
+                                    print('✅ 이미지 존재함, fileName 생성 시작');
                                     fileName = 'journal_${DateTime.now().millisecondsSinceEpoch}.jpeg';
                                     final presignedUrl = await getPresignedUrl(fileName!, 'image/jpeg');
+                                    print('✅ presigned URL 결과: $presignedUrl');
                                     if (presignedUrl == null) return;
+
+                                    print('📤 S3 업로드 시작');
                                     final uploaded = await uploadImageToS3(presignedUrl, _pickedImage!);
+                                    print('📤 S3 업로드 결과: $uploaded');
                                     if (!uploaded) return;
                                   }
+
 
                                   final gameId = await getValidGameId(
                                     date: currentDate,
@@ -788,60 +799,42 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               // 작성 완료 버튼 내부
                               onPressed: widget.isEditMode || isFormValid
                                   ? () async {
-                                print('🟢 [작성완료 버튼] 클릭됨');
-
-                                if (widget.isEditMode) {
-                                  print('🟡 수정 모드 진입');
-                                  final journalId = widget.journalId!;
-
-
-                                  print('🧪 mediaUrl: $mediaUrl');
-                                  print('🧪 extractFileName(mediaUrl): ${extractFileName(mediaUrl)}');
-                                  if (context.mounted) context.go('/diary');
-                                  return;
-                                }
-
-                                // ✅ 작성 모드 로직
                                 print('🟡 작성 모드 진입');
-
-                                analytics.logEvent('write_diary_review', properties: {
-                                  'event_type': 'Custom',
-                                  'component': 'form_submit',
-                                  'review_length': reviewController.text.trim().length,
-                                  'importance': 'High',
-                                });
-
-                                analytics.logEvent('complete_diary_write', properties: {
-                                  'event_type': 'Custom',
-                                  'component': 'btn_click',
-                                  'importance': 'High',
-                                });
 
                                 if (todaySchedule == null) {
                                   print('❗ 오늘 경기 정보가 없습니다.');
                                   return;
                                 }
+                                print('✅ 오늘 경기 정보 있음');
 
                                 String? fileName;
                                 if (_pickedImage != null) {
+                                  print('📸 이미지 있음, presigned URL 요청');
                                   fileName = 'journal_${DateTime.now().millisecondsSinceEpoch}.jpeg';
                                   final presignedUrl = await getPresignedUrl(fileName, 'image/jpeg');
+                                  print('📫 presignedUrl: $presignedUrl');
                                   if (presignedUrl == null) return;
+
                                   final uploaded = await uploadImageToS3(presignedUrl, _pickedImage!);
+                                  print('📤 이미지 업로드 결과: $uploaded');
                                   if (!uploaded) return;
+                                } else {
+                                  print('📸 이미지 없음');
                                 }
 
+                                print('🎯 gameId 생성 시도');
                                 final gameId = await getValidGameId(
                                   date: currentDate,
                                   myTeam: todaySchedule!.myTeam,
                                   opponentTeam: todaySchedule!.opponentTeam,
                                 );
-
+                                print('🎯 gameId 결과: $gameId');
                                 if (gameId == null) {
-                                  print('❌ 유효한 경기 ID를 찾을 수 없음');
+                                  print('❌ 유효한 gameId 찾기 실패');
                                   return;
                                 }
 
+                                print('📤 uploadJournal 호출 시도');
                                 final journalId = await ApiService.uploadJournal(
                                   gameId: gameId,
                                   gameDateTime: DateTime.parse(todaySchedule!.gameDateTime),
@@ -849,13 +842,13 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                   opponentTeamShortCode: todaySchedule!.opponentTeam,
                                   ourScore: int.parse(ourScore),
                                   theirScore: int.parse(opponentScore),
-                                  fileName: fileName ?? '',
+                                  fileName: "journal_1754207562217.jpeg",
                                   emotion: getEmotionKor(selectedEmotionIndex),
                                   reviewText: reviewController.text.trim().isNotEmpty
                                       ? reviewController.text.trim()
                                       : ' ',
-
                                 );
+                                print('📦 journalId 응답: $journalId');
 
                                 if (journalId == null) {
                                   print('❌ 업로드 실패로 journalId가 null입니다.');
@@ -863,8 +856,10 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                 }
 
                                 if (context.mounted) {
-                                  context.go('/diary'); // 👈 extra 없이도 기본 화면으로
+                                  print('🚀 context.go 실행');
+                                  context.go('/diary');
                                 }
+
                               }
                                   : null,
 
@@ -1050,22 +1045,24 @@ class DiaryImagePicker extends StatefulWidget {
 
 class _DiaryImagePickerState extends State<DiaryImagePicker> {
   File? _pickedImage;
+  Uint8List? _pickedImageBytes;
 
   @override
   Widget build(BuildContext context) {
     Widget? content;
 
     // 1. 갤러리에서 사진을 선택한 경우
-    if (_pickedImage != null) {
+    if (_pickedImageBytes != null) {
       content = ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: Image.file(
-          _pickedImage!,
+        child: Image.memory(
+          _pickedImageBytes!,
           fit: BoxFit.fitWidth,
           width: double.infinity,
         ),
       );
     }
+
     // 2. 수정 모드에서 initialImageUrl이 있을 경우
     else if (!widget.enabled &&
         widget.initialImageUrl != null &&
@@ -1129,11 +1126,12 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
     final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
 
     if (image != null) {
-      final file = File(image.path);
+      final bytes = await image.readAsBytes();
       setState(() {
-        _pickedImage = file;
+        _pickedImageBytes = bytes;
       });
-      widget.onImageSelected(file);
+      widget.onImageSelected(File(image.path)); // 이 부분은 업로드용으로 유지
+
 
       analytics.logEvent('upload_diary_photo', properties: {
         'event_type': 'Custom',
@@ -1147,20 +1145,19 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
 
 
 Future<String?> getPresignedUrl(String fileName, String contentType) async {
-
   final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('access_token'); // ✅ 토큰 불러오기
+  final memberId = prefs.getInt('member_id'); // ✅ memberId 불러오기
+
+  if (memberId == null) {
+    print('❌ memberId 없음');
+    return null;
+  }
 
   final url = Uri.parse(
-    'https://api.inninglog.shop/s3/journal/presigned?fileName=$fileName&contentType=$contentType',
+    'https://api.inninglog.shop/s3/journal/presigned?fileName=$fileName&contentType=$contentType&memberId=$memberId',
   );
-  final response = await http.get(
-    url,
-    headers: {
-      'Authorization': 'Bearer $token', // ✅ 인증 헤더 추가
-      'Content-Type': 'application/json',
-    },
-  );
+
+  final response = await http.get(url);
 
   if (response.statusCode == 200) {
     final json = jsonDecode(response.body);
@@ -1170,6 +1167,7 @@ Future<String?> getPresignedUrl(String fileName, String contentType) async {
     return null;
   }
 }
+
 Future<bool> uploadImageToS3(String presignedUrl, File file) async {
   final bytes = await file.readAsBytes();
 
@@ -1209,23 +1207,29 @@ int getEmotionIndex(String emotion) {
 Widget buildMediaWidget(String mediaUrl) {
   if (mediaUrl.isEmpty) {
     return const Text('이미지가 없습니다');
-  } else if (mediaUrl.startsWith('http')) {
+  }
+
+  // 웹일 경우 무조건 network 이미지 사용
+  if (kIsWeb || mediaUrl.startsWith('http')) {
     return Image.network(
       mediaUrl,
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
     );
-  } else {
+  }
+
+  // 모바일에서만 File 객체 사용
+  try {
     final file = File(mediaUrl);
     if (!file.existsSync()) {
       return const Icon(Icons.broken_image);
     }
-    return Image.file(
-      file,
-      fit: BoxFit.cover,
-    );
+    return Image.file(file, fit: BoxFit.cover);
+  } catch (e) {
+    return const Icon(Icons.broken_image);
   }
 }
+
 
 
 String extractFileName(String? url) {

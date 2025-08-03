@@ -115,7 +115,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
     setState(() => isLoadingHashtag = true);
 
     try {
-      final results = await fetchSeatViewsByHashtag(
+      final results = await ApiService.fetchSeatViewsByHashtag(
         stadiumShortCode: stadiumCode,
         hashtagCodes: hashtagCodes,
       );
@@ -149,7 +149,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
     setState(() => isLoading = true);
 
     try {
-      final results = await fetchSeatViews(
+      final results = await ApiService.fetchSeatViews(
         stadiumShortCode: stadiumCode,
         zoneShortCode: zoneShortCode,
         section: widget.section?.isEmpty == true ? null : widget.section,

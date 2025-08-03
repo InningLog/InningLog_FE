@@ -248,56 +248,72 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-                onPressed: isButtonEnabled
-                    ? () async {
-                  final nickname = _nicknameController.text.trim();
-                  final selectedTeam = _selectedTeam!;
-                  final shortCode = teamShortCodes[selectedTeam]!;
+              onPressed: isButtonEnabled
+                  ? () async {
+                final nickname = _nicknameController.text.trim();
+                final selectedTeam = _selectedTeam!;
+                final shortCode = teamShortCodes[selectedTeam]!;
 
-                  // ✅ Amplitude 이벤트 로깅
-                  await analytics.logEvent('onboarding_complete', properties: {
-                    'nickname': nickname ?? '',
-                    'team': selectedTeam ?? '',
-                    'team_short_code': shortCode ?? '',
-                    'category': 'User',
-                    'action': 'setup_complete',
-                  });
+                // ✅ 이벤트 로깅은 그대로 유지
+                await analytics.logEvent('onboarding_complete', properties: {
+                  'nickname': nickname,
+                  'team': selectedTeam,
+                  'team_short_code': shortCode,
+                  'category': 'User',
+                  'action': 'setup_complete',
+                });
 
-                  await analytics.logEvent(
-                    'enter_onboarding_nickname',
-                    properties:{
-                      'component': 'form_submit',
-                      'nickname_length': nickname.length,
-                      'nickname_value': nickname,
-                      'importance': 'Medium',
+                await analytics.logEvent('enter_onboarding_nickname', properties: {
+                  'component': 'form_submit',
+                  'nickname_length': nickname.length,
+                  'nickname_value': nickname,
+                  'importance': 'Medium',
+                });
+
+                await analytics.logEvent('select_onboarding_team', properties: {
+                  'component': 'btn_click',
+                  'team_name': selectedTeam,
+                  'importance': 'Medium',
+                });
+
+                // ✅ 여기부터 새로 작성
+                try {
+                  final prefs = await SharedPreferences.getInstance();
+                  final memberId = prefs.getInt('member_id');
+
+                  if (memberId == null) {
+                    throw Exception('memberId가 없습니다.');
+                  }
+
+                  final url = Uri.parse('https://api.inninglog.shop/member/setup?memberId=$memberId');
+
+                  final response = await http.post(
+                    url,
+                    headers: {
+                      'Content-Type': 'application/json',
                     },
+                    body: jsonEncode({
+                      'nickname': nickname,
+                      'teamShortCode': shortCode,
+                    }),
                   );
 
-                  await analytics.logEvent(
-                    'select_onboarding_team',
-                    properties: {
-                      'component': 'btn_click',
-                      'team_name': selectedTeam,
-                      'importance': 'Medium',
-                    },
-                  );
-
-
-                  try {
-                    await MemberApi.patchNickname(nickname);
-                    await MemberApi.patchTeam(shortCode);
-
+                  if (response.statusCode == 200) {
                     if (!mounted) return;
                     context.go('/home');
-                  } catch (e) {
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(e.toString())),
-                    );
+                  } else {
+                    final resBody = jsonDecode(response.body);
+                    throw Exception(resBody['message'] ?? '회원 설정 실패');
                   }
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(e.toString())),
+                  );
                 }
+              }
+                  : null,
 
-                : null,
 
 
               style: ElevatedButton.styleFrom(

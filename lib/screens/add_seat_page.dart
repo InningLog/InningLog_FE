@@ -623,7 +623,7 @@ class _AddSeatPageState extends State<AddSeatPage> {
                               .whereType<String>()
                               .toList();
 
-                          await uploadSeatView(
+                          await ApiService.uploadSeatView(
                             journalId: widget.journalId,
                             stadiumSC: widget.stadium,
                             zoneSC: selectedZone!,

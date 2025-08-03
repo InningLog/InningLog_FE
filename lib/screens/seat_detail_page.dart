@@ -25,7 +25,7 @@ class _SeatDetailPageState extends State<SeatDetailPage> {
   @override
   void initState() {
     super.initState();
-    _seatDetailFuture = fetchSeatViewDetail(widget.seatViewId);
+    _seatDetailFuture = ApiService.fetchSeatViewDetail(widget.seatViewId);
   }
 
   @override
