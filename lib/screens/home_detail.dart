@@ -190,111 +190,111 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
 
 
 
-    // //전체 직관 횟수가 3회 미만인 경우
-    // if (reportData.totalVisitedGames < 2) {
-    //   return Scaffold(
-    //     backgroundColor: Colors.white,
-    //     body: SafeArea(
-    //       child: Center(
-    //         child: Column(
-    //           mainAxisAlignment: MainAxisAlignment.start,
-    //           children: [
-    //             Container(
-    //               height: 72,
-    //               padding: const EdgeInsets.symmetric(vertical: 10),
-    //               alignment: Alignment.center,
-    //               child: Row(
-    //                 crossAxisAlignment: CrossAxisAlignment.center,
-    //                 children: [
-    //                   IconButton(
-    //                     padding: EdgeInsets.zero,
-    //                     icon: SvgPicture.asset(
-    //                       'assets/icons/back_but.svg',
-    //                       width: 10,
-    //                       height: 20,
-    //                     ),
-    //                     onPressed: () => Navigator.pop(context),
-    //                   ),
-    //                   const SizedBox(width: 0),
-    //                   const Text(
-    //                     '홈',
-    //                     style: TextStyle(
-    //                       fontSize: 26,
-    //                       fontWeight: FontWeight.w400,
-    //                       letterSpacing: -0.26,
-    //                       color: Color(0xFF272727),
-    //                       fontFamily: 'MBC1961GulimOTF',
-    //                     ),
-    //                   ),
-    //                   const Spacer(),
-    //                   IconButton(
-    //                     padding: EdgeInsets.zero,
-    //                     icon: SvgPicture.asset(
-    //                       'assets/icons/Alarm.svg',
-    //                       width: 18.05,
-    //                     ),
-    //                     onPressed: () {},
-    //                   ),
-    //                 ],
-    //               ),
-    //             ),
-    //             const SizedBox(height: 121),
-    //             Text(
-    //               '직관 기록이 부족해요!',
-    //               style: TextStyle(
-    //                 fontSize: 24,
-    //                 fontWeight: FontWeight.w700,
-    //                 fontFamily: 'Pretendard',
-    //               ),
-    //             ),
-    //             const SizedBox(height: 40),
-    //
-    //             Image.asset(
-    //               'assets/images/bori_no_report.jpg',
-    //               width: 108,
-    //               height: 108,
-    //               fit: BoxFit.contain,
-    //             ),
-    //             const SizedBox(height: 40),
-    //             Text.rich(
-    //               TextSpan(
-    //                 text: '직관 기록이 ',
-    //                 style: const TextStyle(
-    //                   fontSize: 19,
-    //                   fontWeight: FontWeight.w700,
-    //                   fontFamily: 'Pretendard',
-    //                   color: Colors.black, // 기본 텍스트 색상
-    //                 ),
-    //                 children: [
-    //                   TextSpan(
-    //                     text: '3회',
-    //                     style: TextStyle(
-    //                       color: AppColors.primary700,
-    //                       fontWeight: FontWeight.w700,
-    //                       fontSize: 19,
-    //                     ),
-    //                   ),
-    //                   const TextSpan(
-    //                     text: ' 이상 있어야\n리포트를 확인할 수 있어요!',
-    //                   ),
-    //                 ],
-    //               ),
-    //               textAlign: TextAlign.center,
-    //             ),
-    //             Text(
-    //               '현재:${reportData.totalVisitedGames}회' ,
-    //               style: TextStyle(
-    //                 color: AppColors.gray700,
-    //                 fontWeight: FontWeight.w700,
-    //                 fontSize: 19,
-    //               ),
-    //             )
-    //           ],
-    //         ),
-    //       ),
-    //     ),
-    //   );
-    // }
+    //전체 직관 횟수가 3회 미만인 경우
+    if (reportData.totalVisitedGames < 1) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Container(
+                  height: 72,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  alignment: Alignment.center,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        icon: SvgPicture.asset(
+                          'assets/icons/back_but.svg',
+                          width: 10,
+                          height: 20,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const SizedBox(width: 0),
+                      const Text(
+                        '홈',
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: -0.26,
+                          color: Color(0xFF272727),
+                          fontFamily: 'MBC1961GulimOTF',
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        icon: SvgPicture.asset(
+                          'assets/icons/Alarm.svg',
+                          width: 18.05,
+                        ),
+                        onPressed: () {},
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 121),
+                Text(
+                  '직관 기록이 부족해요!',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Pretendard',
+                  ),
+                ),
+                const SizedBox(height: 40),
+
+                Image.asset(
+                  'assets/images/bori_no_report.jpg',
+                  width: 108,
+                  height: 108,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(height: 40),
+                Text.rich(
+                  TextSpan(
+                    text: '직관 기록이 ',
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Pretendard',
+                      color: Colors.black, // 기본 텍스트 색상
+                    ),
+                    children: [
+                      TextSpan(
+                        text: '1회',
+                        style: TextStyle(
+                          color: AppColors.primary700,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 19,
+                        ),
+                      ),
+                      const TextSpan(
+                        text: ' 이상 있어야\n리포트를 확인할 수 있어요!',
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                Text(
+                  '현재:${reportData.totalVisitedGames}회' ,
+                  style: TextStyle(
+                    color: AppColors.gray700,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 19,
+                  ),
+                )
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     // 3회 이상이면 기존 리포트 화면 반환
     return Scaffold(

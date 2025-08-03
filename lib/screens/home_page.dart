@@ -89,7 +89,8 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    fetchData();
+    fetchData();           // 홈 데이터 불러오기
+    fetchMyWeaningRate();
   }
 
   void saveScheduleToPrefs(MyTeamSchedule schedule) async {

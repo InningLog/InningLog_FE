@@ -38,6 +38,7 @@ class AddDiaryPage extends StatefulWidget {
   final bool isEditMode;
   final int? journalId;
 
+
   const AddDiaryPage({
     super.key,
     this.initialDate,
@@ -56,6 +57,8 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
   String? fileName;
   DateTime currentDate = DateTime.now();
   String? writtenStadiumCode;
+  Uint8List? _imageBytes;
+
 
   final TextEditingController ourScoreController = TextEditingController();
   final TextEditingController theirScoreController = TextEditingController();
@@ -558,14 +561,15 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                       // 사진 업로드
                       DiaryImagePicker(
                         initialImageUrl: mediaUrl,
-                        onImageSelected: (image) {
+                        onImageSelected: (image, bytes) {
                           setState(() {
                             _pickedImage = image;
-
+                            _imageBytes = bytes;
                           });
                         },
                         enabled: !widget.isEditMode,
                       ),
+
 
 
 
@@ -714,7 +718,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                     if (presignedUrl == null) return;
 
                                     print('📤 S3 업로드 시작');
-                                    final uploaded = await uploadImageToS3(presignedUrl, _pickedImage!);
+                                    final uploaded = await uploadImageToS3(presignedUrl, _imageBytes!);
                                     print('📤 S3 업로드 결과: $uploaded');
                                     if (!uploaded) return;
                                   }
@@ -807,20 +811,18 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                 }
                                 print('✅ 오늘 경기 정보 있음');
 
-                                String? fileName;
-                                if (_pickedImage != null) {
+                                if (_pickedImage != null && _imageBytes != null) {
                                   print('📸 이미지 있음, presigned URL 요청');
                                   fileName = 'journal_${DateTime.now().millisecondsSinceEpoch}.jpeg';
-                                  final presignedUrl = await getPresignedUrl(fileName, 'image/jpeg');
+                                  final presignedUrl = await getPresignedUrl(fileName!, 'image/jpeg');
                                   print('📫 presignedUrl: $presignedUrl');
                                   if (presignedUrl == null) return;
 
-                                  final uploaded = await uploadImageToS3(presignedUrl, _pickedImage!);
+                                  final uploaded = await uploadImageToS3(presignedUrl, _imageBytes!); // ✅ Uint8List 사용
                                   print('📤 이미지 업로드 결과: $uploaded');
                                   if (!uploaded) return;
-                                } else {
-                                  print('📸 이미지 없음');
                                 }
+
 
                                 print('🎯 gameId 생성 시도');
                                 final gameId = await getValidGameId(
@@ -842,12 +844,13 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                   opponentTeamShortCode: todaySchedule!.opponentTeam,
                                   ourScore: int.parse(ourScore),
                                   theirScore: int.parse(opponentScore),
-                                  fileName: "journal_1754207562217.jpeg",
+                                  fileName: (fileName != null && fileName!.isNotEmpty) ? fileName! : null, // ✅ null로 전달
                                   emotion: getEmotionKor(selectedEmotionIndex),
                                   reviewText: reviewController.text.trim().isNotEmpty
                                       ? reviewController.text.trim()
                                       : ' ',
                                 );
+
                                 print('📦 journalId 응답: $journalId');
 
                                 if (journalId == null) {
@@ -1028,7 +1031,8 @@ Widget _scoreInputField({
 
 //사진 가져오기
 class DiaryImagePicker extends StatefulWidget {
-  final void Function(File image) onImageSelected;
+  final void Function(File image, Uint8List bytes) onImageSelected;
+
   final String? initialImageUrl;
   final bool enabled;
 
@@ -1126,11 +1130,14 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
     final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
 
     if (image != null) {
-      final bytes = await image.readAsBytes();
+      final Uint8List bytes = await image.readAsBytes();
+
       setState(() {
         _pickedImageBytes = bytes;
       });
-      widget.onImageSelected(File(image.path)); // 이 부분은 업로드용으로 유지
+
+      widget.onImageSelected(File(image.path), bytes); // ❗️이제 bytes도 같이 넘겨줌
+
 
 
       analytics.logEvent('upload_diary_photo', properties: {
@@ -1168,13 +1175,10 @@ Future<String?> getPresignedUrl(String fileName, String contentType) async {
   }
 }
 
-Future<bool> uploadImageToS3(String presignedUrl, File file) async {
-  final bytes = await file.readAsBytes();
-
+Future<bool> uploadImageToS3(String presignedUrl, Uint8List bytes) async {
   final response = await http.put(
     Uri.parse(presignedUrl),
     headers: {
-
       'Content-Type': 'image/jpeg',
     },
     body: bytes,
@@ -1182,6 +1186,7 @@ Future<bool> uploadImageToS3(String presignedUrl, File file) async {
 
   return response.statusCode == 200;
 }
+
 
 
 

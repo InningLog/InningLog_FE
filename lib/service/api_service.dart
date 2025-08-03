@@ -151,7 +151,7 @@ class ApiService {
 
   static Future<int?> uploadJournal({
     required String gameId,
-    required String fileName,
+    String? fileName,
     required String stadiumShortCode,
     required String opponentTeamShortCode,
     required DateTime gameDateTime,
@@ -438,23 +438,16 @@ class ApiService {
     int page = 0,
     int size = 10,
   }) async {
-    final cleanedZone = (zoneShortCode != null && zoneShortCode
-        .trim()
-        .isNotEmpty)
-        ? zoneShortCode.trim()
-        : null;
-    final cleanedSection = (section != null && section
-        .trim()
-        .isNotEmpty)
-        ? section.trim()
-        : null;
-    final cleanedRow = (seatRow != null && seatRow
-        .trim()
-        .isNotEmpty)
-        ? seatRow.trim()
-        : null;
+    final prefs = await SharedPreferences.getInstance();
+    final memberId = prefs.getInt('member_id');
+    if (memberId == null) throw Exception('memberId가 존재하지 않습니다.');
+
+    final cleanedZone = zoneShortCode?.trim().isNotEmpty == true ? zoneShortCode!.trim() : null;
+    final cleanedSection = section?.trim().isNotEmpty == true ? section!.trim() : null;
+    final cleanedRow = seatRow?.trim().isNotEmpty == true ? seatRow!.trim() : null;
 
     final uri = Uri.https('api.inninglog.shop', '/seatViews/normal/gallery', {
+      'memberId': '$memberId', // ✅ 필수 파라미터 추가
       'stadiumShortCode': stadiumShortCode,
       if (cleanedZone != null) 'zoneShortCode': cleanedZone,
       if (cleanedSection != null) 'section': cleanedSection,
@@ -466,18 +459,17 @@ class ApiService {
     print('🧩 전달된 zoneShortCode: "$zoneShortCode"');
     print('📦 최종 요청 URI: $uri');
 
-    final res = await http.get(uri); // ❌ 토큰 없이 요청
+    final res = await http.get(uri);
 
     if (res.statusCode == 200) {
       final json = jsonDecode(res.body);
       final List<dynamic> contents = json['data']['content'];
-      return contents
-          .map<String>((item) => item['viewMediaUrl'] as String)
-          .toList();
+      return contents.map<String>((item) => item['viewMediaUrl'] as String).toList();
     } else {
       throw Exception('좌석 시야 조회 실패: ${res.body}');
     }
   }
+
 
 
   static Future<List<SeatView>> fetchSeatViewsByHashtag({
@@ -486,38 +478,58 @@ class ApiService {
     int page = 0,
     int size = 10,
   }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final memberId = prefs.getInt('member_id');
+    if (memberId == null) throw Exception('❌ memberId가 존재하지 않습니다.');
+
     final uri = Uri.https('api.inninglog.shop', '/seatViews/hashtag/gallery', {
+      'memberId': '$memberId', // ✅ 필수 파라미터 추가
       'stadiumShortCode': stadiumShortCode,
-      'hashtagCodes': hashtagCodes.join(','), // ✅ List → String으로 변환
+      'hashtagCodes': hashtagCodes.join(','), // ✅ List → String 변환
       'page': '$page',
       'size': '$size',
     });
 
-    final res = await http.get(uri); // ❌ Authorization 헤더 제거
+    print('📡 해시태그 요청 URI: $uri');
+
+    final res = await http.get(uri);
 
     if (res.statusCode == 200) {
       final json = jsonDecode(res.body);
       final List<dynamic> contents = json['data']['content'];
       return contents.map((item) => SeatView.fromJson(item)).toList();
     } else {
-      throw Exception('해시태그 좌석 조회 실패: ${res.body}');
+      throw Exception('❌ 해시태그 좌석 조회 실패: ${res.body}');
     }
   }
 
 
-  static Future<SeatViewDetail> fetchSeatViewDetail(int seatViewId) async {
-    final uri = Uri.https('api.inninglog.shop', '/seatViews/$seatViewId');
 
-    final res = await http.get(uri); // ❌ 토큰 제거
+  static Future<SeatViewDetail> fetchSeatViewDetail(int seatViewId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final memberId = prefs.getInt('member_id');
+    if (memberId == null) throw Exception('❌ memberId가 존재하지 않습니다.');
+
+    final uri = Uri.https(
+      'api.inninglog.shop',
+      '/seatViews/$seatViewId',
+      {
+        'memberId': '$memberId', // ✅ 쿼리 파라미터에 추가
+      },
+    );
+
+    print('🔍 시야 상세 요청 URI: $uri');
+
+    final res = await http.get(uri); // 여전히 Authorization은 필요 없음
 
     if (res.statusCode == 200) {
       final json = jsonDecode(res.body);
       final data = json['data'];
-
       return SeatViewDetail.fromJson(data);
     } else {
       throw Exception('좌석 시야 상세 조회 실패: ${res.body}');
     }
   }
+
 
 }

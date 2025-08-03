@@ -96,60 +96,70 @@ class _SeatDetailPageState extends State<SeatDetailPage> {
                 ),
                 const SizedBox(height: 16),
                 // ✅ 대표 이미지
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 58.5),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: AspectRatio(
-                      aspectRatio: 273 / 364,
-                      child: Image.network(
-                        widget.imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
 
-                // ✅ 좌석 정보 텍스트
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Align(
-                      alignment: Alignment.center,
-                      child: Text(
-                    info != null
-                        ? '${info.zoneName ?? ""} ${info.section ?? ""}구역 ${info.seatRow ?? ""}열'
-                        : '좌석 정보 없음',
-                    style: const TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'Pretendard',
-                    ),
-                  ),
-            ),
-                ),
-                const SizedBox(height: 16),
-
-                // ✅ 해시태그 영역
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildCategory("응원", ["#일어남", "#일어날_사람은_일어남", "#앉아서"], selectedTag: selectedTags["응원"]),
-                          _buildCategory("햇빛", ["#강함", "#있다가_그늘짐", "#없음"], selectedTag: selectedTags["햇빛"]),
-                          _buildCategory("지붕", ["#있음", "#없음"], selectedTag: selectedTags["지붕"]),
-                          _buildCategory("시야 방해", ["#그물", "#아크릴_가림막", "#없음"], selectedTag: selectedTags["시야 방해"]),
-                          _buildCategory("좌석 공간", ["#아주_넓음", "#넓음", "#보통", "#좁음"], selectedTag: selectedTags["좌석 공간"]),
-                        ],
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 16),
+                      // ✅ 대표 이미지
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 58.5),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: AspectRatio(
+                            aspectRatio: 273 / 364,
+                            child: Image.network(
+                              widget.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 16),
+
+                      // ✅ 좌석 정보 텍스트
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Align(
+                          alignment: Alignment.center,
+                          child: Text(
+                            info != null
+                                ? '${info.zoneName ?? ""} ${info.section ?? ""}구역 ${info.seatRow ?? ""}열'
+                                : '좌석 정보 없음',
+                            style: const TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'Pretendard',
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // ✅ 해시태그 영역 (스크롤 가능 영역이 아니고, 전체 스크롤에 포함됨)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildCategory("응원", ["#일어남", "#일어날_사람은_일어남", "#앉아서"], selectedTag: selectedTags["응원"]),
+                            _buildCategory("햇빛", ["#강함", "#있다가_그늘짐", "#없음"], selectedTag: selectedTags["햇빛"]),
+                            _buildCategory("지붕", ["#있음", "#없음"], selectedTag: selectedTags["지붕"]),
+                            _buildCategory("시야 방해", ["#그물", "#아크릴_가림막", "#없음"], selectedTag: selectedTags["시야 방해"]),
+                            _buildCategory("좌석 공간", ["#아주_넓음", "#넓음", "#보통", "#좁음"], selectedTag: selectedTags["좌석 공간"]),
+                            const SizedBox(height: 32),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+
+                ),
+            ],
             );
           },
         ),

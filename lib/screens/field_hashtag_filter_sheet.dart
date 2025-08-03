@@ -52,11 +52,10 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
   bool get isDirectSearchValid {
     final hasZone = selectedZone?.isNotEmpty ?? false;
     final hasSection = sectionController.text.trim().isNotEmpty;
-    final hasRow = rowController.text.trim().isNotEmpty;
 
-    // ✅ 존만 입력, 혹은 구역+열만 입력 둘 다 허용
-    return hasZone || (hasSection && hasRow);
+    return hasZone || hasSection; // ✅ 존 or 구역 중 하나만 있어도 OK
   }
+
 
 
   String? getZoneNameFromCode(String stadiumName, String? zoneCode) {
@@ -213,7 +212,6 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        // ✅ 바텀시트 열기 전에 현재 선택 상태 반영
         selectedZone ??= widget.zone;
         if (sectionController.text.isEmpty && widget.section != null) {
           sectionController.text = widget.section!;
@@ -222,16 +220,20 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
           rowController.text = widget.row!;
         }
 
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-            left: 20,
-            right: 20,
-            top: 24,
-          ),
-          child: StatefulBuilder(
-            builder: (context, setModalState) {
-              return SingleChildScrollView(
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            bool isDirectSearchValid() {
+              return (selectedZone?.isNotEmpty ?? false) || sectionController.text.trim().isNotEmpty;
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 20,
+                right: 20,
+                top: 24,
+              ),
+              child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -243,6 +245,8 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                       ),
                     ),
                     const SizedBox(height: 16),
+
+                    // ✅ 존 선택
                     DropdownButtonFormField<String>(
                       dropdownColor: Colors.white,
                       decoration: InputDecoration(
@@ -272,41 +276,23 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                       value: selectedZone,
                       items: buildZoneItems(selectedStadiumCode),
                       onChanged: (value) {
-                        print('🎯 선택된 존: $value');
-                        analytics.logEvent('change_stadium_direct_dropdown', properties: {
-                          'event_type': 'Custom',
-                          'component': 'btn_click',
-                          'changed_field': 'zone_name',
-                          'changed_value': value,
-                          'importance': 'High',
-                        });
-                        analytics.logEvent('change_stadium_direct_dropdown', properties: {
-                          'event_type': 'Custom',
-                          'component': 'btn_click',
-                          'changed_field': 'section',
-                          'changed_value': sectionController.text,
-                          'importance': 'High',
-                        });
-
-                        analytics.logEvent('change_stadium_direct_dropdown', properties: {
-                          'event_type': 'Custom',
-                          'component': 'btn_click',
-                          'changed_field': 'row',
-                          'changed_value': rowController.text,
-                          'importance': 'High',
-                        });
                         setState(() {
                           selectedZone = value;
                         });
+                        setModalState(() {}); // ✅ 상태 즉시 반영
                       },
                     ),
+
                     const SizedBox(height: 12),
+
+                    // ✅ 구역 & 열 입력
                     Row(
                       children: [
                         Expanded(
                           child: TextField(
                             controller: sectionController,
                             textAlign: TextAlign.center,
+                            onChanged: (_) => setModalState(() {}),
                             decoration: _seatInputDecoration('ex) 314'),
                           ),
                         ),
@@ -318,6 +304,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                           child: TextField(
                             controller: rowController,
                             textAlign: TextAlign.center,
+                            onChanged: (_) => setModalState(() {}),
                             decoration: _seatInputDecoration('ex) 3'),
                           ),
                         ),
@@ -326,16 +313,18 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                       ],
                     ),
+
                     const SizedBox(height: 46),
+
+                    // ✅ 작성 완료 버튼
                     SizedBox(
                       width: double.infinity,
                       height: 54,
                       child: ElevatedButton(
-                        onPressed: isDirectSearchValid
+                        onPressed: isDirectSearchValid()
                             ? () {
-                          Navigator.pop(context); // 닫고 이동
+                          Navigator.pop(context);
                           context.pushNamed(
-
                             'field_result',
                             extra: {
                               'index': 0,
@@ -344,17 +333,15 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                               'section': sectionController.text,
                               'row': rowController.text,
                             },
-
                           );
-
                         }
                             : null,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isDirectSearchValid ? AppColors.primary700 : AppColors.gray200,
+                          backgroundColor: isDirectSearchValid() ? AppColors.primary700 : AppColors.gray200,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(36),
                             side: BorderSide(
-                              color: isDirectSearchValid ? AppColors.primary700 : Colors.transparent,
+                              color: isDirectSearchValid() ? AppColors.primary700 : Colors.transparent,
                               width: 1,
                             ),
                           ),
@@ -364,17 +351,18 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
-                            color: isDirectSearchValid ? Colors.white : AppColors.gray700,
+                            color: isDirectSearchValid() ? Colors.white : AppColors.gray700,
                           ),
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 20),
                   ],
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         );
       },
     );

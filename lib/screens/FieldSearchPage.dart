@@ -331,6 +331,7 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                        child :  SingleChildScrollView(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -479,6 +480,7 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                             ),
                           ],
 
+                        ),
                         ),
 
 
