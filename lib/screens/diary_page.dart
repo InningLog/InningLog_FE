@@ -93,6 +93,7 @@ class _DiaryPageState extends State<DiaryPage> {
     _scrollController.addListener(() {
       if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent && !isLoadingMore && hasMore) {
         loadMoreSummary();
+
       }
     });
 
@@ -113,10 +114,17 @@ class _DiaryPageState extends State<DiaryPage> {
   Future<void> loadMoreSummary() async {
     setState(() => isLoadingMore = true);
 
-    // ✅ 서버에 필터 적용해서 가져옴 (API가 지원한다면)
+    final scoreParam = selectedFilterCollection == '승리'
+        ? '승'
+        : selectedFilterCollection == '패배'
+        ? '패'
+        : selectedFilterCollection == '무승부'
+        ? '무승부'
+        : null;
+
     final newList = await ApiService.fetchJournalSummary(
       page: page,
-      resultScore: selectedFilterCollection,
+      resultScore: scoreParam,
     );
 
     setState(() {
@@ -125,7 +133,13 @@ class _DiaryPageState extends State<DiaryPage> {
       page++;
       isLoadingMore = false;
     });
+
+    print('📋 현재 일지 개수: ${journalList.length}');
+    for (var j in journalList) {
+      print('📝 ${j.journalId} | ${j.gameDate} | ${j.stadiumSC}');
+    }
   }
+
 
 
 
@@ -149,6 +163,51 @@ class _DiaryPageState extends State<DiaryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final Map<String, Journal> gameMap = {};
+
+    for (var game in journalList) {
+      final key = '${game.gameDate}_${game.stadiumSC}';
+
+      final isImageAvailable = game.mediaUrl != null && game.mediaUrl!.isNotEmpty;
+      final isEmotionAvailable = emotionImageMap[game.emotion.trim()] != null;
+
+      if (!gameMap.containsKey(key)) {
+        gameMap[key] = game;
+      } else {
+        final existing = gameMap[key]!;
+        final existingHasImage = existing.mediaUrl != null && existing.mediaUrl!.isNotEmpty;
+        final existingHasEmotionImage = emotionImageMap[existing.emotion.trim()] != null;
+
+        // ✅ 사진 → 감정 → 아무것도 없는 순으로 우선순위 정함
+        if (
+        // 1. 기존 건 사진 없고, 새로운 건 사진 있으면 교체
+        (!existingHasImage && isImageAvailable) ||
+
+            // 2. 기존 건 사진/감정 이미지 둘 다 없고, 새로운 건 감정 이미지라도 있으면 교체
+            (!existingHasImage && !existingHasEmotionImage && isEmotionAvailable)
+        ) {
+          gameMap[key] = game;
+        }
+      }
+    }
+
+    final filteredGames = gameMap.values.where((game) {
+      if (selectedFilterCollection == null) return true;
+
+      final expectedResult = selectedFilterCollection!; // '승리' / '패배' / '무승부'
+      final resultScore = game.resultScore;
+
+      if (resultScore == '승' && expectedResult == '승리') return true;
+      if (resultScore == '패' && expectedResult == '패배') return true;
+      if (resultScore == '무승부' && expectedResult == '무승부') return true;
+
+      return false;
+    }).toList();
+
+
+
+
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -631,11 +690,7 @@ class _DiaryPageState extends State<DiaryPage> {
 
                           child: GridView.builder(
                             controller: _scrollController,
-                            itemCount: journalList.where((game) {
-                              if (selectedFilterCollection == null) return true;
-                              final filterScore = resultFilterToScore[selectedFilterCollection!];
-                              return game.resultScore != null && game.resultScore == filterScore;
-                            }).length,
+                            itemCount: filteredGames.length,
 
 
 
@@ -646,22 +701,13 @@ class _DiaryPageState extends State<DiaryPage> {
                               childAspectRatio: 0.75, // 카드 비율 (필요 시 조절)
                             ),
                             itemBuilder: (context, index) {
-                              final filteredGames = journalList.where((game) {
-                                if (selectedFilterCollection == null) return true;
-                                final filterScore = resultFilterToScore[selectedFilterCollection!];
-                                return game.resultScore != null && game.resultScore == filterScore;
-                              }).toList();
-
-
-
-
-
                               final game = filteredGames[index];
                               final imageUrl = game.mediaUrl;
                               final hasImage = imageUrl.isNotEmpty && imageUrl.startsWith('http');
 
                               final result = game.resultScore ?? '';
                               final shortResult = result == '무승부' ? '무' : result;
+
 
 
                               final imageWidget = hasImage
@@ -1096,6 +1142,11 @@ class _DiaryPageState extends State<DiaryPage> {
         });
         // ✅ Amplitude 이벤트 전송
         if (index == 0) {
+          setState(() {
+            _selectedIndex = index;
+            selectedFilterCalendar = null; // ✅ 캘린더 필터 초기화
+            loadCalendar(); // ✅ 다시 로드
+          });
           analytics.logEvent('click_diary_calendar_tab', properties: {
             'component': 'btn_click',
             'category': 'Diary',
@@ -1212,8 +1263,8 @@ const Map<String, String> emotionImageMap = {
   '짜릿함': 'assets/images/electric.jpg',
   '감동': 'assets/images/touched.jpg',
   '흡족' : 'assets/images/smile.jpg',
-  '답답함' : 'assets/images/ohmy.jpg',
-  '아쉬움': 'assets/images/sad.jpg',
+  '아쉬움' : 'assets/images/ohmy.jpg',
+  '답답함': 'assets/images/sad.jpg',
   '분노': 'assets/images/angry.jpg',
   // 필요한 만큼 추가
 };

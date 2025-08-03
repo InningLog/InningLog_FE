@@ -347,9 +347,12 @@ class _HomePageState extends State<HomePage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const HomeDetailPage(),
+                            builder: (context) => HomeDetailPage(
+                              teamShortCode: teamShortCode, // ✅ 이거 넘겨주기
+                            ),
                           ),
                         );
+
                       },
 
                       style: OutlinedButton.styleFrom(

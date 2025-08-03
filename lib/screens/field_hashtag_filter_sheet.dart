@@ -90,6 +90,11 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
     super.initState();
     selectedTags = Map<String, String>.from(widget.selectedTags ?? {});
     _selectedIndex = widget.index; // ✅ index 반영!
+    selectedZone = widget.zone;
+
+    selectedZone = widget.zone;
+    sectionController.text = widget.section ?? '';
+    rowController.text = widget.row ?? '';
 
     if (_selectedIndex == 0) {
       fetchDirectSearchResults(); // ✅ 직접 검색
@@ -135,15 +140,17 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
   Future<void> fetchDirectSearchResults() async {
     print('🚀 fetchDirectSearchResults 실행됨');
     final stadiumCode = stadiumNameToCode[widget.stadiumName];
-    final zoneShortCode = widget.zone;
+    final zoneShortCode = selectedZone;
 
     print('🧭 최종 selectedZone: $selectedZone');
+    print('🧭 최종 section: $sectionController');
     if (stadiumCode == null) return;
 
     if ((widget.zone == null || widget.zone!.isEmpty) &&
-        (widget.section == null || widget.section!.isEmpty || widget.row == null || widget.row!.isEmpty)) {
+        (widget.section == null || widget.section!.isEmpty)) {
       return;
     }
+
 
     setState(() => isLoading = true);
 
@@ -154,6 +161,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
         section: widget.section?.isEmpty == true ? null : widget.section,
         seatRow: widget.row?.isEmpty == true ? null : widget.row,
       );
+      print('📮 직접 검색 파라미터 → stadium: $stadiumCode, zone: ${widget.zone}, section: ${widget.section}, row: ${widget.row}');
 
       setState(() {
         seatImages = results;
@@ -531,6 +539,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                           height: 48,
                           child: ElevatedButton(
                             onPressed: () {
+                              fetchHashtagSearchResults();
 
                               final List<String> selectedHashtagList = selectedTags.entries
                                   .map((entry) => "${entry.key}:${entry.value}")

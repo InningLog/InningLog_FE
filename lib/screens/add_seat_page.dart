@@ -18,47 +18,50 @@ import 'package:flutter/foundation.dart';
 
 
 
-Future<String?> getPresignedUrl(String fileName, String contentType) async {
-  final url = Uri.parse(
-    'https://api.inninglog.shop/s3/seatView/presigned?fileName=$fileName&contentType=$contentType',
-  );
-
+Future<String?> getPresignedUrlSeat(String fileName, String contentType) async {
   final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('access_token');
+  final memberId = prefs.getInt('member_id'); // ✅ 추가
+
+  if (memberId == null) {
+    print('❌ SharedPreferences에서 member_id를 찾을 수 없습니다.');
+    return null;
+  }
+
+  final url = Uri.parse(
+    'https://api.inninglog.shop/s3/seatView/presigned?fileName=$fileName&contentType=$contentType&memberId=$memberId',
+  );
 
   final res = await http.get(
     url,
     headers: {
-      'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
     },
   );
 
   print('📡 Presigned 요청 URL: $url');
-  print('📡 Headers: Authorization=Bearer $token');
 
   if (res.statusCode == 200) {
     final body = jsonDecode(res.body);
     return body['data'];
   } else {
-    print('❌ Presigned URL 발급 실패: ${res.body}');
+    print('❌ Presigned URL 발급 실패: ${res.statusCode}');
+    print('❌ 응답 내용: ${res.body}');
     return null;
   }
 }
 
 
 
-Future<bool> uploadToS3(String presignedUrl, File file) async {
+Future<bool> uploadToS3(String presignedUrl, {File? file, Uint8List? bytes}) async {
   try {
-    final bytes = await file.readAsBytes();
-    print('📸 업로드할 파일 크기: ${bytes.length}');
+    final uploadBytes = bytes ?? await file!.readAsBytes();
 
     final res = await http.put(
       Uri.parse(presignedUrl),
       headers: {
         'Content-Type': 'image/png',
       },
-      body: bytes,
+      body: uploadBytes,
     );
     print('📤 S3 업로드 응답: ${res.statusCode}');
     return res.statusCode == 200;
@@ -67,6 +70,8 @@ Future<bool> uploadToS3(String presignedUrl, File file) async {
     return false;
   }
 }
+
+
 
 
 
@@ -91,13 +96,17 @@ class AddSeatPage extends StatefulWidget {
 class _AddSeatPageState extends State<AddSeatPage> {
 
 
+
   MyTeamSchedule? todaySchedule;
   DateTime currentDate = DateTime.now();
+  File? seatImage;
+  Uint8List? seatImageBytes;
+
+
 
   String? selectedZone;
   final TextEditingController sectionController = TextEditingController();
   final TextEditingController rowController = TextEditingController();
-  File? seatImage;
   final Map<String, String> selectedTags = {};
   late String selectedStadiumCode;
 
@@ -105,7 +114,15 @@ class _AddSeatPageState extends State<AddSeatPage> {
     final prefs = await SharedPreferences.getInstance();
     final key = 'schedule_${currentDate.toIso8601String().split("T")[0]}';
     final jsonString = prefs.getString(key);
-    if (jsonString == null) return;
+    if (jsonString == null) {
+      print('❌ 오늘 일정 없음 (SharedPreferences)');
+      return;
+    }
+
+
+
+    print('📦 SharedPrefs key: $key');
+    print('📦 SharedPrefs value: $jsonString');
 
     final jsonData = jsonDecode(jsonString);
     setState(() {
@@ -157,10 +174,11 @@ class _AddSeatPageState extends State<AddSeatPage> {
     final hasZone = selectedZone != null && selectedZone!.isNotEmpty;
     final hasSection = sectionController.text.trim().isNotEmpty;
     final hasRow = rowController.text.trim().isNotEmpty;
-    final hasImage = seatImage != null;
+    final hasImage = seatImage != null || seatImageBytes != null; // ✅ 여기 수정됨!
 
     return hasZone && hasSection && hasRow && hasImage;
   }
+
 
 
 
@@ -181,7 +199,6 @@ class _AddSeatPageState extends State<AddSeatPage> {
     if (map == null) return [];
     return map.keys.toList(); // ✅ key만 리스트로
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -456,15 +473,17 @@ class _AddSeatPageState extends State<AddSeatPage> {
                     ),
                     const SizedBox(height: 8),
 
-                DiaryImagePicker(
-                  onImageSelected: (file) {
-                    setState(() {
-                      seatImage = file; // ✅ 이게 있어야 isFormValid가 true가 됨
-                    });
-                  },
-                ),
+                    DiaryImagePicker(
+                      onImageSelected: (file, bytes) {
+                        setState(() {
+                          seatImage = file;
+                          seatImageBytes = bytes;
+                        });
+                      },
+                    ),
 
-                  const SizedBox(height: 26),
+
+                    const SizedBox(height: 26),
                     const Text('좌석에 관한 해시태그로 검색해보세요!',
                       style: TextStyle(
                         fontSize: 16,
@@ -544,6 +563,9 @@ class _AddSeatPageState extends State<AddSeatPage> {
                       height: 54,
                       child: ElevatedButton(
                         onPressed: isFormValid ? () async {
+                          print('🟢 버튼 클릭됨!');
+                          print('🧪 isFormValid: $isFormValid');
+
 
                           await analytics.logEvent(
                             'select_seat_zone',
@@ -599,14 +621,21 @@ class _AddSeatPageState extends State<AddSeatPage> {
 
 
 
-                          if (seatImage == null || todaySchedule == null) return;
 
                           final fileName = 'journal_${widget.journalId}_${DateTime.now().millisecondsSinceEpoch}.png';
-                          final presignedUrl = await getPresignedUrl(fileName, 'image/png');
+                          final presignedUrl = await getPresignedUrlSeat(fileName, 'image/png');
+                          print('📡 Presigned 요청 URL: $presignedUrl');
+
 
                           if (presignedUrl == null) return;
 
-                          final success = await uploadToS3(presignedUrl, seatImage!);
+                          final success = await uploadToS3(
+                            presignedUrl,
+                            file: kIsWeb ? null : seatImage,
+                            bytes: kIsWeb ? seatImageBytes : null,
+                          );
+                          print('✅ 업로드 성공 여부: $success');
+
                           if (!success) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text('사진 업로드 실패')),
@@ -625,13 +654,20 @@ class _AddSeatPageState extends State<AddSeatPage> {
 
                           await ApiService.uploadSeatView(
                             journalId: widget.journalId,
-                            stadiumSC: widget.stadium,
-                            zoneSC: selectedZone!,
+                            stadiumShortCode: widget.stadium,
+                            zoneShortCode: selectedZone!,
                             section: sectionController.text.trim(),
-                            row: rowController.text.trim(),
-                            tagCodes: tagCodes,
+                            seatRow: rowController.text.trim(),
+                            emotionTagCodes: tagCodes,
                             fileName: fileName,
                           );
+
+
+                          if (success) {
+                            print('🎉 좌석 시야 등록 성공!');
+                          }
+
+
 
                           print('📦 uploadSeatView 호출 인자:');
                           print('  journalId: ${widget.journalId}');
@@ -695,9 +731,10 @@ class _AddSeatPageState extends State<AddSeatPage> {
     properties.add(StringProperty('selectedStadiumCode', selectedStadiumCode));
   }
 
+
 }
 class DiaryImagePicker extends StatefulWidget {
-  final Function(File) onImageSelected;
+  final Function(File?, Uint8List?) onImageSelected;
 
   const DiaryImagePicker({super.key, required this.onImageSelected});
 
@@ -707,27 +744,40 @@ class DiaryImagePicker extends StatefulWidget {
 
 class _DiaryImagePickerState extends State<DiaryImagePicker> {
   File? _pickedImage;
+  Uint8List? _pickedImageBytes;
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
-    );
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
 
     if (image != null) {
-      final file = File(image.path);
-      setState(() {
-        _pickedImage = file;
-      });
-      widget.onImageSelected(file); // ✅ 부모에게 전달
+      if (kIsWeb) {
+        final bytes = await image.readAsBytes();
+        setState(() {
+          _pickedImageBytes = bytes;
+        });
+        widget.onImageSelected(null, bytes); // 웹
+      } else {
+        final file = File(image.path);
+        setState(() {
+          _pickedImage = file;
+        });
+        widget.onImageSelected(file, null); // 앱
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final previewWidget = kIsWeb
+        ? (_pickedImageBytes == null
+        ? const Icon(Icons.camera_alt, size: 28.3, color: Colors.grey)
+        : Image.memory(_pickedImageBytes!, fit: BoxFit.fitWidth))
+        : (_pickedImage == null
+        ? const Icon(Icons.camera_alt, size: 28.3, color: Colors.grey)
+        : Image.file(_pickedImage!, fit: BoxFit.fitWidth));
+
     return GestureDetector(
-      behavior: HitTestBehavior.opaque,
       onTap: _pickImage,
       child: Container(
         width: double.infinity,
@@ -736,24 +786,15 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
           border: Border.all(color: const Color(0xFFD9D9D9)),
           color: const Color(0xFFF5F5F5),
         ),
-        child: _pickedImage == null
-            ? Padding(
+        child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 36),
-          child: Center(
-            child: Icon(Icons.camera_alt, size: 28.3, color: Colors.grey),
-          ),
-        )
-            : ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.file(
-            _pickedImage!,
-            fit: BoxFit.fitWidth,
-            width: double.infinity,
-          ),
+          child: Center(child: previewWidget),
         ),
       ),
     );
   }
+}
+
 
 
   // Future<void> loadTodaySchedule() async {
@@ -768,7 +809,6 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
   //   });
   // }
 
-}
 
 
 

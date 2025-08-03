@@ -103,7 +103,11 @@ class MyReportResponse {
 
 
 class HomeDetailPage extends StatefulWidget {
-  const HomeDetailPage({super.key});
+
+  final String teamShortCode;
+  const HomeDetailPage({super.key,
+    required this.teamShortCode, });
+
 
   @override
   State<HomeDetailPage> createState() => _HomeDetailPageState();
@@ -164,9 +168,12 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
 
 
 
+
   @override
   Widget build(BuildContext context) {
-    final Color teamColor = teamColors[teamShortCode] ?? AppColors.primary700;
+    final Color teamColor =
+        teamColors[widget.teamShortCode] ?? AppColors.primary800;
+
 
     final reportData = report!;
 
@@ -186,7 +193,6 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-
 
 
 
@@ -416,7 +422,7 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
                                   Text(
                                     getCaptionForRate(reportData.winningRateHalPoongRi),
                                     textAlign: TextAlign.center,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w400,
                                       fontFamily: 'omyu pretty',

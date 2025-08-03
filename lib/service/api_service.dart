@@ -133,6 +133,41 @@ class ApiService {
     }
   }
 
+  static Future<String?> getPresignedUrlSeat({
+    required String fileName,
+    required String contentType,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final memberId = prefs.getInt('member_id');
+
+    if (memberId == null) {
+      print('❌ SharedPreferences에 member_id 없음');
+      return null;
+    }
+
+    final url = Uri.parse(
+      '$baseUrl/s3/seatView/presigned'
+          '?fileName=$fileName'
+          '&contentType=$contentType'
+          '&memberId=$memberId',
+    );
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      final presignedUrl = body['data'];
+      print('📦 Presigned URL 발급 성공: $presignedUrl');
+      return presignedUrl;
+    } else {
+      print('❌ Presigned URL 발급 실패: ${response.statusCode}');
+      print('❌ 응답 내용: ${response.body}');
+      return null;
+    }
+  }
+
+
+
 
   Future<bool> uploadImageToS3(String presignedUrl, Uint8List bytes) async {
     final response = await http.put(
@@ -169,7 +204,6 @@ class ApiService {
     }
 
     final bodyData = {
-      "memberId": memberId, // ✅ 추가됨
       "gameId": gameId,
       "gameDate": DateFormat('yyyy-MM-dd HH:mm').format(gameDateTime),
       "stadiumSC": stadiumShortCode,
@@ -195,7 +229,7 @@ class ApiService {
     print('📡 응답 코드: ${response.statusCode}');
     print('📦 응답 바디: ${response.body}');
 
-    if (response.statusCode == 201) {
+    if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       final data = json['data'];
       final journalId = data['journalId'];
@@ -335,35 +369,43 @@ class ApiService {
   }
 
 
-  static Future<bool> uploadSeatView({
+  static Future<void> uploadSeatView({
     required int journalId,
-    required String stadiumSC,
-    required String zoneSC,
+    required String stadiumShortCode,
+    required String zoneShortCode,
     required String section,
-    required String row,
-    required List<String> tagCodes,
+    required String seatRow,
+    required List<String> emotionTagCodes,
     required String fileName,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final memberId = prefs.getInt('member_id');
-    if (memberId == null) return false;
 
-    final url = Uri.parse('https://api.inninglog.shop/seatViews/contents');
+    if (memberId == null) {
+      print('❌ SharedPreferences에서 member_id를 찾을 수 없습니다.');
+      return;
+    }
+
+    final url = Uri.parse(
+      'https://api.inninglog.shop/seatViews/contents?memberId=$memberId',
+    );
 
     final body = {
-      'memberId': memberId, // ✅ 추가됨
-      'journalId': journalId,
-      'stadiumShortCode': stadiumSC,
-      'zoneShortCode': zoneSC,
-      'section': section,
-      'seatRow': row,
-      'emotionTagCodes': tagCodes,
-      'fileName': fileName,
+      "journalId": journalId,
+      "stadiumShortCode": stadiumShortCode,
+      "zoneShortCode": zoneShortCode,
+      "section": section,
+      "seatRow": seatRow,
+      "emotionTagCodes": emotionTagCodes,
+      "fileName": fileName,
     };
 
-    print('📤 좌석 시야 업로드 요청 바디: ${jsonEncode(body)}');
+    print('📤 좌석 시야 업로드 요청');
+    print('URL: $url');
+    print('BODY: ${jsonEncode(body)}');
 
-    final response = await http.post(
+
+    final res = await http.post(
       url,
       headers: {
         'Content-Type': 'application/json',
@@ -371,15 +413,14 @@ class ApiService {
       body: jsonEncode(body),
     );
 
-    if (response.statusCode == 200) {
-      print('✅ 좌석 시야 업로드 성공');
-      return true;
+    if (res.statusCode == 200) {
+      print('✅ 좌석 시야 업로드 성공!');
     } else {
-      print('❌ 좌석 시야 업로드 실패: ${response.statusCode}');
-      print('❌ 응답 내용: ${response.body}');
-      return false;
+      print('❌ 좌석 시야 업로드 실패: ${res.statusCode}');
+      print('❌ 응답 내용: ${res.body}');
     }
   }
+
 
 
   static Future<Map<String, dynamic>?> fetchScheduleForDate(
@@ -457,7 +498,9 @@ class ApiService {
     });
 
     print('🧩 전달된 zoneShortCode: "$zoneShortCode"');
+    print('🧩 전달된 section: "$section"');
     print('📦 최종 요청 URI: $uri');
+
 
     final res = await http.get(uri);
 

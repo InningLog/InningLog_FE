@@ -45,10 +45,28 @@ class _SeatDetailPageState extends State<SeatDetailPage> {
 
             final detail = snapshot.data!;
             final info = detail.seatInfo;
-            final selectedTags = {
-              for (var tag in detail.emotionTags ?? [])
-                _getTagCategory(tag.label): '#${tag.label}'
-            };
+
+            // 해시태그 이름이 겹치는 카테고리는 접미사 붙이기
+            String getFormattedTag(String category, String tagName) {
+              if (category == '지붕' && tagName == '없음') return '#없음_지붕';
+              if (category == '시야 방해' && tagName == '없음') return '#없음_시야방해';
+              return '#$tagName';
+            }
+
+
+            final Map<String, List<String>> selectedTags = {};
+
+            for (var tag in detail.emotionTags ?? []) {
+              final parts = tag.label.split(' - ');
+              if (parts.length != 2) continue;
+              final category = parts[0];
+              final rawTagName = parts[1];
+              final tagName = getFormattedTag(category, rawTagName);
+
+              selectedTags.putIfAbsent(category, () => []).add(tagName);
+            }
+
+
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,11 +163,11 @@ class _SeatDetailPageState extends State<SeatDetailPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildCategory("응원", ["#일어남", "#일어날_사람은_일어남", "#앉아서"], selectedTag: selectedTags["응원"]),
-                            _buildCategory("햇빛", ["#강함", "#있다가_그늘짐", "#없음"], selectedTag: selectedTags["햇빛"]),
-                            _buildCategory("지붕", ["#있음", "#없음"], selectedTag: selectedTags["지붕"]),
-                            _buildCategory("시야 방해", ["#그물", "#아크릴_가림막", "#없음"], selectedTag: selectedTags["시야 방해"]),
-                            _buildCategory("좌석 공간", ["#아주_넓음", "#넓음", "#보통", "#좁음"], selectedTag: selectedTags["좌석 공간"]),
+                            _buildCategory("응원", ["#일어남", "#일어날_사람은_일어남", "#앉아서"], selectedTags: selectedTags["응원"]),
+                            _buildCategory("햇빛", ["#강함", "#있다가_그늘짐", "#없음"], selectedTags: selectedTags["햇빛"]),
+                            _buildCategory("지붕", ["#있음", "#없음"], selectedTags: selectedTags["지붕"]),
+                            _buildCategory("시야 방해", ["#그물", "#아크릴_가림막", "#없음"], selectedTags: selectedTags["시야 방해"]),
+                            _buildCategory("좌석 공간", ["#아주_넓음", "#넓음", "#보통", "#좁음"], selectedTags: selectedTags["좌석 공간"]),
                             const SizedBox(height: 32),
                           ],
                         ),
@@ -167,7 +185,7 @@ class _SeatDetailPageState extends State<SeatDetailPage> {
     );
   }
 
-  Widget _buildCategory(String title, List<String> tags, {String? selectedTag}) {
+  Widget _buildCategory(String title, List<String> tags, {List<String>? selectedTags}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -185,7 +203,7 @@ class _SeatDetailPageState extends State<SeatDetailPage> {
             spacing: 12,
             runSpacing: 12,
             children: tags.map((tag) {
-              final isSelected = tag == selectedTag;
+              final isSelected = selectedTags?.contains(tag) ?? false;
               return ChoiceChip(
                 label: Text(tag),
                 selected: isSelected,
@@ -213,14 +231,31 @@ class _SeatDetailPageState extends State<SeatDetailPage> {
     );
   }
 
-  /// 감정 태그 label에서 카테고리를 추정하는 함수
-  String _getTagCategory(String label) {
-    if (label.contains("일어남") || label.contains("앉아서")) return "응원";
-    if (label.contains("햇빛") || label.contains("강함") || label.contains("그늘")) return "햇빛";
-    if (label.contains("지붕")) return "지붕";
-    if (label.contains("그물") || label.contains("가림막")) return "시야 방해";
-    if (label.contains("넓음") || label.contains("좁음") || label.contains("공간")) return "좌석 공간";
-    return "기타";
-  }
+
+  final Map<String, String> tagCodeMap = {
+    '#일어남': 'CHEERING_STANDING',
+    '#일어날_사람은_일어남': 'CHEERING_MOSTLY_STANDING',
+    '#앉아서': 'CHEERING_SEATED',
+    '#강함': 'SUN_STRONG',
+    '#있다가_그늘짐': 'SUN_MOVES_TO_SHADE',
+    '#없음': 'SUN_NONE', // 햇빛 - 없음
+    '#있음': 'ROOF_EXISTS', // 지붕 - 있음
+    '#없음_지붕': 'ROOF_NONE', // 구분 위해 이름 바꿈
+    '#그물': 'VIEW_OBSTRUCT_NET',
+    '#아크릴_가림막': 'VIEW_OBSTRUCT_ACRYLIC',
+    '#없음_시야방해': 'VIEW_NO_OBSTRUCTION', // 구분 위해 이름 바꿈
+    '#아주_넓음': 'SEAT_SPACE_VERY_WIDE',
+    '#넓음': 'SEAT_SPACE_WIDE',
+    '#보통': 'SEAT_SPACE_NORMAL',
+    '#좁음': 'SEAT_SPACE_NARROW',
+  };
 }
 
+String _getTagCategory(String tagLabel) {
+  if (['일어남', '일어날_사람은_일어남', '앉아서'].contains(tagLabel)) return '응원';
+  if (['강함', '있다가_그늘짐', '없음'].contains(tagLabel)) return '햇빛';
+  if (['있음', '없음'].contains(tagLabel)) return '지붕';
+  if (['그물', '아크릴_가림막', '없음'].contains(tagLabel)) return '시야 방해';
+  if (['아주_넓음', '넓음', '보통', '좁음'].contains(tagLabel)) return '좌석 공간';
+  return '기타';
+}

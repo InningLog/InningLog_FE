@@ -735,19 +735,18 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                     return;
                                   }
                                   writtenStadiumCode = todaySchedule!.stadium;
-                                  final int? journalId = await ApiService.uploadJournal(
+                                  final journalId = await ApiService.uploadJournal(
                                     gameId: gameId,
                                     gameDateTime: DateTime.parse(todaySchedule!.gameDateTime),
-                                    stadiumShortCode: writtenStadiumCode!,
+                                    stadiumShortCode: todaySchedule!.stadium,
                                     opponentTeamShortCode: todaySchedule!.opponentTeam,
                                     ourScore: int.parse(ourScore),
                                     theirScore: int.parse(opponentScore),
-                                    fileName: fileName ?? '',
+                                    fileName: (fileName != null && fileName!.isNotEmpty) ? fileName! : null, // ✅ null로 전달
                                     emotion: getEmotionKor(selectedEmotionIndex),
                                     reviewText: reviewController.text.trim().isNotEmpty
                                         ? reviewController.text.trim()
                                         : ' ',
-
                                   );
 
                                   if (journalId == null) {
@@ -760,7 +759,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                     '/addseat',
                                     extra: {
                                       'journalId': journalId,
-                                      'stadium': writtenStadiumCode, // ✅ 여기 수정
+                                      'stadium': todaySchedule!.stadium,
                                       'gameDateTime': todaySchedule!.gameDateTime,
                                     },
 

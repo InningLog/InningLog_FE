@@ -275,6 +275,11 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                             onPressed: isDirectSearchValid
 
                                 ? () {
+                              print('🚨 selectedZone: $selectedZone');
+                              print('🚨 section: ${sectionController.text}');
+                              print('🚨 row: ${rowController.text}');
+
+
                               analytics.logEvent('enter_stadium_direct_search', properties: {
                                 'event_type': 'Custom',
                                 'component': 'form_submit',
@@ -296,6 +301,7 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                                   'zone': selectedZone,
                                   'section': sectionController.text,
                                   'row': rowController.text,
+
                                 },
                               );
                             }
