@@ -134,8 +134,9 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                         const Text(
                           '좌석 검색',
                           style: TextStyle(
+                            fontWeight: FontWeight.w800,
                             fontSize: 16,
-                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Pretendard',
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -345,8 +346,9 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                             const Text(
                               '좌석에 관한 해시태그로 검색해보세요!',
                               style: TextStyle(
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w800,
                                 fontSize: 16,
+                                fontFamily: 'Pretendard',
                               ),
                             ),
                             const SizedBox(height: 0),
