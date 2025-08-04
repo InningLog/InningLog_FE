@@ -244,6 +244,8 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
       resizeToAvoidBottomInset: true,
       backgroundColor: Colors.white,
       body: SafeArea(
+        child: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         child: Column(
           children: [
             // ✅ 상단 고정 헤더
@@ -906,6 +908,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

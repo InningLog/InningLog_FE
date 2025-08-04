@@ -296,14 +296,13 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                               context.pushNamed(
                                 'field_result',
                                 extra: {
-                                  'index': 0,
+                                  'index': 1,
                                   'stadiumName': widget.stadiumName,
-                                  'zone': selectedZone,
-                                  'section': sectionController.text,
-                                  'row': rowController.text,
-
+                                  'selectedTags': selectedTags.map((k, v) => MapEntry(k, v.toString())),
+                                  'tagCategories': tagCategories.map((k, v) => MapEntry(k, v.map((e) => e.toString()).toList())),
                                 },
                               );
+
                             }
                                 : null,
 
@@ -334,7 +333,7 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
 
 
                     //해시태그 검색 화면
-                    Expanded(
+                SingleChildScrollView(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 15.0),
                         child :  SingleChildScrollView(

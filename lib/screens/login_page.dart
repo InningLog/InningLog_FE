@@ -107,6 +107,8 @@ class _LoginPageState extends State<LoginPage> {
       resizeToAvoidBottomInset: true,
       backgroundColor: Colors.white,
       body: SafeArea(
+        child: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
@@ -262,6 +264,7 @@ class _LoginPageState extends State<LoginPage> {
 
             ],
           ),
+        ),
         ),
       ),
     );
