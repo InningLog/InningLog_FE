@@ -79,7 +79,7 @@ class SeatPage extends StatelessWidget {
 
             Expanded(
               child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 15.25),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: GridView.builder(
                     itemCount: teamStadiums.length,
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

@@ -213,7 +213,7 @@ class _DiaryPageState extends State<DiaryPage> {
       body: SafeArea(
         child: Column(
           children: [
-            const CommonHeader(title: '직관 기록'),
+            const CommonHeader(title: '직관 일지'),
 
             // 탭바
             Container(
@@ -811,6 +811,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                             height: 1.1,
                                           ),
                                         ),
+                                        const SizedBox(height: 1),
                                         Text(
                                           'vs  ${teamNameMap[game.opponentTeamSC] ?? game.opponentTeamSC}',
                                           style: const TextStyle(
@@ -821,6 +822,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                             height: 1.1,
                                           ),
                                         ),
+                                        const SizedBox(height: 1),
                                         Text(
                                           '@${stadiumNameMap[game.stadiumSC] ?? game.stadiumSC}',
                                           style: const TextStyle(

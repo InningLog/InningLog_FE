@@ -494,7 +494,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                                       fontSize: 14,
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 6),
                                   Wrap(
                                     spacing: 12,
                                     runSpacing: 12,

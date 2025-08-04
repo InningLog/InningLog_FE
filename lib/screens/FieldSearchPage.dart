@@ -296,10 +296,11 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                               context.pushNamed(
                                 'field_result',
                                 extra: {
-                                  'index': 1,
+                                  'index': 0,
                                   'stadiumName': widget.stadiumName,
-                                  'selectedTags': selectedTags.map((k, v) => MapEntry(k, v.toString())),
-                                  'tagCategories': tagCategories.map((k, v) => MapEntry(k, v.map((e) => e.toString()).toList())),
+                                  'zone': selectedZone,
+                                  'section': sectionController.text,
+                                  'row': rowController.text,
                                 },
                               );
 
@@ -335,7 +336,7 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                     //해시태그 검색 화면
                 SingleChildScrollView(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 1),
                         child :  SingleChildScrollView(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -372,8 +373,9 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                                     Text(category,
                                         style: const TextStyle(
                                           fontWeight: FontWeight.w700,
-                                          fontSize: 14,)),
-                                    const SizedBox(height: 8),
+                                          fontSize: 14,
+                                          letterSpacing: -0.14,)),
+                                    const SizedBox(height: 6),
                                     Wrap(
                                       spacing: 12,
                                       runSpacing: 12,
