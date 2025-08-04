@@ -873,6 +873,9 @@ class _DiaryPageState extends State<DiaryPage> {
           final dateToSend = selectedDate ?? DateTime.now();
           final scheduleData = await ApiService.fetchScheduleForDate(dateToSend);
 
+
+
+// ❗️ 먼저 null 체크
           if (scheduleData == null) {
             await showDialog(
               context: context,
@@ -881,14 +884,35 @@ class _DiaryPageState extends State<DiaryPage> {
                 content: const Text('해당 날짜에 경기 일정이 없습니다.'),
                 actions: [
                   TextButton(
-                    onPressed: () => Navigator.of(context).pop(), // ← context 안전하게 처리
+                    onPressed: () => Navigator.of(context).pop(),
                     child: const Text('확인'),
                   ),
                 ],
               ),
             );
-            return; // 여기에 정확히 return 필요!
+            return;
           }
+
+          final now = DateTime.now();
+          final gameDateTime = DateTime.parse(scheduleData?['gameDate']); // ISO 8601 string으로 온다고 가정
+
+          if (gameDateTime.isAfter(now)) {
+            await showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('경기 전입니다'),
+                content: const Text('아직 경기가 시작하지 않았어요!\n경기 후에 일지를 작성해주세요.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('확인'),
+                  ),
+                ],
+              ),
+            );
+            return;
+          }
+
 
 
           final confirmed = await _showGameConfirmationDialog(context, dateToSend, scheduleData);
@@ -960,7 +984,7 @@ class _DiaryPageState extends State<DiaryPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text('직관하신 경기가 맞는지 확인해주세요!',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, fontFamily: 'Pretendard',)),
                 const SizedBox(height: 20),
 
                 Container(
@@ -972,23 +996,23 @@ class _DiaryPageState extends State<DiaryPage> {
                   ),
                   child: Column(
                     children: [
-                      Text(formattedDate, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                      Text(formattedDate, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, fontFamily: 'Pretendard',)),
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(team1, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700)),
+                          Text(team1, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700, fontFamily: 'Pretendard',)),
                           const SizedBox(width: 12),
                           const Text('VS',
-                              style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700, color: AppColors.primary700)),
+                              style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700, color: AppColors.primary700, fontFamily: 'Pretendard',)),
                           const SizedBox(width: 12),
-                          Text(team2, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700)),
+                          Text(team2, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700, fontFamily: 'Pretendard',)),
                         ],
                       ),
                       const SizedBox(height: 12),
-                      Text(gameTime, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      Text(gameTime, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, fontFamily: 'Pretendard',)),
                       const SizedBox(height: 4),
-                      Text('@ $stadium', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
+                      Text('@ $stadium', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500, fontFamily: 'Pretendard',)),
                     ],
                   ),
                 ),
@@ -998,12 +1022,12 @@ class _DiaryPageState extends State<DiaryPage> {
                     Expanded(
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFFA9A9A9)),
+                          side: const BorderSide(color: Color(0xFF8F8F8F)),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                           minimumSize: const Size.fromHeight(48),
                         ),
                         onPressed: () => Navigator.pop(context, false),
-                        child: const Text('취소', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                        child: const Text('취소', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Pretendard',color : Color(0xFF8F8F8F))),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -1016,7 +1040,7 @@ class _DiaryPageState extends State<DiaryPage> {
                         ),
                         onPressed: () => Navigator.pop(context, true),
                         child: const Text('일지 작성하기',
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white, fontFamily: 'Pretendard',)),
                       ),
                     ),
                   ],
@@ -1166,10 +1190,10 @@ class _DiaryPageState extends State<DiaryPage> {
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(vertical: 0),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary200 : Colors.transparent,
+          color: isSelected ? AppColors.primary200 : const Color(0xFFFAFAFA), // ✅ 선택 안 됐을 때 배경색
           border: Border(
             bottom: BorderSide(
-              color: isSelected ? AppColors.primary700 : const Color(0xFFFAFAFA),
+              color: isSelected ? AppColors.primary700 : const Color(0xFFAFB1B6), // ✅ 선택 안 됐을 때 밑줄 색
               width: isSelected ? 2.0 : 1.0,
             ),
           ),
@@ -1187,6 +1211,7 @@ class _DiaryPageState extends State<DiaryPage> {
           ),
         ),
       ),
+
     );
   }
 

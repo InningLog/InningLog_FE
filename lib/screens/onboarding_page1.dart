@@ -31,7 +31,7 @@ class OnboardingPage1 extends StatelessWidget {
           const Text(
             '이름: 보리\n* 직관 많이 다녀서 꼬질꼬질 해짐',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 20, color: Colors.black, fontFamily: 'omyu pretty.ttf'),
+            style: TextStyle(fontSize: 20, color: Colors.black,  fontFamily: 'omyu pretty',),
           ),
         ],
       ),

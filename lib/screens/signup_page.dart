@@ -154,6 +154,7 @@ class _SignupPageState extends State<SignupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
@@ -205,7 +206,7 @@ class _SignupPageState extends State<SignupPage> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: Colors.black,
+                      color: AppColors.primary700,
                       width: 1.5,
                     ),
                   ),
@@ -272,7 +273,7 @@ class _SignupPageState extends State<SignupPage> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: Colors.black,
+                      color: AppColors.primary700,
                       width: 1.5,
                     ),
                   ),

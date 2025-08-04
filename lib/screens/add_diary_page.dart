@@ -241,6 +241,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
 
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(

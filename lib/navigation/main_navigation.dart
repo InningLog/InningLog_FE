@@ -71,9 +71,10 @@ class MainNavigation extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
               color: isSelected ? const Color(0xFF272727) : const Color(0xFFD3D3D3),
-              fontWeight: FontWeight.w500,
+              fontFamily: 'Pretendard',
             ),
           ),
         ],

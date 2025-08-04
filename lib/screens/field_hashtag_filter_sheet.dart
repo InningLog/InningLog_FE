@@ -181,16 +181,23 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
         setState(() {
           _selectedIndex = index;
         });
+
+        if (index == 0) {
+          fetchDirectSearchResults();
+        } else {
+          fetchHashtagSearchResults();
+        }
       },
+
       child: Container(
         width: 195,
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(vertical: 0),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary200 : Colors.transparent,
+          color: isSelected ? AppColors.primary200 : const Color(0xFFFAFAFA), // ✅ 선택 안 됐을 때 배경색
           border: Border(
             bottom: BorderSide(
-              color: isSelected ? AppColors.primary700 : const Color(0xFFFAFAFA),
+              color: isSelected ? AppColors.primary700 : const Color(0xFFAFB1B6), // ✅ 선택 안 됐을 때 밑줄 색
               width: isSelected ? 2.0 : 1.0,
             ),
           ),
@@ -208,6 +215,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
           ),
         ),
       ),
+
     );
   }
 
@@ -649,7 +657,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
               Column(
               children: [
                   SingleChildScrollView(
-                    padding: const EdgeInsetsDirectional.only(start: 12, top: 10, bottom: 10),
+                    padding: const EdgeInsetsDirectional.only(start: 12, top: 18, bottom: 10),
                     child: Row(
                       mainAxisSize: MainAxisSize.max,
                       mainAxisAlignment: MainAxisAlignment.start,
@@ -736,7 +744,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                     children: [
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
                         child: Row(
                           children: (widget.tagCategories ?? {}).keys.map((category) {
                             final isSelected = selectedTags.containsKey(category);

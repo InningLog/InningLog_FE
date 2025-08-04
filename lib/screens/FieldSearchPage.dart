@@ -529,10 +529,10 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(vertical: 0),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary200 : Colors.transparent,
+          color: isSelected ? AppColors.primary200 : const Color(0xFFFAFAFA), // ✅ 선택 안 됐을 때 배경색
           border: Border(
             bottom: BorderSide(
-              color: isSelected ? AppColors.primary700 : const Color(0xFFFAFAFA),
+              color: isSelected ? AppColors.primary700 : const Color(0xFFAFB1B6), // ✅ 선택 안 됐을 때 밑줄 색
               width: isSelected ? 2.0 : 1.0,
             ),
           ),
@@ -550,6 +550,7 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
           ),
         ),
       ),
+
     );
   }
 }

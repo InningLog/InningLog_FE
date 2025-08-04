@@ -108,28 +108,32 @@ final GoRouter _router = GoRouter(
       routes: [
         GoRoute(path: '/home', builder: (_, __) => const HomePage()),
         GoRoute(path: '/diary', builder: (_, __) => const DiaryPage()),
-        GoRoute(path: '/seat', builder: (_, __) => const SeatPage()),
+        GoRoute(path: '/seat', builder: (_, __) => const SeatPage(), routes: [
+
+          /// ✅ 여기 안으로 옮긴다
+          GoRoute(
+            path: 'result', // => 실제 경로는 /seat/result
+            name: 'field_result',
+            builder: (context, state) {
+              final extra = state.extra as Map<String, dynamic>;
+              final index = extra['index'] as int;
+              final stadiumName = extra['stadiumName'] as String;
+
+              return FieldHashtagSearchResultPage(
+                index: index,
+                stadiumName: stadiumName,
+                zone: extra['zone'],
+                section: extra['section'],
+                row: extra['row'],
+                selectedTags: Map<String, String>.from(extra['selectedTags'] ?? {}),
+                tagCategories: tagCategories,
+              );
+            },
+          ),
+        ]),
         GoRoute(path: '/board', builder: (_, __) => const BoardPage()),
         GoRoute(path: '/mypage', builder: (_, __) => const MyPage()),
-        GoRoute(
-          path: '/field_result',
-          name: 'field_result',
-          builder: (context, state) {
-            final extra = state.extra as Map<String, dynamic>;
-            final index = extra['index'] as int;
-            final stadiumName = extra['stadiumName'] as String;
 
-            return FieldHashtagSearchResultPage(
-              index: index,
-              stadiumName: stadiumName,
-              zone: extra['zone'],
-              section: extra['section'],
-              row: extra['row'],
-              selectedTags: Map<String, String>.from(extra['selectedTags'] ?? {}),
-              tagCategories: tagCategories,
-            );
-          },
-        ),
 
         GoRoute(
           path: '/seat_detail',

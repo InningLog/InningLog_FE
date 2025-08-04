@@ -160,15 +160,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: ElevatedButton(
                 onPressed: _nextPage,
                 style: ElevatedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(50),
+                  minimumSize: const Size.fromHeight(54),
                   backgroundColor: Colors.white,
-                  foregroundColor: Colors.green,
-                  side: const BorderSide(color: Colors.green),
+                  foregroundColor: AppColors.primary600,
+                  side: const BorderSide(color: AppColors.primary600),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24),
                   ),
                 ),
-                child: const Text('다음'),
+                child: const Text('다음',
+                  style: TextStyle(fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Pretendard',),),
               ),
             ),
           // if (_currentPage == 4)

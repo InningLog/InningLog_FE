@@ -120,12 +120,12 @@ class _HomePageState extends State<HomePage> {
     print('🏠 받아온 홈 데이터: $data'); // ← 이거 추가해봐
 
     if (data != null) {
+      // 🔽 임시 필터 제거: 날짜 상관 없이 다 저장
       setState(() {
         homeData = data;
-        nickName = data.nickName; // ✅ 서버 응답에서 닉네임 가져오기
-        teamShortCode = data.supportTeamSC; // ✅ 응원팀 코드 가져오기
+        nickName = data.nickName;
+        teamShortCode = data.supportTeamSC;
       });
-
       if (data.myTeamSchedule.isNotEmpty) {
         saveScheduleListToPrefs(data.myTeamSchedule);
       }

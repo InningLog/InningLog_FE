@@ -135,7 +135,7 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 38),
+            const SizedBox(height: 18),
             const Text(
               '닉네임을 입력해주세요!',
               style: TextStyle(

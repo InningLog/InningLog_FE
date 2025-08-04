@@ -104,6 +104,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
@@ -145,7 +146,7 @@ class _LoginPageState extends State<LoginPage> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: Colors.black, // 원하는 색으로 변경
+                      color: AppColors.primary700, // 원하는 색으로 변경
                       width: 1.5,
                     ),
                   ),
@@ -188,7 +189,7 @@ class _LoginPageState extends State<LoginPage> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: Colors.black, // 원하는 색으로 변경
+                      color: AppColors.primary700,  // 원하는 색으로 변경
                       width: 1.5,
                     ),
                   ),
