@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import '../analytics/AmplitudeFlutter.dart';
 import '../app_colors.dart';
 import '../main.dart';
 import '../models/home_view.dart';
@@ -554,7 +555,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                                   .toList();
 
                               // ✅ Amplitude 이벤트 로깅
-                              analytics.logEvent('change_stadium_hashtag_dropdown', properties: {
+                              AmplitudeFlutter.getInstance().logEvent('change_stadium_hashtag_dropdown',eventProperties: {
                                 'event_type': 'Custom',
                                 'component': 'btn_click',
                                 'changed_category': selectedHashtagList,
@@ -678,7 +679,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                               : '존',
                           isSelected: widget.zone?.isNotEmpty == true,
                           onTap: () {
-                            analytics.logEvent('change_stadium_direct_search_tab', properties: {
+                            AmplitudeFlutter.getInstance().logEvent('change_stadium_direct_search_tab', eventProperties: {
                               'event_type': 'Custom',
                               'component': 'btn_click',
                               'field_changed': 'zone_name',
@@ -692,7 +693,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                           label: widget.section?.isNotEmpty == true ? widget.section! : '구역',
                           isSelected: widget.section?.isNotEmpty == true,
                           onTap: () {
-                            analytics.logEvent('change_stadium_direct_search_tab', properties: {
+                            AmplitudeFlutter.getInstance().logEvent('change_stadium_direct_search_tab', eventProperties: {
                               'event_type': 'Custom',
                               'component': 'btn_click',
                               'field_changed': 'section',
@@ -706,7 +707,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                           label: widget.row?.isNotEmpty == true ? widget.row! : '열',
                           isSelected: widget.row?.isNotEmpty == true,
                           onTap: () {
-                            analytics.logEvent('change_stadium_direct_search_tab', properties: {
+                            AmplitudeFlutter.getInstance().logEvent('change_stadium_direct_search_tab', eventProperties: {
                               'event_type': 'Custom',
                               'component': 'btn_click',
                               'field_changed': 'row',
@@ -763,9 +764,9 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                               child: InkWell(
                                 onTap: () {
                                   // Amplitude 이벤트 추가
-                                  analytics.logEvent(
+                                  AmplitudeFlutter.getInstance().logEvent(
                                       'change_stadium_hashtag_tab',
-                                      properties: {
+                                      eventProperties: {
                                         'event_type': 'Custom',
                                         'component': 'btn_click',
                                         'selected_category': category,

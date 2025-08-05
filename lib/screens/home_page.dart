@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../analytics/AmplitudeFlutter.dart';
 import '../app_colors.dart';
 import '../main.dart';
 import '../models/home_view.dart';
@@ -216,9 +217,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _goToPreviousDay() {
-    analytics.logEvent(
+    AmplitudeFlutter.getInstance().logEvent(
       'click_home_team_schedule',
-      properties: {
+      eventProperties: {
         'component': 'btn_click',
         'direction': 'prev',
         'importance': 'Medium',
@@ -230,9 +231,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _goToNextDay() {
-    analytics.logEvent(
+    AmplitudeFlutter.getInstance().logEvent(
       'click_home_team_schedule',
-      properties: {
+      eventProperties: {
         'component': 'btn_click',
         'direction': 'next',
         'importance': 'Medium',
@@ -334,9 +335,9 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(height: 16),
                     OutlinedButton(
                       onPressed: () async {
-                        await analytics.logEvent(
+                        await  AmplitudeFlutter.getInstance().logEvent(
                           'view_home_report',
-                          properties: {
+                          eventProperties: {
                             'category': 'Custom',
                             'action': 'page_view',
                             'report_period': 'recent_1days',
@@ -514,9 +515,9 @@ class _HomePageState extends State<HomePage> {
                   child: ElevatedButton(
                     onPressed: () async {
 
-                      await analytics.logEvent(
+                      await  AmplitudeFlutter.getInstance().logEvent(
                         'click_home_ticket_button',
-                        properties: {
+                        eventProperties: {
                           'component': 'btn_click',
                           'ticket_provider': _getTicketProviderName,
                           'importance': 'Low',

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:month_picker_dialog/month_picker_dialog.dart';
+import '../analytics/AmplitudeFlutter.dart';
 import '../app_colors.dart';
 import '../models/home_view.dart';
 import '../service/api_service.dart';
@@ -249,7 +250,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                 setState(() {
                                   selectedFilterCalendar = value;
                                   loadCalendar();
-                                  analytics.logEvent('select_diary_filter', properties: {
+                                  AmplitudeFlutter.getInstance().logEvent('select_diary_filter', eventProperties: {
                                     'event_type': 'Custom',
                                     'component': 'btn_click',
                                     'filter_result': 'win',
@@ -264,7 +265,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                 setState(() {
                                   selectedFilterCalendar = value;
                                   loadCalendar();
-                                  analytics.logEvent('select_diary_filter', properties: {
+                                  AmplitudeFlutter.getInstance().logEvent('select_diary_filter', eventProperties: {
                                     'event_type': 'Custom',
                                     'component': 'btn_click',
                                     'filter_result': 'lose',
@@ -279,7 +280,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                 setState(() {
                                   selectedFilterCalendar = value;
                                   loadCalendar();
-                                  analytics.logEvent('select_diary_filter', properties: {
+                                  AmplitudeFlutter.getInstance().logEvent('select_diary_filter', eventProperties: {
                                     'event_type': 'Custom',
                                     'component': 'btn_click',
                                     'filter_result': 'draw',
@@ -318,7 +319,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                             focusedDay = newDate;
                                           });
                                           // ✅ Amplitude 이벤트 로깅
-                                          analytics.logEvent('change_diary_calendar_month', properties: {
+                                          AmplitudeFlutter.getInstance().logEvent('change_diary_calendar_month', eventProperties: {
                                             'event_type': 'Custom',
                                             'component': 'event',
                                             'month': newDate.month,
@@ -497,9 +498,9 @@ class _DiaryPageState extends State<DiaryPage> {
                                     return GestureDetector(
                                       onTap: () async {
 
-                                        await analytics.logEvent(
+                                        await  AmplitudeFlutter.getInstance().logEvent(
                                           'click_diary_calendar_diary',
-                                          properties: {
+                                          eventProperties: {
                                             'component': 'btn_click',
                                             'diary_id': game.journalId.toString(), // UUID 또는 int → 문자열
                                             'importance': 'Medium',
@@ -512,8 +513,12 @@ class _DiaryPageState extends State<DiaryPage> {
                                             'initialDate': selectedDate,
                                             'isEditMode': true,
                                             'journalId': game.journalId,
+
                                           },
+
                                         );
+                                        loadCalendar();
+                                        loadMoreSummary();
                                       },
 
                                       child:  Container(
@@ -742,9 +747,9 @@ class _DiaryPageState extends State<DiaryPage> {
 
                               return GestureDetector(
                                   onTap: () async {
-                                    await analytics.logEvent(
+                                    await  AmplitudeFlutter.getInstance().logEvent(
                                       'click_diary_from_collection',
-                                      properties: {
+                                      eventProperties: {
                                         'component': 'btn_click',
                                         'diary_id': game.journalId.toString(),
                                         'importance': 'Medium',
@@ -874,9 +879,9 @@ class _DiaryPageState extends State<DiaryPage> {
 
         onPressed: () async {
 
-          await analytics.logEvent(
+          await  AmplitudeFlutter.getInstance().logEvent(
             'view_diary_write_popup',
-            properties: {
+            eventProperties: {
               'component': 'page_view',
               'match_team': 'opponentTeam',
               'is_favorite_team_match': true,
@@ -957,9 +962,9 @@ class _DiaryPageState extends State<DiaryPage> {
 
           if (confirmed == true) {
 
-            await analytics.logEvent(
+            await  AmplitudeFlutter.getInstance().logEvent(
               'click_diary_write_start',
-              properties: {
+              eventProperties: {
                 'component': 'btn_click',
                 'importance': 'High',
               },
@@ -1307,13 +1312,13 @@ class _DiaryPageState extends State<DiaryPage> {
             selectedFilterCalendar = null; // ✅ 캘린더 필터 초기화
             loadCalendar(); // ✅ 다시 로드
           });
-          analytics.logEvent('click_diary_calendar_tab', properties: {
+          AmplitudeFlutter.getInstance().logEvent('click_diary_calendar_tab', eventProperties: {
             'component': 'btn_click',
             'category': 'Diary',
             'importance': 'High',
           });
         } else if (index == 1) {
-          analytics.logEvent('click_diary_collection_tab', properties: {
+          AmplitudeFlutter.getInstance().logEvent('click_diary_collection_tab', eventProperties: {
             'component': 'btn_click',
             'category': 'Diary',
             'importance': 'High',

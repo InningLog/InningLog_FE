@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../analytics/AmplitudeFlutter.dart';
 import '../app_colors.dart';
 import '../main.dart';
 import '../widgets/common_header.dart';
@@ -92,7 +93,7 @@ class SeatPage extends StatelessWidget {
                       final stadium = teamStadiums[index];
                       return GestureDetector(
                         onTap: () {
-                          analytics.logEvent('select_stadium', properties: {
+                          AmplitudeFlutter.getInstance().logEvent('select_stadium', eventProperties: {
                             'event_type': 'Custom',
                             'component': 'btn_click',
                             'stadium_name':stadium.stadiumNameShort,

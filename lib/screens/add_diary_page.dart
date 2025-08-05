@@ -8,6 +8,7 @@ import 'package:inninglog/service/api_service.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../analytics/AmplitudeFlutter.dart';
 import '../app_colors.dart';
 import 'dart:io';
 import '../main.dart';
@@ -276,7 +277,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                     ),
                     onPressed: () {
                       // ✅ Amplitude 이벤트 로깅
-                      analytics.logEvent('click_diary_write_back', properties: {
+                      AmplitudeFlutter.getInstance().logEvent('click_diary_write_back', eventProperties: {
                         'event_type': 'Custom',
                         'component': 'btn_click',
                         'importance': 'Medium',
@@ -473,7 +474,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               setState(() {
                                 ourScore = value;
                               });
-                              analytics.logEvent('enter_diary_score', properties: {
+                              AmplitudeFlutter.getInstance().logEvent('enter_diary_score', eventProperties: {
                                 'event_type': 'Custom',
                                 'component': 'form_submit',
                                 'score_home': ourScore,
@@ -499,7 +500,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               setState(() {
                                 opponentScore = value;
                               });
-                              analytics.logEvent('enter_diary_score', properties: {
+                              AmplitudeFlutter.getInstance().logEvent('enter_diary_score', eventProperties: {
                                 'event_type': 'Custom',
                                 'component': 'form_submit',
                                 'score_away': opponentScore,
@@ -687,7 +688,16 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               width: 360,
                               height: 54,
                               child: ElevatedButton(
-                                onPressed: isSeatButtonEnabled? () async {
+
+                                  onPressed: (isSeatButtonEnabled && !isSaving)
+                                  ? () async {
+                                setState(() {
+                                  isSaving = true; // 저장 시작 → 버튼 비활성화
+                                });
+
+                                try {
+
+
 
                                   if (widget.isEditMode) {
                                     final journalId = widget.journalId!;
@@ -706,14 +716,14 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                   }
 
                                   // 작성 모드 → S3 업로드 → 업로드 API 호출 → /addseat로 이동
-                                  analytics.logEvent('write_diary_review', properties: {
+                                  AmplitudeFlutter.getInstance().logEvent('write_diary_review', eventProperties: {
                                     'event_type': 'Custom',
                                     'component': 'form_submit',
                                     'review_length': reviewController.text.trim().length,
                                     'importance': 'High',
                                   });
 
-                                  analytics.logEvent('click_seat_review_write_start', properties: {
+                                  AmplitudeFlutter.getInstance().logEvent('click_seat_review_write_start', eventProperties: {
                                     'event_type': 'Custom',
                                     'component': 'btn_click',
                                     'importance': 'High',
@@ -776,11 +786,14 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                       'stadium': todaySchedule!.stadium,
                                       'gameDateTime': todaySchedule!.gameDateTime,
                                     },
-
                                   );
-
-                                }
-                                    : null,
+                                    } finally {
+                                      setState(() {
+                                        isSaving = false; // 저장 완료 → 버튼 다시 활성화
+                                      });
+                                    }
+                                      }
+                                          : null, // 비활성화 상태
 
 
                                 style: ElevatedButton.styleFrom(
@@ -794,7 +807,16 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                         : BorderSide.none,
                                   ),
                                 ),
-                                child: Text(
+                                child: isSaving
+                                    ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white, // 버튼 배경색과 대비
+                                  ),
+                                )
+                                 : Text(
                                   '좌석 후기 작성하기',
                                   style: TextStyle(
                                     color:  isSeatButtonEnabled ? Colors.white : AppColors.gray700,
@@ -900,7 +922,16 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                   ),
                                 ),
                               ),
-                              child: Text(
+                              child: isSaving
+                                  ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white, // 버튼 배경색과 대비
+                                ),
+                              )
+                              : Text(
                                 widget.isEditMode ? '수정 완료' : '작성 완료',
                                 style: TextStyle(
                                   color:
@@ -952,7 +983,8 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
           selectedEmotionIndex = index;
         });
         // ✅ Amplitude 이벤트 로깅
-        analytics.logEvent('select_diary_emotion', properties: {
+        AmplitudeFlutter.getInstance().logEvent('select_diary_emotion',
+            eventProperties: {
           'event_type': 'Custom',
           'component': 'btn_click',
           'emotion': labels[index],
@@ -1158,7 +1190,7 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
 
 
 
-      analytics.logEvent('upload_diary_photo', properties: {
+      AmplitudeFlutter.getInstance().logEvent('upload_diary_photo', eventProperties: {
         'event_type': 'Custom',
         'component': 'event',
         'photo_count': 1,

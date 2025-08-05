@@ -1,17 +1,16 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
-/// Amplitude 서버에 직접 이벤트 전송을 위한 클래스
 class AmplitudeFlutter {
   static final Map<String, AmplitudeFlutter> _instances = {};
-
   final String instanceName;
   String? _apiKey;
-  String? _userId;
+  String? _deviceId;
 
   AmplitudeFlutter._internal(this.instanceName);
 
-  /// 싱글턴 인스턴스 가져오기
   static AmplitudeFlutter getInstance({String instanceName = 'default'}) {
     return _instances.putIfAbsent(
       instanceName,
@@ -19,27 +18,29 @@ class AmplitudeFlutter {
     );
   }
 
-  /// API 키 설정
-  void init(String apiKey) {
+  /// API 키 설정 + deviceId 고정
+  Future<void> init(String apiKey) async {
     _apiKey = apiKey;
+
+    final prefs = await SharedPreferences.getInstance();
+    String? savedDeviceId = prefs.getString('amplitude_device_id');
+
+    if (savedDeviceId == null) {
+      // 최초 실행 시 UUID 생성
+      savedDeviceId = const Uuid().v4();
+      await prefs.setString('amplitude_device_id', savedDeviceId);
+      print('📱 새 deviceId 생성: $savedDeviceId');
+    } else {
+      print('📱 기존 deviceId 불러옴: $savedDeviceId');
+    }
+
+    _deviceId = savedDeviceId;
   }
 
-  /// 세션 이벤트 로깅 여부 설정 (실제 로직은 없음, 로그용)
-  void trackingSessionEvents(bool enable) {
-  }
-
-  /// 사용자 ID 설정
-  void setUserId(String userId) {
-    _userId = userId;
-
-  }
-
-  /// Amplitude에 이벤트 전송
+  /// 이벤트 전송 (userId 없이 deviceId만)
   Future<void> logEvent(String eventName, {Map<String, dynamic>? eventProperties}) async {
-
-
     if (_apiKey == null) {
-
+      print('⚠️ Amplitude API Key 없음');
       return;
     }
 
@@ -47,8 +48,7 @@ class AmplitudeFlutter {
       'api_key': _apiKey,
       'events': [
         {
-          'user_id': _userId ?? 'anonymous', // 저장된 userId가 없으면 anonymous
-          'device_id': 'flutter-device-id',
+          'device_id': _deviceId ?? 'unknown_device',
           'event_type': eventName,
           'event_properties': eventProperties ?? {},
         }
@@ -62,13 +62,11 @@ class AmplitudeFlutter {
         body: jsonEncode(body),
       );
 
-      if (response.statusCode == 200) {
-
-      } else {
-
+      if (response.statusCode != 200) {
+        print('❌ Amplitude 이벤트 전송 실패: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-
+      print('❌ Amplitude 예외: $e');
     }
   }
 }

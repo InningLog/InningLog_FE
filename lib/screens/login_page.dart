@@ -1,10 +1,11 @@
+import 'package:amplitude_flutter/amplitude_web.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inninglog/app_colors.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
+import '../analytics/AmplitudeFlutter.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -52,15 +53,18 @@ class _LoginPageState extends State<LoginPage> {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final memberId = data['memberId'];
 
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setInt('member_id', memberId); // ✅ 멤버 ID 저장
+        await prefs.setInt('member_id', memberId ?? 0);
 
-        context.go('/home'); // 👈 홈이 아니라 온보딩6으로 가야지
+        // ✅ userId 세팅은 하지 않음 → device_id만 사용
+        debugPrint('📊 로그인 완료 (deviceId로만 추적)');
+
+        context.go('/home');
+
 // 라우트 이름은 상황에 따라 수정 가능
       } else if (response.statusCode == 400) {
         final error = jsonDecode(response.body);
@@ -134,6 +138,9 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 40),
               TextField(
                 controller: _idController,
+                onChanged: (value) {
+                  // ✅ Amplitude 이벤트: 아이디 입
+                },
                 decoration: InputDecoration(
                   filled: true, // 배경색 활성화
                   fillColor: AppColors.primary50,
@@ -222,7 +229,24 @@ class _LoginPageState extends State<LoginPage> {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _isButtonEnabled ? _login : null,
+                  onPressed: _isButtonEnabled
+                      ? () {
+                    // Amplitude 이벤트 전송
+                    AmplitudeFlutter.getInstance().logEvent(
+                      'enter_signup_id',
+                      eventProperties: {
+                        'event_type': 'Recommended',
+                        'component': 'form_submit',
+                        'id_length': _idController.text.length, // value 대신 컨트롤러 사용
+                        'is_newuser': false, // 항상 false
+                        'importance': 'High',
+                      },
+                    );
+
+                    // 로그인 실행
+                    _login();
+                  }
+                      : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _isButtonEnabled
                         ? AppColors.primary700

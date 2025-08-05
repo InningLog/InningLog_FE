@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:inninglog/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../analytics/AmplitudeFlutter.dart';
 import '../main.dart';
 import '../service/api_service.dart';
 import '../models/home_view.dart';
@@ -94,6 +95,7 @@ class AddSeatPage extends StatefulWidget {
 }
 
 class _AddSeatPageState extends State<AddSeatPage> {
+  bool isSaving = false;
 
 
 
@@ -224,7 +226,15 @@ class _AddSeatPageState extends State<AddSeatPage> {
                       width: 10,
                       height: 20,
                     ),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DiaryPage(),
+                        ),
+                      );
+                    },
+
                   ),
                   const SizedBox(width: 0),
                   const Text(
@@ -562,23 +572,27 @@ class _AddSeatPageState extends State<AddSeatPage> {
                       width: double.infinity,
                       height: 54,
                       child: ElevatedButton(
-                        onPressed: isFormValid ? () async {
+    onPressed: (isFormValid && !isSaving) // 저장 중이면 비활성화
+    ? () async {
+    setState(() => isSaving = true); // 저장 시작
+
+    try {
                           print('🟢 버튼 클릭됨!');
                           print('🧪 isFormValid: $isFormValid');
 
 
-                          await analytics.logEvent(
+                          await  AmplitudeFlutter.getInstance().logEvent(
                             'select_seat_zone',
-                            properties: {
+                            eventProperties: {
                               'component': 'btn_click',
                               'seat_zone': selectedZone,
                               'importance': 'High',
                             },
                           );
 
-                          await analytics.logEvent(
+                          await  AmplitudeFlutter.getInstance().logEvent(
                             'enter_seat_section_row',
-                            properties: {
+                            eventProperties: {
                               'component': 'form_submit',
                               'section': sectionController.text,
                               'row': rowController.text,
@@ -586,18 +600,18 @@ class _AddSeatPageState extends State<AddSeatPage> {
                             },
                           );
 
-                          await analytics.logEvent(
+                          await  AmplitudeFlutter.getInstance().logEvent(
                             'upload_seat_photo',
-                            properties: {
+                            eventProperties: {
                               'component': 'event',
                               'photo_count': '1',
                               'importance': 'High',
                             },
                           );
 
-                          await analytics.logEvent(
+                          await  AmplitudeFlutter.getInstance().logEvent(
                             'select_seat_hashtag',
-                            properties: {
+                            eventProperties: {
                               'component': 'btn_click',
                               'hashtag_cheering': selectedTags['응원'],         // 예: '일어남'
                               'hashtag_sunlight': selectedTags['햇빛'],
@@ -609,9 +623,9 @@ class _AddSeatPageState extends State<AddSeatPage> {
                           );
 
 
-                          await analytics.logEvent(
+                          await  AmplitudeFlutter.getInstance().logEvent(
                             'complete_seat_review',
-                            properties: {
+                            eventProperties: {
                               'component': 'btn_click',
                               'diary_id': widget.journalId,
                               'importance': 'High',
@@ -682,7 +696,11 @@ class _AddSeatPageState extends State<AddSeatPage> {
                           if (context.mounted) {
                             context.go('/diary');
                           }
-                        } : null,
+                          } finally {
+                            setState(() => isSaving = false); // 저장 종료 → 버튼 다시 활성화
+                          }
+                          }
+                              : null,
 
                         style: ElevatedButton.styleFrom(
                           backgroundColor: isFormValid ? AppColors.primary700 : AppColors.gray200,
@@ -694,7 +712,16 @@ class _AddSeatPageState extends State<AddSeatPage> {
                             ),
                           ),
                         ),
-                        child: Text(
+                        child: isSaving
+                        ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                        ),
+                        )
+                            : Text(
                           '작성 완료',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,

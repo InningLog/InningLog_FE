@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../analytics/AmplitudeFlutter.dart';
 import '../app_colors.dart';
 import '../main.dart';
 import '../service/api_service.dart';
@@ -325,9 +326,9 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
                       height: 20,
                     ),
                     onPressed: () async {
-                      await analytics.logEvent(
+                      await  AmplitudeFlutter.getInstance().logEvent(
                         'click_home_report_back',
-                        properties: {
+                        eventProperties: {
                           'component': 'btn_click',
                           'previous_page': 'home', // 필요 시 동적으로 바꾸기
                           'importance': 'Medium',
@@ -554,9 +555,9 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
                             ),
                           ),
                           onPressed: () async {
-                            await analytics.logEvent(
+                            await  AmplitudeFlutter.getInstance().logEvent(
                               'click_home_report_share',
-                              properties: {
+                              eventProperties: {
                                 'component': 'btn_click',
                                 'share_method': 'capture',
                                 'importance': 'High',

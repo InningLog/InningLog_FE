@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:async';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:inninglog/navigation/main_navigation.dart';
-import 'package:inninglog/screens/onboarding_screen.dart';
 import 'package:inninglog/app_colors.dart';
-
-import 'home_page.dart';
+import '../analytics/AmplitudeFlutter.dart'; // ✅ deviceId 전용 버전 불러오기
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -18,11 +16,17 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   bool _switched = false;
+
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // ✅ Amplitude 초기화 (deviceId 전용)
+      final amplitude = AmplitudeFlutter.getInstance();
+      await dotenv.load(fileName: ".env");
+      await amplitude.init(dotenv.env['AMPLITUDE_API_KEY']!);
+
       final uri = Uri.base;
       final isBridge = uri.fragment.startsWith('/bridge');
 
@@ -49,11 +53,9 @@ class _SplashScreenState extends State<SplashScreen> {
         return;
       }
 
-      // ✅ 여기서만 실행해야 함
       await _startSplashLogic();
     });
   }
-
 
   Future<void> _startSplashLogic() async {
     await Future.delayed(const Duration(milliseconds: 1500));
@@ -66,14 +68,12 @@ class _SplashScreenState extends State<SplashScreen> {
     await Future.delayed(const Duration(milliseconds: 1500));
 
     final prefs = await SharedPreferences.getInstance();
-
     final token = prefs.getString('access_token');
     if (token != null) {
       context.go('/home');
       return;
     }
 
-    //배포할 때 빼기
     final hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
     if (!mounted) return;
 
@@ -83,8 +83,6 @@ class _SplashScreenState extends State<SplashScreen> {
       context.go('/onboarding');
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -126,4 +124,3 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
-

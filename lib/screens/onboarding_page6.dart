@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import '../analytics/AmplitudeFlutter.dart';
 import '../app_colors.dart';
 import '../main.dart';
 import '../navigation/main_navigation.dart';
@@ -257,7 +258,7 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
                 final shortCode = teamShortCodes[selectedTeam]!;
 
                 // ✅ 이벤트 로깅은 그대로 유지
-                await analytics.logEvent('onboarding_complete', properties: {
+                await  AmplitudeFlutter.getInstance().logEvent('onboarding_complete', eventProperties: {
                   'nickname': nickname,
                   'team': selectedTeam,
                   'team_short_code': shortCode,
@@ -265,14 +266,14 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
                   'action': 'setup_complete',
                 });
 
-                await analytics.logEvent('enter_onboarding_nickname', properties: {
+                await  AmplitudeFlutter.getInstance().logEvent('enter_onboarding_nickname', eventProperties: {
                   'component': 'form_submit',
                   'nickname_length': nickname.length,
                   'nickname_value': nickname,
                   'importance': 'Medium',
                 });
 
-                await analytics.logEvent('select_onboarding_team', properties: {
+                await  AmplitudeFlutter.getInstance().logEvent('select_onboarding_team', eventProperties: {
                   'component': 'btn_click',
                   'team_name': selectedTeam,
                   'importance': 'Medium',

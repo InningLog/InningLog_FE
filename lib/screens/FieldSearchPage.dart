@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:inninglog/screens/seat_page.dart';
+import '../analytics/AmplitudeFlutter.dart';
 import '../app_colors.dart';
 import '../main.dart';
 import '../widgets/common_header.dart';
@@ -292,7 +293,7 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                               print('🚨 row: ${rowController.text}');
 
 
-                              analytics.logEvent('enter_stadium_direct_search', properties: {
+                              AmplitudeFlutter.getInstance().logEvent('enter_stadium_direct_search', eventProperties: {
                                 'event_type': 'Custom',
                                 'component': 'form_submit',
                                 'zone_name': stadiumZones[selectedStadiumCode]?[selectedZone] ?? selectedZone ?? '',
@@ -300,7 +301,7 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                                 'row': int.tryParse(rowController.text) ?? 0,
                                 'importance': 'High',
                               });
-                              analytics.logEvent('execute_stadium_search', properties: {
+                              AmplitudeFlutter.getInstance().logEvent('execute_stadium_search', eventProperties: {
                                 'event_type': 'Custom',
                                 'component': 'btn_click',
                                 'search_type': 'direct',
@@ -444,14 +445,14 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                                       .map((entry) => "${entry.key}:${entry.value}")
                                       .toList();
 
-                                  analytics.logEvent('select_stadium_hashtag', properties: {
+                                  AmplitudeFlutter.getInstance().logEvent('select_stadium_hashtag', eventProperties: {
                                     'event_type': 'Custom',
                                     'component': 'btn_click',
                                     'hashtags': selectedHashtagList,
                                     'hashtag_count': selectedHashtagList.length,
                                     'importance': 'High',
                                   });
-                                  analytics.logEvent('execute_stadium_search', properties: {
+                                  AmplitudeFlutter.getInstance().logEvent('execute_stadium_search', eventProperties: {
                                     'event_type': 'Custom',
                                     'component': 'btn_click',
                                     'search_type': 'hashtag',
@@ -525,9 +526,9 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
     final isSelected = _selectedIndex == index;
     return GestureDetector(
       onTap: () {
-        analytics.logEvent(
+        AmplitudeFlutter.getInstance().logEvent(
           'change_stadium_search_tab',
-          properties: {
+          eventProperties: {
             'component': 'btn_click',
             'tab_type': index == 0 ? 'direct' : 'hashtag',
             'importance': 'High',

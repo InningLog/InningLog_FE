@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import '../analytics/AmplitudeFlutter.dart';
+
 
 
 class SignupPage extends StatefulWidget {
@@ -52,6 +54,16 @@ class _SignupPageState extends State<SignupPage> {
       final response = await http.get(uri);
       if (response.statusCode == 200) {
         final isDuplicate = json.decode(response.body) as bool;
+
+        AmplitudeFlutter.getInstance().logEvent(
+          'click_check_id_duplicate',
+          eventProperties: {
+            'event_type': 'Custom',
+            'component': 'btn_click',
+            'is_duplicatecd': isDuplicate, // Boolean
+            'importance': 'High',
+          },
+        );
         if (isDuplicate) {
           _showDialog('이미 사용 중인 아이디입니다.');
         } else {
@@ -79,7 +91,11 @@ class _SignupPageState extends State<SignupPage> {
       ),
     );
   }
+  DateTime? _signupStartTime;
+
   Future<void> _signup() async {
+    _signupStartTime = DateTime.now();
+
     final userID = _idController.text.trim();
     final password = _pwController.text.trim();
 
@@ -99,6 +115,22 @@ class _SignupPageState extends State<SignupPage> {
       );
 
       if (response.statusCode == 200) {
+        // 가입 완료 시간 계산
+        final durationSeconds = DateTime.now()
+            .difference(_signupStartTime!)
+            .inMilliseconds / 1000;
+
+        // ✅ Amplitude 이벤트: 가입 완료
+        AmplitudeFlutter.getInstance().logEvent(
+          'click_signup_complete',
+          eventProperties: {
+            'event_type': 'Custom',
+            'component': 'btn_click',
+            'signup_duration_seconds': durationSeconds, // FLOAT
+            'importance': 'High',
+          },
+        );
+
         // ✅ 자동 로그인 시도
         await _loginAfterSignup(userID, password);
       }
@@ -134,15 +166,23 @@ class _SignupPageState extends State<SignupPage> {
 
       if (response.statusCode == 200 && response.body.isNotEmpty) {
         final json = jsonDecode(response.body);
-        final token = json['token'];
         final memberId = json['memberId'];
 
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('access_token', token);
-        await prefs.setInt('member_id', memberId);
+        await prefs.setInt('member_id', memberId ?? 0);
+
+        // ✅ userId는 세팅하지 않고 device_id만 계속 사용
+        debugPrint('📊 회원가입 후 로그인 완료 (deviceId로만 추적)');
+
+        // ✅ 회원가입 성공 이벤트 로깅
+        AmplitudeFlutter.getInstance().logEvent(
+          'signup_success',
+          eventProperties: {'signup_method': 'manual'},
+        );
 
         context.go('/onboarding6');
-      } else {
+      }
+      else {
         _showDialog('회원가입 후 자동 로그인에 실패했습니다.');
       }
     } catch (e) {
@@ -194,6 +234,19 @@ class _SignupPageState extends State<SignupPage> {
               const SizedBox(height: 40),
               TextField(
                 controller: _idController,
+                onChanged: (value) {
+                  // ✅ Amplitude 이벤트: 아이디 입력
+                  AmplitudeFlutter.getInstance().logEvent(
+                    'enter_signup_id',
+                    eventProperties: {
+                      'event_type': 'Recommended', // 요청한 대로 Recommended
+                      'component': 'form_submit',
+                      'id_length': value.length, // INT
+                      'is_newuser': true, // 항상 true
+                      'importance': 'High',
+                    },
+                  );
+                },
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: AppColors.primary50,
@@ -237,6 +290,7 @@ class _SignupPageState extends State<SignupPage> {
                 alignment: Alignment.centerLeft,
                 child: ElevatedButton(
                   onPressed: _checkDuplicateID,
+
                     // TODO: 아이디 중복확인 기능
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFD9D9D9),
@@ -261,6 +315,18 @@ class _SignupPageState extends State<SignupPage> {
               const SizedBox(height: 16),
               TextField(
                 controller: _pwController,
+                onChanged: (value) {
+                  // ✅ Amplitude 이벤트: 비밀번호 입력
+                  AmplitudeFlutter.getInstance().logEvent(
+                    'enter_signup_password',
+                    eventProperties: {
+                      'event_type': 'Custom',
+                      'component': 'form_submit',
+                      'password_length': value.length, // INT
+                      'importance': 'High',
+                    },
+                  );
+                },
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: AppColors.primary50,
@@ -305,6 +371,7 @@ class _SignupPageState extends State<SignupPage> {
                 height: 48,
                 child: ElevatedButton(
                   onPressed: _isButtonEnabled ? _signup : null,
+
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _isButtonEnabled
                         ? AppColors.primary700
