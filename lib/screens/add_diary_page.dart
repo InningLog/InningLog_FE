@@ -34,6 +34,7 @@ bool hasSeatView = false;
 
 
 class AddDiaryPage extends StatefulWidget {
+
   final DateTime? initialDate;
   final bool isEditMode;
   final int? journalId;
@@ -54,6 +55,7 @@ class AddDiaryPage extends StatefulWidget {
 }
 
 class _AddDiaryPageState extends State<AddDiaryPage> {
+  bool isSaving = false;
   String? fileName;
   DateTime currentDate = DateTime.now();
   String? writtenStadiumCode;
@@ -81,9 +83,18 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
   }
 
   void _goToNextDay() {
+    final today = DateTime.now();
+    // 시간 비교를 위해 시/분/초 제거
+    final todayOnly = DateTime(today.year, today.month, today.day);
     final newDate = currentDate.add(const Duration(days: 1));
+
+    if (newDate.isAfter(todayOnly)) {
+      // 오늘보다 이후 날짜면 막기
+      return;
+    }
     _updateScheduleForDate(newDate);
   }
+
 
   String _formatDate(DateTime date) {
     final today = DateTime.now();
@@ -805,6 +816,8 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               // 작성 완료 버튼 내부
                               onPressed: widget.isEditMode || isFormValid
                                   ? () async {
+                                setState(() => isSaving = true);
+                                try{
                                 print('🟡 작성 모드 진입');
 
                                 if (todaySchedule == null) {
@@ -864,7 +877,9 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                   print('🚀 context.go 실행');
                                   context.go('/diary');
                                 }
-
+                                } finally {
+                                  setState(() => isSaving = false); // 저장 종료
+                                }
                               }
                                   : null,
 

@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
 import '../main.dart';
@@ -149,6 +150,7 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
               controller: _nicknameController,
               focusNode: _focusNode,
               maxLength: _maxLength,
+              maxLengthEnforcement: MaxLengthEnforcement.enforced,
               onChanged: (_) => setState(() {}),
               style: const TextStyle(
                 fontSize: 16,

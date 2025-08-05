@@ -612,7 +612,17 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                       width: 10,
                       height: 20,
                     ),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FieldSearchPage(
+                            stadiumName: widget.stadiumName, // 여기서 widget. 붙여야 함
+                          ),
+                        ),
+                      );
+                    },
+
                   ),
                   const SizedBox(width: 0),
                   Text(

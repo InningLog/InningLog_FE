@@ -35,6 +35,7 @@ dependencies:
   path_provider: ^2.1.2
   share_plus: ^7.2.1
   flutter_dotenv: ^5.2.1
+  fluttertoast: ^8.2.4
 
 
 
@@ -71,8 +72,7 @@ flutter:
 
     - family: Pretendard
       fonts:
-         - asset: assets/fonts/Pretendard-Regular.otf
-         - asset: assets/fonts/Pretendard-Bold.otf
+         - asset: assets/fonts/Pretendard-Black.ttf
 
     - family: Inter
       fonts:

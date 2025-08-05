@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:inninglog/screens/seat_page.dart';
 import '../app_colors.dart';
 import '../main.dart';
 import '../widgets/common_header.dart';
@@ -8,6 +9,7 @@ import 'package:go_router/go_router.dart';
 
 class FieldSearchPage extends StatefulWidget {
   final String stadiumName;
+
 
   const FieldSearchPage({super.key, required this.stadiumName});
 
@@ -73,7 +75,16 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                       width: 10,
                       height: 20,
                     ),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SeatPage(),
+                        ),
+                      );
+                    },
+
+
                   ),
                   const SizedBox(width: 0),
                   Text(

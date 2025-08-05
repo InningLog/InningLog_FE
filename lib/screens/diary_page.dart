@@ -21,7 +21,7 @@ const Map<String, String> teamNameMap = {
   'SS': '삼성',
   'KT': 'KT',
   'LT': '롯데',
-  'HT': 'KIA',
+  'HT': '기아',
   'NC': 'NC',
   'WO': '키움',
 };
@@ -90,6 +90,7 @@ class _DiaryPageState extends State<DiaryPage> {
   void initState() {
     super.initState();
     loadCalendar();
+    loadMoreSummary();
     _scrollController.addListener(() {
       if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent && !isLoadingMore && hasMore) {
         loadMoreSummary();
@@ -213,7 +214,7 @@ class _DiaryPageState extends State<DiaryPage> {
       body: SafeArea(
         child: Column(
           children: [
-            const CommonHeader(title: '직관 일지'),
+          const CommonHeader(title: '직관 일지'),
 
             // 탭바
             Container(
@@ -337,11 +338,21 @@ class _DiaryPageState extends State<DiaryPage> {
                               // 달력
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque, // 투명 터치 방지
+                                  onVerticalDragUpdate: (details) {
+                                    // Drag 이벤트를 ScrollController에 직접 넘기기
+                                    Scrollable.ensureVisible(
+                                      context.findRenderObject()! as BuildContext,
+                                      duration: const Duration(milliseconds: 1),
+                                    );
+                                  },
                                 child: TableCalendar(
                                   locale: 'ko_KR',
                                   firstDay: DateTime.utc(2020, 1, 1),
                                   lastDay: DateTime.utc(2030, 12, 31),
                                   focusedDay: focusedDay,
+                                  availableGestures: AvailableGestures.verticalSwipe,
                                   selectedDayPredicate: (day) {
                                     return selectedDate != null &&
                                         DateTime.utc(day.year, day.month, day.day) ==
@@ -452,6 +463,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                   },
 
 
+                                ),
                                 ),
 
                               ),
@@ -857,9 +869,8 @@ class _DiaryPageState extends State<DiaryPage> {
       ),
 
 
-      floatingActionButton: FloatingActionButton(
-
-
+      floatingActionButton: _selectedIndex == 0
+          ? FloatingActionButton(
 
         onPressed: () async {
 
@@ -874,6 +885,31 @@ class _DiaryPageState extends State<DiaryPage> {
           );
           final dateToSend = selectedDate ?? DateTime.now();
           final scheduleData = await ApiService.fetchScheduleForDate(dateToSend);
+
+
+          // 1️⃣ 이미 작성된 경기 있는지 확인
+          final existingGame = journalList.firstWhereOrNull(
+                (j) => DateUtils.isSameDay(j.gameDate, dateToSend),
+          );
+
+          // 2️⃣ 있으면 -> 이미 작성 팝업
+          if (existingGame != null) {
+            final scheduleData = await ApiService.fetchScheduleForDate(dateToSend);
+            if (scheduleData != null) {
+              final addMore = await _showGamealreadyDialog(context, dateToSend, scheduleData);
+              if (addMore == true) {
+                context.push(
+                  '/adddiary',
+                  extra: {
+                    'initialDate': dateToSend,
+                    'isEditMode': false,
+                    'journalId': null,
+                  },
+                );
+              }
+            }
+            return; // 여기서 끝냄
+          }
 
 
 
@@ -939,21 +975,20 @@ class _DiaryPageState extends State<DiaryPage> {
             );
           }
         },
-        backgroundColor: AppColors.primary700,
-        elevation: 6,
+
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         shape: const CircleBorder(),
-        child: Padding(
-          padding: const EdgeInsets.all(0), // 여백 줄여서 SVG 더 크게 보이게
           child: SvgPicture.asset(
             'assets/icons/add_diary.svg',
-            width: 36,
-            height: 36,
+            width: 56, // 필요에 따라 조절
+            height: 56,
           ),
-        ),
-      ),
+        )     : null,
 
 
-      );
+
+    );
 
 
 
@@ -1024,12 +1059,12 @@ class _DiaryPageState extends State<DiaryPage> {
                     Expanded(
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFF8F8F8F)),
+                          side: const BorderSide(color: Color(0xFF8F8F8F),  width: 0.5,),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                           minimumSize: const Size.fromHeight(48),
                         ),
                         onPressed: () => Navigator.pop(context, false),
-                        child: const Text('취소', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Pretendard',color : Color(0xFF8F8F8F))),
+                        child: const Text('취소', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, fontFamily: 'Pretendard',color : Color(0xFF8F8F8F))),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -1042,7 +1077,106 @@ class _DiaryPageState extends State<DiaryPage> {
                         ),
                         onPressed: () => Navigator.pop(context, true),
                         child: const Text('일지 작성하기',
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white, fontFamily: 'Pretendard',)),
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.white, fontFamily: 'Pretendard',)),
+                      ),
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
+        );
+      },
+    ).then((value) => value ?? false);
+  }
+
+
+  Future<bool> _showGamealreadyDialog(
+      BuildContext context,
+      DateTime selectedDate,
+      Map<String, dynamic> schedule,
+      ) async {
+    final formattedDate =
+        '${selectedDate.month.toString().padLeft(2, '0')}.${selectedDate.day.toString().padLeft(2, '0')}(${_getWeekday(selectedDate)})';
+
+    final team1 = teamNameMap[schedule['supportTeamSC']] ?? schedule['supportTeamSC'];
+    final team2 = teamNameMap[schedule['opponentSC']] ?? schedule['opponentSC'];
+    final stadium = stadiumNameMap[schedule['stadiumSC']] ?? schedule['stadiumSC'];
+    final gameTime = schedule['gameDate'].toString().split(' ')[1];
+
+    return await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          contentPadding: const EdgeInsets.all(0),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          content: Container(
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 17),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('앗, 이미 기록 된 같은 경기가 있어요!\n추가로 작성 하시겠어요?',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, fontFamily: 'Pretendard',),
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 20),
+
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8F8F8),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(formattedDate, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, fontFamily: 'Pretendard',)),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(team1, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700, fontFamily: 'Pretendard',)),
+                          const SizedBox(width: 12),
+                          const Text('VS',
+                              style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700, color: AppColors.primary700, fontFamily: 'Pretendard',)),
+                          const SizedBox(width: 12),
+                          Text(team2, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700, fontFamily: 'Pretendard',)),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(gameTime, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, fontFamily: 'Pretendard',)),
+                      const SizedBox(height: 4),
+                      Text('@ $stadium', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500, fontFamily: 'Pretendard',)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF8F8F8F),  width: 0.5,),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                          minimumSize: const Size.fromHeight(48),
+                        ),
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('취소', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, fontFamily: 'Pretendard',color : Color(0xFF8F8F8F))),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF94C32C),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                          minimumSize: const Size.fromHeight(48),
+                        ),
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('일지 작성하기',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.white, fontFamily: 'Pretendard',)),
                       ),
                     ),
                   ],

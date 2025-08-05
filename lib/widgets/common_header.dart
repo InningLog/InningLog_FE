@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class CommonHeader extends StatelessWidget {
   final String title;
@@ -41,7 +42,16 @@ class CommonHeader extends StatelessWidget {
               'assets/icons/Alarm.svg',
               width: 18.05,
             ),
-            onPressed: onAlarmPressed ?? () {},
+            onPressed: () {
+              Fluttertoast.showToast(
+                msg: "아직 개발 중이에요 ㅠ.ㅠ",
+                toastLength: Toast.LENGTH_SHORT,
+                gravity: ToastGravity.BOTTOM,
+                backgroundColor: Colors.black.withOpacity(0.7),
+                textColor: Colors.white,
+                fontSize: 14,
+              );
+            },
           ),
         ],
       ),
