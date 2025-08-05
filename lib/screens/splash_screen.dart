@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:async';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -22,10 +21,14 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // ✅ Amplitude 초기화 (deviceId 전용)
       final amplitude = AmplitudeFlutter.getInstance();
-      await dotenv.load(fileName: ".env");
-      await amplitude.init(dotenv.env['AMPLITUDE_API_KEY']!);
+      const amplitudeKey = String.fromEnvironment('AMPLITUDE_API_KEY');
+
+      if (amplitudeKey.isNotEmpty) {
+        await amplitude.init(amplitudeKey);
+      } else {
+        debugPrint('⚠️ AMPLITUDE_API_KEY is missing in Splash');
+      }
 
       final uri = Uri.base;
       final isBridge = uri.fragment.startsWith('/bridge');

@@ -25,23 +25,28 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io' show Platform;
 import 'analytics/analytics.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:inninglog/analytics/AmplitudeFlutter.dart';
 import '../analytics/AmplitudeFlutter.dart';
 
+
+const amplitudeKey = String.fromEnvironment('AMPLITUDE_API_KEY');
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final amplitude = AmplitudeFlutter.getInstance();
-  await dotenv.load(fileName: ".env");
-  await amplitude.init(dotenv.env['AMPLITUDE_API_KEY']!);
+
+  if (amplitudeKey.isNotEmpty) {
+    await amplitude.init(amplitudeKey);
+  } else {
+    print('⚠️ AMPLITUDE_API_KEY is missing');
+  }
 
   runApp(const InningLogApp());
 }
+
 
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();

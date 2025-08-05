@@ -7,8 +7,13 @@ class AnalyticsService {
   final AmplitudeFlutter _amplitude = AmplitudeFlutter.getInstance(instanceName: "default");
 
   void init() {
-    _amplitude.init("821c8925a751c008310e896ad437b1bc");
-    _amplitude.trackingSessionEvents(true);
+    const amplitudeKey = String.fromEnvironment('AMPLITUDE_API_KEY');
+    if (amplitudeKey.isNotEmpty) {
+      _amplitude.init(amplitudeKey);
+      _amplitude.trackingSessionEvents(true);
+    } else {
+      print('⚠️ Amplitude API Key is missing');
+    }
   }
 
   Future<void> logEvent(String eventName, {Map<String, dynamic>? properties}) async {
