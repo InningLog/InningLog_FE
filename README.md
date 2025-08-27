@@ -1,5 +1,7 @@
-# ⚾ 이닝로그 (InningLog)
-🏆 전국 대학 성과 공유포럼 국회의원상 , 최우수상 , 인기상 수상작
+## ⚾️ 이닝로그 (InningLog)
+## 🏆 전국 대학 성과 공유포럼 국회의원상 , 최우수상 , 인기상 수상작
+
+<p align="center"> <img src="https://github.com/user-attachments/assets/5c9f31c5-4c86-4b0c-a100-34b38d5e4c45" alt="Me-mory Banner" width="860" style="border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.12);" /> </p>
 
 야구 팬들을 위한 직관 다이어리 앱  
 감정, 사진, 좌석 후기와 함께 경기장의 기억을 기록하는 공간  
