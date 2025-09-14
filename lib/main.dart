@@ -81,7 +81,7 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/adddiary',
       builder: (context, state) {
-        print('✅ AddDiaryPage 빌더 진입!');
+        print('✅ AddDiarPage 빌더 진입!');
         final extra = state.extra as Map<String, dynamic>;
         print('🟢 받은 extra: $extra');
 
