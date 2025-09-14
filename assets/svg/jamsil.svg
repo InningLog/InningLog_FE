@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 2000">
+
+    <!-- 구역 312 (남색 배경 + 흰 글씨) -->
+    <g id="JAM-312" data-zone="NEVY" data-section="312">
+        <path
+            d="M200,400 h500 v300 h-500 z"
+            fill="#001F5C"
+            stroke="#333333"
+            stroke-width="2"/>
+        <text
+            x="450" y="550"
+            font-size="120"
+            font-family="Pretendard, Arial, sans-serif"
+            fill="#FFFFFF"
+            text-anchor="middle"
+            dominant-baseline="middle">
+            312
+        </text>
+    </g>
+
+    <!-- 구역 313 (빨간색 배경 + 노란 글씨) -->
+    <g id="JAM-313" data-zone="NEVY" data-section="313">
+        <path
+            d="M800,420 h520 v280 h-520 z"
+            fill="#CC0000"
+            stroke="#333333"
+            stroke-width="2"/>
+        <text
+            x="1060" y="560"
+            font-size="120"
+            font-family="Pretendard, Arial, sans-serif"
+            fill="#FFFF00"
+            text-anchor="middle"
+            dominant-baseline="middle">
+            313
+        </text>
+    </g>
+
+</svg>

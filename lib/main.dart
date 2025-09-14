@@ -13,6 +13,7 @@ import 'package:inninglog/screens/onboarding_page6.dart';
 import 'package:inninglog/screens/signup_page.dart';
 import 'package:inninglog/screens/splash_screen.dart';
 import 'package:inninglog/screens/onboarding_screen.dart';
+import 'package:inninglog/screens/seatviewtest.dart';
 import 'package:inninglog/screens/home_page.dart';
 import 'package:inninglog/screens/diary_page.dart';
 import 'package:inninglog/screens/seat_page.dart';
@@ -65,6 +66,14 @@ final GoRouter _router = GoRouter(
     ),
 
     /// GNB 없는 화면들
+    GoRoute(
+      path: '/seatviewtest',
+      builder: (context, state) {
+        return const Seatviewtest(); // ✅ 그냥 기본 생성자만
+      },
+    ),
+
+
     GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
     GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
     GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
