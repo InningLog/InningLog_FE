@@ -1,4 +1,3 @@
-import 'package:amplitude_flutter/amplitude_web.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inninglog/app_colors.dart';

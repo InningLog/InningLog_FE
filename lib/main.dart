@@ -66,12 +66,12 @@ final GoRouter _router = GoRouter(
     ),
 
     /// GNB 없는 화면들
-    GoRoute(
-      path: '/seatviewtest',
-      builder: (context, state) {
-        return const Seatviewtest(); // ✅ 그냥 기본 생성자만
-      },
-    ),
+    // GoRoute(
+    //   path: '/seatviewtest',
+    //   builder: (context, state) {
+    //     return const Seatviewtest(); // ✅ 그냥 기본 생성자만
+    //   },
+    // ),
 
 
     GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),

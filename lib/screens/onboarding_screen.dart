@@ -11,7 +11,6 @@ import 'package:inninglog/screens/onboarding_page6.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'dart:html' as html;
 import '../app_colors.dart';
 
 
