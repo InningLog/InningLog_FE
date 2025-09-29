@@ -12,6 +12,9 @@ import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../app_colors.dart';
+import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:http/http.dart' as http;
 
 
 class OnboardingScreen extends StatefulWidget {
@@ -152,7 +155,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
           _buildDots(),
           const SizedBox(height: 81),
-          if (_currentPage != _pages.length )
+          if (_currentPage != _pages.length-1 )
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: ElevatedButton(
@@ -172,16 +175,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     fontFamily: 'Pretendard',),),
               ),
             ),
-          // if (_currentPage == 4)
-          //   Padding(
-          //     padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          //     child: GestureDetector(
-          //       child: SvgPicture.asset(
-          //         'assets/icons/kakao_button.svg',
-          //         height: 54,
-          //       ),
-          //     ),
-          //   ),
+          if (_currentPage == 4)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: GestureDetector(
+                onTap: () => context.push('/kakaoWebView'), // GoRouter에 라우트 등록 필요
+                child: SvgPicture.asset(
+                  'assets/icons/kakao_button.svg',
+                  height: 54,
+                ),
+              ),
+            ),
 
 
           const SizedBox(height: 30),
@@ -192,7 +196,41 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
 
 
+  Future<void> startKakaoLogin() async {
+    try {
+      final resp = await http.get(
+        Uri.parse('https://api.inninglog.shop/login/page'),
+        headers: {'accept': 'application/json'},
+      );
+      if (resp.statusCode != 200) {
+        throw Exception('로그인 페이지 요청 실패: ${resp.statusCode}');
+      }
 
+      final loc = (jsonDecode(resp.body)['location'] as String?)?.trim();
+      if (loc == null || loc.isEmpty) {
+        throw Exception('location 값이 비어있습니다.');
+      }
 
+      final uri = Uri.parse(loc);
+
+      // ❗ dart:html 없이 url_launcher 하나로 처리 (웹도 동작)
+      // 웹에서 같은 탭 이동을 원하면 webOnlyWindowName: '_self'
+      final ok = await launchUrl(
+        uri,
+        webOnlyWindowName: '_self',
+        mode: kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
+      );
+
+      if (!ok && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('로그인 페이지로 이동하지 못했습니다.')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('로그인 중 오류: $e')),
+      );
+    }
+  }
 }
-

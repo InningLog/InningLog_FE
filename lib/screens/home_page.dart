@@ -139,7 +139,7 @@ class _HomePageState extends State<HomePage> {
 
   void fetchMyWeaningRate() async {
     final prefs = await SharedPreferences.getInstance();
-    final memberId = prefs.getInt('member_id');
+    final memberId = prefs.getInt('memberId');
     if (memberId == null) return;
 
     final response = await http.get(
@@ -202,7 +202,7 @@ class _HomePageState extends State<HomePage> {
       'SS': 'https://www.ticketlink.co.kr/sports/137/57',
       'KT': 'https://www.ticketlink.co.kr/sports/137/62',
       'SK': 'https://www.ticketlink.co.kr/sports/137/476',
-      'HH': 'https://www.ticketlink.co.kr/sports/137/476',
+      'HH': 'https://www.ticketlink.co.kr/sports/137/63',
       'NC': 'https://www.ncdinos.com/auth/ticket.do',
       'LT': 'https://ticket.giantsclub.com/loginForm.do',
     };

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inninglog/navigation/main_navigation.dart';
+import 'package:inninglog/screens/KakaoLoginWebViewPage.dart';
 import 'package:inninglog/screens/add_diary_page.dart';
 import 'package:inninglog/screens/add_seat_page.dart';
 import 'package:inninglog/screens/field_hashtag_filter_sheet.dart';
@@ -72,6 +73,11 @@ final GoRouter _router = GoRouter(
     //     return const Seatviewtest(); // ✅ 그냥 기본 생성자만
     //   },
     // ),
+    GoRoute(
+      path: '/kakaoWebView',
+      name: 'kakaoWebView',
+      builder: (context, state) => const KakaoLoginWebViewPage(),
+    ),
 
 
     GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
