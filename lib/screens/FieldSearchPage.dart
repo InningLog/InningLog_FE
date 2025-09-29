@@ -578,7 +578,7 @@ final Map<String, String> stadiumNameToCode = {
   '라이온즈 파크': 'DAE',
   '사직 야구장': 'BUS',
   'NC 파크장': 'CHW',
-  '챔피언스 월드': 'GWJ',
+  '챔피언스 필드': 'GWJ',
 };
 
 

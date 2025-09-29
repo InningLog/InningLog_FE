@@ -42,11 +42,11 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
     'LG 트윈스': 'LG',
     '두산 베어스': 'OB',
     'SSG 랜더스': 'SK',
-    '한화 이글즈': 'HH',
+    '한화 이글스': 'HH',
     '삼성 라이온즈': 'SS',
     'KT 위즈': 'KT',
     '롯데 자이언츠': 'LT',
-    'KIA 타이거즈': 'HT',
+    '기아 타이거즈': 'HT',
     'NC 다이노스': 'NC',
     '키움 히어로즈': 'WO',
   };
@@ -54,12 +54,12 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
 
 
   final List<String> _teams = [
-    'KIA 타이거즈',
+    '기아 타이거즈',
     '두산 베어스',
     '롯데 자이언츠',
     '삼성 라이온즈',
     '키움 히어로즈',
-    '한화 이글즈',
+    '한화 이글스',
     'KT 위즈',
     'LG 트윈스',
     'NC 다이노스',

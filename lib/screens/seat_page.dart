@@ -14,7 +14,7 @@ final List<_TeamStadium> teamStadiums = [
   _TeamStadium('assets/icons/ssg_seat.svg', 'SSG','랜더스 필드','문학'),
   _TeamStadium('assets/icons/lion_seat.svg', '삼성','라이온즈 파크','대구'),
   _TeamStadium('assets/icons/hh_seat.svg', '한화','한화생명 볼파크','대전'),
-  _TeamStadium('assets/icons/kia_seat.svg', '기아','챔피언스 월드','광주'),
+  _TeamStadium('assets/icons/kia_seat.svg', '기아','챔피언스 필드','광주'),
   _TeamStadium('assets/icons/kt_seat.svg', 'KT','위즈 파크','수원'),
   _TeamStadium('assets/icons/nc_seat.svg', 'NC','NC 파크장','창원'),
 ];
