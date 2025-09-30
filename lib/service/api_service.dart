@@ -14,87 +14,135 @@ class ApiService {
   static const String baseUrl = 'https://api.inninglog.shop';
 
 
-  static Future<http.Response?> getHomeView() async {
-    final prefs = await SharedPreferences.getInstance();
-    final memberId = prefs.getInt('member_id');
+  /// 파싱까지 해서 바로 쓰기 좋은 함수
+  static Future<HomeData?> fetchHomeData({String? accessToken}) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // ✅ 저장 키는 'member_id'가 아니라 'memberId' / 토큰은 'accessToken' 사용
+      final token = accessToken ?? prefs.getString('accessToken');
+      if (token == null) {
+        debugPrint('❌ accessToken 없음');
+        return null;
+      }
 
-    if (memberId == null) {
-      print('❌ memberId 없음');
-      return null;
-    }
+      final url = Uri.parse('$baseUrl/home/view');
+      final res = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token', // ✅ 인증은 헤더로
+          'Accept': 'application/json',
+        },
+      );
 
-    final url = Uri.parse('$baseUrl/home/view?memberId=$memberId');
-
-    return await http.get(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    );
-  }
-
-
-  static Future<HomeData?> fetchHomeData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final memberId = prefs.getInt('member_id'); // 🔑 SharedPreferences에 저장된 memberId 사용
-
-    if (memberId == null) {
-      print('❌ memberId 없음');
-      return null;
-    }
-
-    final url = Uri.parse(
-        '$baseUrl/home/view?memberId=$memberId'); // 🧭 쿼리 파라미터로 전달
-
-    final response = await http.get(url); // 🔓 Authorization 헤더 제거
-
-    if (response.statusCode == 200) {
-      final jsonBody = json.decode(response.body);
-      return HomeData.fromJson(jsonBody['data']);
-    } else if (response.statusCode == 404) {
-      print('❌ 존재하지 않는 회원입니다');
-      return null;
-    } else {
-      print('❌ API 오류: ${response.statusCode} - ${response.body}');
+      debugPrint('GET /home/view → ${res.statusCode}');
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body) as Map<String, dynamic>;
+        final data = body['data'];
+        if (data == null) return null;
+        return HomeData.fromJson(data);
+      } else {
+        debugPrint('응답 바디: ${res.body}');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('🚨 fetchHomeData 에러: $e');
       return null;
     }
   }
 
+  /// 디버깅용: 원본 Response가 필요할 때
+  static Future<http.Response?> getHomeViewRaw({String? accessToken}) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = accessToken ?? prefs.getString('accessToken');
+      if (token == null) {
+        debugPrint('❌ accessToken 없음');
+        return null;
+      }
 
-  static Future<MyReportResponse?> fetchMyReport() async {
-    final prefs = await SharedPreferences.getInstance();
-    final memberId = prefs.getInt('member_id');
-
-    if (memberId == null) {
-      print('❌ memberId 없음');
+      final url = Uri.parse('$baseUrl/home/view');
+      return await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+    } catch (e) {
+      debugPrint('🚨 getHomeViewRaw 에러: $e');
       return null;
     }
+  }
 
-    final url = Uri.parse('$baseUrl/report/main?memberId=$memberId');
-    final response = await http.get(url);
 
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      return MyReportResponse.fromJson(json['data']);
-    } else {
-      final errorJson = jsonDecode(response.body);
-      if (errorJson['code'] == 'NO_VISITED_GAME') {
-        print('📭 직관 기록 없음');
+
+
+  /// 직관 리포트 조회 (/report/main)
+  /// - 파라미터 없음
+  /// - Authorization: Bearer <accessToken>
+  static Future<MyReportResponse?> fetchMyReport({String? accessToken}) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = accessToken ?? prefs.getString('accessToken');
+      if (token == null) {
+        debugPrint('❌ accessToken 없음');
+        return null;
+      }
+
+      final url = Uri.parse('$baseUrl/report/main');
+      final res = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      debugPrint('GET /report/main → ${res.statusCode}');
+      debugPrint('응답: ${res.body}');
+
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body) as Map<String, dynamic>;
+        final data = body['data'];
+        if (data == null) return null;
+        return MyReportResponse.fromJson(data);
+      }
+
+      // ---- 에러 처리 ----
+      Map<String, dynamic>? err;
+      try { err = jsonDecode(res.body) as Map<String, dynamic>; } catch (_) {}
+
+      final code = (err?['code'] ?? '').toString().toUpperCase();
+
+      // 직관 기록 없음 (문서/서버 표기가 혼재할 수 있어 둘 다 처리)
+      if (res.statusCode == 400 &&
+          (code == 'NOVISITEDGAMES' || code == 'NO_VISITED_GAME')) {
+        debugPrint('📭 직관 기록 없음');
+        final nickname = prefs.getString('nickname') ?? '유저';
         return MyReportResponse(
+          nickname: nickname,
           totalVisitedGames: 0,
           winGames: 0,
           loseGames: 0,
           drawGames: 0,
           winningRateHalPoongRi: 0,
           teamWinRate: 0,
-          topBatters: [],
-          topPitchers: [],
-          bottomBatters: [],
-          bottomPitchers: [],
-          nickname: '유저',
+          topBatters: const [],
+          topPitchers: const [],
+          bottomBatters: const [],
+          bottomPitchers: const [],
         );
       }
-      print('❌ API 오류: ${errorJson['message']}');
+
+      if (res.statusCode == 404) {
+        debugPrint('❌ 존재하지 않는 회원');
+        return null;
+      }
+
+      debugPrint('❌ 서버/요청 오류: ${res.statusCode} ${err?['message'] ?? ''}');
+      return null;
+    } catch (e) {
+      debugPrint('🚨 fetchMyReport 에러: $e');
       return null;
     }
   }
