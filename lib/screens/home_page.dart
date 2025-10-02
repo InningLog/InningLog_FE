@@ -137,37 +137,110 @@ class _HomePageState extends State<HomePage> {
   int? myWeaningRate;
 
 
-  void fetchMyWeaningRate() async {
-    final prefs = await SharedPreferences.getInstance();
-    final memberId = prefs.getInt('memberId');
-    if (memberId == null) return;
+  Future<void> fetchMyWeaningRate({String? accessToken}) async {
+    // 릴리즈에서도 보이게
+    void log(Object? m) => print('[fetchMyWeaningRate] $m');
 
-    final response = await http.get(
-      Uri.parse('https://api.inninglog.shop/report/main?memberId=$memberId'),
-    );
+    if (!mounted) return;
 
-    print('📡 응답 상태: ${response.statusCode}');
-    print('📦 리포트 API 응답 바디: ${response.body}');
+    try {
+      final prefs = await SharedPreferences.getInstance();
 
-    if (response.statusCode == 200) {
-      final jsonData = jsonDecode(response.body);
-      final int rate = jsonData['data']['myWeaningRate'];
-      setState(() {
-        myWeaningRate = rate;
-      });
-    } else if (response.statusCode == 400) {
-      final errorJson = jsonDecode(response.body);
-      final errorCode = errorJson['code'];
-      if (errorCode == 'NO_VISITED_GAME') {
-        print('📭 직관 기록 없음');
-        setState(() {
-          myWeaningRate = 0;
-        });
+      // 우선순위: Authorization 토큰 → (백업) memberId 쿼리
+      final token = accessToken ?? prefs.getString('accessToken');
+      final memberId = prefs.getInt('memberId');
+
+      // baseUrl 없으면 고정 URL 사용
+      final base = 'https://api.inninglog.shop';
+      final endpoint = '$base/report/main';
+
+      // 토큰 있으면 헤더 인증, 없으면 memberId 쿼리로 백업
+      Uri url;
+      Map<String, String> headers = {'Accept': 'application/json, */*'};
+
+      if (token != null && token.isNotEmpty) {
+        url = Uri.parse(endpoint);
+        headers['Authorization'] = 'Bearer $token';
+      } else if (memberId != null) {
+        url = Uri.parse('$endpoint?memberId=$memberId');
       } else {
-        print('❌ 알 수 없는 400 오류: ${errorJson['message']}');
+        log('❌ 토큰/멤버ID 모두 없음');
+        if (!mounted) return;
+        setState(() => myWeaningRate = 0);
+        return;
       }
-    } else {
-      print('❌ 기타 오류: ${response.statusCode}');
+
+      log('→ GET $url');
+      final res = await http.get(url, headers: headers).timeout(const Duration(seconds: 15));
+      log('→ status: ${res.statusCode}');
+      log('→ body: ${res.body}');
+
+      // JSON 파싱 시도
+      Map<String, dynamic>? body;
+      try {
+        final decoded = jsonDecode(res.body);
+        body = decoded is Map<String, dynamic> ? decoded : null;
+      } catch (_) {
+        body = null;
+      }
+
+      num _toNum(dynamic v) {
+        if (v is num) return v;
+        if (v is String) return num.tryParse(v) ?? 0;
+        return 0;
+      }
+
+      if (res.statusCode == 200) {
+        final data = body?['data'];
+        if (data is Map<String, dynamic>) {
+          // 서버 키 혼재 대응: myWeaningRate / winningRateHalPoongRi / halPoongRi 등
+          final rate = _toNum(
+            data['myWeaningRate'] ??
+                data['winningRateHalPoongRi'] ??
+                data['halPoongRi'] ??
+                0,
+          ).toInt();
+
+          if (!mounted) return;
+          setState(() => myWeaningRate = rate);
+          return;
+        } else {
+          log('❌ 200이지만 data 없음/형식 불일치');
+          if (!mounted) return;
+          setState(() => myWeaningRate = 0);
+          return;
+        }
+      }
+
+      // ---- 에러 분기 ----
+      final codeField = (body?['code']);
+      final codeStr = (codeField ?? '').toString().toUpperCase();
+
+      // 직관기록 없음: NOVISITEDGAMES / NO_VISITED_GAME 등 혼재 처리
+      final noVisited =
+          codeStr.contains('NOVISITEDGAMES') || codeStr.contains('NO_VISITED_GAME');
+
+      if (res.statusCode == 400 && noVisited) {
+        log('📭 직관 기록 없음 (400/$codeStr)');
+        if (!mounted) return;
+        setState(() => myWeaningRate = 0);
+        return;
+      }
+
+      if (res.statusCode == 404) {
+        log('❌ 존재하지 않는 회원 (404)');
+        if (!mounted) return;
+        setState(() => myWeaningRate = 0);
+        return;
+      }
+
+      log('❌ 기타 오류: ${res.statusCode} / msg: ${body?['message'] ?? ''} / code: $codeStr');
+      if (!mounted) return;
+      setState(() => myWeaningRate = 0);
+    } catch (e, st) {
+      print('[fetchMyWeaningRate] 🚨 예외: $e\n$st');
+      if (!mounted) return;
+      setState(() => myWeaningRate = 0);
     }
   }
 
