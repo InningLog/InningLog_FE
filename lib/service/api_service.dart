@@ -315,7 +315,7 @@ class ApiService {
 
   static Future<int?> uploadJournal({
     required String gameId,
-    required String fileName, // 문서상 필수
+    String? fileName, // ✅ 선택
     required String stadiumShortCode,
     required String opponentTeamShortCode,
     required DateTime gameDateTime, // yyyy-MM-dd HH:mm
@@ -328,18 +328,14 @@ class ApiService {
 
     // ---- 필수값 & 유효성 ----
     if (gameId.trim().isEmpty) { log('❌ gameId 없음'); return null; }
-    if (fileName.trim().isEmpty) { log('❌ fileName 없음'); return null; }
     if (stadiumShortCode.trim().isEmpty) { log('❌ stadiumShortCode 없음'); return null; }
     if (opponentTeamShortCode.trim().isEmpty) { log('❌ opponentTeamShortCode 없음'); return null; }
 
-    // 감정 값 화이트리스트
     const allowedEmotions = ['감동','짜릿함','답답함','아쉬움','분노','흡족'];
     if (!allowedEmotions.contains(emotion)) {
       log('❌ emotion 값이 허용 목록이 아님: $emotion');
       return null;
     }
-
-    // 점수 가드(음수 방지)
     if (ourScore < 0 || theirScore < 0) {
       log('❌ 점수는 0 이상이어야 함');
       return null;
@@ -358,20 +354,25 @@ class ApiService {
       final gameDateStr = '${dt.year}-${two(dt.month)}-${two(dt.day)} ${two(dt.hour)}:${two(dt.minute)}';
 
       // 🔐 키 혼재 방어: SC/ShortCode 둘 다 보냄
-      final bodyData = {
+      final bodyData = <String, dynamic>{
         'gameId': gameId,
-        'gameDate': gameDateStr,         // 호환용
-        'gameDateTime': gameDateStr,     // 요구 스펙
-        'stadiumSC': stadiumShortCode,   // 예시 키
+        'gameDate': gameDateStr,              // 호환용
+        'gameDateTime': gameDateStr,          // 요구 스펙
+        'stadiumSC': stadiumShortCode,        // 예시 키
         'stadiumShortCode': stadiumShortCode, // 문서 키
-        'opponentTeamSC': opponentTeamShortCode, // 예시 키
+        'opponentTeamSC': opponentTeamShortCode,        // 예시 키
         'opponentTeamShortCode': opponentTeamShortCode, // 문서 키
         'ourScore': ourScore,
         'theirScore': theirScore,
-        'fileName': fileName,
         'emotion': emotion,
         'review_text': reviewText,
       };
+
+      // ✅ fileName은 선택: 값이 있을 때만 포함
+      final cleanedFileName = fileName?.trim();
+      if (cleanedFileName != null && cleanedFileName.isNotEmpty) {
+        bodyData['fileName'] = cleanedFileName;
+      }
 
       log('📤 body: ${jsonEncode(bodyData)}');
 
@@ -418,6 +419,7 @@ class ApiService {
       return null;
     }
   }
+
 
 
 

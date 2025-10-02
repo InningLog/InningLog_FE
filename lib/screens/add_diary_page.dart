@@ -239,7 +239,6 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
 
   @override
   Widget build(BuildContext context) {
-
     bool isFormValid =
         ourScore?.isNotEmpty == true &&
             opponentScore?.isNotEmpty == true &&
@@ -247,20 +246,17 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
 
 
     final bool isSeatButtonEnabled = !widget.isEditMode
-        ? isFormValid  // 작성 모드: 점수, 감정 필수
+        ? isFormValid // 작성 모드: 점수, 감정 필수
         : isFormValid && !hasSeatView; // 수정 모드: 점수 감정 입력 && 아직 좌석 후기 없음
-
 
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         child: Column(
           children: [
-            // ✅ 상단 고정 헤더
+            // ✅ 상단 고정 헤더 (스크롤 바깥)
             Container(
               height: 72,
               padding: const EdgeInsets.symmetric(vertical: 10),
@@ -276,8 +272,8 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                       height: 20,
                     ),
                     onPressed: () {
-                      // ✅ Amplitude 이벤트 로깅
-                      AmplitudeFlutter.getInstance().logEvent('click_diary_write_back', eventProperties: {
+                      AmplitudeFlutter.getInstance().logEvent(
+                          'click_diary_write_back', eventProperties: {
                         'event_type': 'Custom',
                         'component': 'btn_click',
                         'importance': 'Medium',
@@ -309,9 +305,11 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
               ),
             ),
 
-            // ✅ 스크롤 가능한 본문
+            // ✅ 스크롤 가능한 본문 (Expanded 안의 SingleChildScrollView)
             Expanded(
               child: SingleChildScrollView(
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior
+                    .onDrag,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
@@ -322,9 +320,12 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                       // 날짜 & 팀 매치 정보
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 19),
+                        padding: const EdgeInsets.only(
+                            left: 16, right: 16, bottom: 19),
                         decoration: BoxDecoration(
-                          border: Border.all( color: widget.isEditMode ? AppColors.primary400 : AppColors.gray300, ),// ✅ 조건 분기),
+                          border: Border.all(color: widget.isEditMode
+                              ? AppColors.primary400
+                              : AppColors.gray300,), // ✅ 조건 분기),
                           borderRadius: BorderRadius.circular(12),
                         ),
 
@@ -335,7 +336,8 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 widget.isEditMode
-                                    ? const SizedBox(width: 48,height: 48) // 아이콘 없을 때 공간 유지
+                                    ? const SizedBox(
+                                    width: 48, height: 48) // 아이콘 없을 때 공간 유지
                                     : IconButton(
                                   onPressed: _goToPreviousDay,
                                   icon: SvgPicture.asset(
@@ -369,8 +371,9 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                             if (todaySchedule == null)
 
                               Padding(
-                                padding: const EdgeInsets.only(left: 16, right: 16, bottom: 19),
-                                child:  Row(
+                                padding: const EdgeInsets.only(
+                                    left: 16, right: 16, bottom: 19),
+                                child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
@@ -401,8 +404,10 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
-                                        teamNameMap[todaySchedule!.myTeam] ?? todaySchedule!.myTeam,
-                                        style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+                                        teamNameMap[todaySchedule!.myTeam] ??
+                                            todaySchedule!.myTeam,
+                                        style: const TextStyle(fontSize: 19,
+                                            fontWeight: FontWeight.w800),
                                       ),
                                       const SizedBox(width: 66),
                                       const Text(
@@ -415,21 +420,28 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                       ),
                                       const SizedBox(width: 66),
                                       Text(
-                                        teamNameMap[todaySchedule!.opponentTeam] ?? todaySchedule!.opponentTeam,
-                                        style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+                                        teamNameMap[todaySchedule!
+                                            .opponentTeam] ??
+                                            todaySchedule!.opponentTeam,
+                                        style: const TextStyle(fontSize: 19,
+                                            fontWeight: FontWeight.w800),
                                       ),
                                     ],
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
                                     todaySchedule!.gameDateTime.contains(' ')
-                                        ? todaySchedule!.gameDateTime.split(' ')[1]
+                                        ? todaySchedule!.gameDateTime.split(
+                                        ' ')[1]
                                         : '',
-                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                                    style: const TextStyle(fontSize: 16,
+                                        fontWeight: FontWeight.w600),
                                   ),
                                   Text(
-                                    '@ ${stadiumNameMap[todaySchedule!.stadium] ?? todaySchedule!.stadium}',
-                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+                                    '@ ${stadiumNameMap[todaySchedule!
+                                        .stadium] ?? todaySchedule!.stadium}',
+                                    style: const TextStyle(fontSize: 10,
+                                        fontWeight: FontWeight.w500),
                                   ),
                                 ],
                               ),
@@ -474,13 +486,13 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               setState(() {
                                 ourScore = value;
                               });
-                              AmplitudeFlutter.getInstance().logEvent('enter_diary_score', eventProperties: {
+                              AmplitudeFlutter.getInstance().logEvent(
+                                  'enter_diary_score', eventProperties: {
                                 'event_type': 'Custom',
                                 'component': 'form_submit',
                                 'score_home': ourScore,
                                 'importance': 'High',
                               });
-
                             },
                             isEditable: !widget.isEditMode,
                           ),
@@ -500,13 +512,13 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               setState(() {
                                 opponentScore = value;
                               });
-                              AmplitudeFlutter.getInstance().logEvent('enter_diary_score', eventProperties: {
+                              AmplitudeFlutter.getInstance().logEvent(
+                                  'enter_diary_score', eventProperties: {
                                 'event_type': 'Custom',
                                 'component': 'form_submit',
                                 'score_away': opponentScore,
                                 'importance': 'High',
                               });
-
                             },
                             isEditable: !widget.isEditMode,
                           ),
@@ -544,7 +556,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                           const SizedBox(height: 8),
                           SizedBox(
                             height: 192,
-                            width: 360,// 감정 아이콘 전체 높이 (아이콘 크기에 따라 조절)
+                            width: 360, // 감정 아이콘 전체 높이 (아이콘 크기에 따라 조절)
 
                             child: GridView.count(
                               crossAxisCount: 3,
@@ -552,8 +564,10 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               mainAxisSpacing: 12,
 
                               physics: const NeverScrollableScrollPhysics(),
-                              childAspectRatio: 112 / 90, // ✅ 카드 너비/높이 비율
-                              children: List.generate(6, (index) => _emotionIcon(index)),
+                              childAspectRatio: 112 / 90,
+                              // ✅ 카드 너비/높이 비율
+                              children: List.generate(
+                                  6, (index) => _emotionIcon(index)),
                             ),
 
                           ),
@@ -586,10 +600,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                       ),
 
 
-
-
                       const SizedBox(height: 26),
-
 
 
                       // 후기 작성
@@ -614,7 +625,8 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                             maxLength: 132,
                             enabled: !widget.isEditMode,
                             style: TextStyle(
-                              color: widget.isEditMode ? Colors.black : Colors.black, // ✅ 글자색
+                              color: widget.isEditMode ? Colors.black : Colors
+                                  .black, // ✅ 글자색
                             ),
                             onChanged: (value) {
                               setState(() {
@@ -633,10 +645,12 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               ),
                               filled: true,
                               fillColor: AppColors.gray100,
-                              counterText: '', // ✅ 기본 카운터 숨김
+                              counterText: '',
+                              // ✅ 기본 카운터 숨김
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: AppColors.gray300),
+                                borderSide: const BorderSide(
+                                    color: AppColors.gray300),
                               ),
                               disabledBorder: OutlineInputBorder(
                                 borderSide: BorderSide(
@@ -646,11 +660,13 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: AppColors.gray300),
+                                borderSide: const BorderSide(
+                                    color: AppColors.gray300),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: AppColors.gray700),
+                                borderSide: const BorderSide(
+                                    color: AppColors.gray700),
                               ),
                               contentPadding: const EdgeInsets.all(12),
                             ),
@@ -681,130 +697,289 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
 
                       if (!widget.isEditMode)
                       // 버튼 2개
-                      Column(
-                        children: [
-                          Center(
-                            child : SizedBox(
-                              width: 360,
-                              height: 54,
-                              child: ElevatedButton(
+                        Column(
+                          children: [
+                            Center(
+                              child: SizedBox(
+                                width: 360,
+                                height: 54,
+                                child: ElevatedButton(
 
                                   onPressed: (isSeatButtonEnabled && !isSaving)
-                                  ? () async {
-                                setState(() {
-                                  isSaving = true; // 저장 시작 → 버튼 비활성화
-                                });
+                                      ? () async {
+                                    setState(() {
+                                      isSaving = true; // 저장 시작 → 버튼 비활성화
+                                    });
 
-                                try {
-
-
-
-                                  if (widget.isEditMode) {
-                                    final journalId = widget.journalId!;
+                                    try {
+                                      if (widget.isEditMode) {
+                                        final journalId = widget.journalId!;
 
 
-                                    context.push(
-                                      '/addseat',
-                                      extra: {
-                                        'journalId': journalId,
-                                        'stadium': todaySchedule!.stadium,
-                                        'gameDateTime': todaySchedule!.gameDateTime,
-                                      },
-                                    );
+                                        context.push(
+                                          '/addseat',
+                                          extra: {
+                                            'journalId': journalId,
+                                            'stadium': todaySchedule!.stadium,
+                                            'gameDateTime': todaySchedule!
+                                                .gameDateTime,
+                                          },
+                                        );
 
-                                    return;
-                                  }
+                                        return;
+                                      }
 
-                                  // 작성 모드 → S3 업로드 → 업로드 API 호출 → /addseat로 이동
-                                  AmplitudeFlutter.getInstance().logEvent('write_diary_review', eventProperties: {
-                                    'event_type': 'Custom',
-                                    'component': 'form_submit',
-                                    'review_length': reviewController.text.trim().length,
-                                    'importance': 'High',
-                                  });
+                                      // 작성 모드 → S3 업로드 → 업로드 API 호출 → /addseat로 이동
+                                      AmplitudeFlutter.getInstance().logEvent(
+                                          'write_diary_review',
+                                          eventProperties: {
+                                            'event_type': 'Custom',
+                                            'component': 'form_submit',
+                                            'review_length': reviewController
+                                                .text
+                                                .trim()
+                                                .length,
+                                            'importance': 'High',
+                                          });
 
-                                  AmplitudeFlutter.getInstance().logEvent('click_seat_review_write_start', eventProperties: {
-                                    'event_type': 'Custom',
-                                    'component': 'btn_click',
-                                    'importance': 'High',
-                                  });
+                                      AmplitudeFlutter.getInstance().logEvent(
+                                          'click_seat_review_write_start',
+                                          eventProperties: {
+                                            'event_type': 'Custom',
+                                            'component': 'btn_click',
+                                            'importance': 'High',
+                                          });
 
-                                  if (todaySchedule == null) {
-                                    print('❗ 오늘 경기 정보가 없습니다.');
-                                    return;
-                                  }
+                                      if (todaySchedule == null) {
+                                        print('❗ 오늘 경기 정보가 없습니다.');
+                                        return;
+                                      }
 
-                                  if (_pickedImage != null) {
-                                    print('✅ 이미지 존재함, fileName 생성 시작');
-                                    fileName = 'journal_${DateTime.now().millisecondsSinceEpoch}.jpeg';
-                                    final presignedUrl = await getPresignedUrl(fileName!, 'image/jpeg');
-                                    print('✅ presigned URL 결과: $presignedUrl');
-                                    if (presignedUrl == null) return;
+                                      if (_pickedImage != null) {
+                                        print('✅ 이미지 존재함, fileName 생성 시작');
+                                        fileName = 'journal_${DateTime
+                                            .now()
+                                            .millisecondsSinceEpoch}.jpeg';
+                                        final presignedUrl = await getPresignedUrl(
+                                            fileName!, 'image/jpeg');
+                                        print(
+                                            '✅ presigned URL 결과: $presignedUrl');
+                                        if (presignedUrl == null) return;
 
-                                    print('📤 S3 업로드 시작');
-                                    final uploaded = await uploadImageToS3(presignedUrl, _imageBytes!);
-                                    print('📤 S3 업로드 결과: $uploaded');
-                                    if (!uploaded) return;
-                                  }
+                                        print('📤 S3 업로드 시작');
+                                        final uploaded = await uploadImageToS3(
+                                            presignedUrl, _imageBytes!);
+                                        print('📤 S3 업로드 결과: $uploaded');
+                                        if (!uploaded) return;
+                                      }
 
 
-                                  final gameId = await getValidGameId(
-                                    date: currentDate,
-                                    myTeam: todaySchedule!.myTeam,
-                                    opponentTeam: todaySchedule!.opponentTeam,
-                                  );
+                                      final gameId = await getValidGameId(
+                                        date: currentDate,
+                                        myTeam: todaySchedule!.myTeam,
+                                        opponentTeam: todaySchedule!
+                                            .opponentTeam,
+                                      );
 
-                                  if (gameId == null) {
-                                    print('❌ 유효한 경기 ID를 찾을 수 없음');
-                                    return;
-                                  }
-                                  writtenStadiumCode = todaySchedule!.stadium;
-                                  final journalId = await ApiService.uploadJournal(
-                                    gameId: gameId,
-                                    gameDateTime: DateTime.parse(todaySchedule!.gameDateTime),
-                                    stadiumShortCode: todaySchedule!.stadium,
-                                    opponentTeamShortCode: todaySchedule!.opponentTeam,
-                                    ourScore: int.parse(ourScore),
-                                    theirScore: int.parse(opponentScore),
-                                    fileName: (fileName != null && fileName!.isNotEmpty) ? fileName! : null, // ✅ null로 전달
-                                    emotion: getEmotionKor(selectedEmotionIndex),
-                                    reviewText: reviewController.text.trim().isNotEmpty
-                                        ? reviewController.text.trim()
-                                        : ' ',
-                                  );
+                                      if (gameId == null) {
+                                        print('❌ 유효한 경기 ID를 찾을 수 없음');
+                                        return;
+                                      }
+                                      writtenStadiumCode =
+                                          todaySchedule!.stadium;
+                                      final journalId = await ApiService
+                                          .uploadJournal(
+                                        gameId: gameId,
+                                        gameDateTime: DateTime.parse(
+                                            todaySchedule!.gameDateTime),
+                                        stadiumShortCode: todaySchedule!
+                                            .stadium,
+                                        opponentTeamShortCode: todaySchedule!
+                                            .opponentTeam,
+                                        ourScore: int.parse(ourScore),
+                                        theirScore: int.parse(opponentScore),
+                                        fileName: (fileName != null &&
+                                            fileName!.isNotEmpty)
+                                            ? fileName!
+                                            : null,
+                                        // ✅ null로 전달
+                                        emotion: getEmotionKor(
+                                            selectedEmotionIndex),
+                                        reviewText: reviewController.text
+                                            .trim()
+                                            .isNotEmpty
+                                            ? reviewController.text.trim()
+                                            : ' ',
+                                      );
 
-                                  if (journalId == null) {
-                                    print('❌ 업로드 실패로 journalId가 null입니다.');
-                                    return;
-                                  }
-                                  print('📍 화면 전환 → journalId: $journalId, stadium: $writtenStadiumCode, gameTime: ${todaySchedule!.gameDateTime}');
+                                      if (journalId == null) {
+                                        print('❌ 업로드 실패로 journalId가 null입니다.');
+                                        return;
+                                      }
+                                      print(
+                                          '📍 화면 전환 → journalId: $journalId, stadium: $writtenStadiumCode, gameTime: ${todaySchedule!
+                                              .gameDateTime}');
 
-                                  context.push(
-                                    '/addseat',
-                                    extra: {
-                                      'journalId': journalId,
-                                      'stadium': todaySchedule!.stadium,
-                                      'gameDateTime': todaySchedule!.gameDateTime,
-                                    },
-                                  );
+                                      context.push(
+                                        '/addseat',
+                                        extra: {
+                                          'journalId': journalId,
+                                          'stadium': todaySchedule!.stadium,
+                                          'gameDateTime': todaySchedule!
+                                              .gameDateTime,
+                                        },
+                                      );
                                     } finally {
                                       setState(() {
                                         isSaving = false; // 저장 완료 → 버튼 다시 활성화
                                       });
                                     }
-                                      }
-                                          : null, // 비활성화 상태
+                                  }
+                                      : null, // 비활성화 상태
+
+
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                    isSeatButtonEnabled
+                                        ? AppColors.primary700
+                                        : AppColors.gray200,
+                                    foregroundColor: Colors.black,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                      side: isSeatButtonEnabled
+                                          ? const BorderSide(
+                                          color: AppColors.primary700)
+                                          : BorderSide.none,
+                                    ),
+                                  ),
+                                  child: isSaving
+                                      ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white, // 버튼 배경색과 대비
+                                    ),
+                                  )
+                                      : Text(
+                                    '좌석 후기 작성하기',
+                                    style: TextStyle(
+                                      color: isSeatButtonEnabled
+                                          ? Colors.white
+                                          : AppColors.gray700,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // ✅ 아래 버튼도 SizedBox로 감싸기
+                            SizedBox(
+                              width: 360,
+                              height: 54,
+                              child: ElevatedButton(
+                                // 작성 완료 버튼 내부
+                                onPressed: widget.isEditMode || isFormValid
+                                    ? () async {
+                                  setState(() => isSaving = true);
+                                  try {
+                                    print('🟡 작성 모드 진입');
+
+                                    if (todaySchedule == null) {
+                                      print('❗ 오늘 경기 정보가 없습니다.');
+                                      return;
+                                    }
+                                    print('✅ 오늘 경기 정보 있음');
+
+                                    if (_pickedImage != null &&
+                                        _imageBytes != null) {
+                                      print('📸 이미지 있음, presigned URL 요청');
+                                      fileName = 'journal_${DateTime
+                                          .now()
+                                          .millisecondsSinceEpoch}.jpeg';
+                                      final presignedUrl = await getPresignedUrl(
+                                          fileName!, 'image/jpeg');
+                                      print('📫 presignedUrl: $presignedUrl');
+                                      if (presignedUrl == null) return;
+
+                                      final uploaded = await uploadImageToS3(
+                                          presignedUrl,
+                                          _imageBytes!); // ✅ Uint8List 사용
+                                      print('📤 이미지 업로드 결과: $uploaded');
+                                      if (!uploaded) return;
+                                    }
+
+
+                                    print('🎯 gameId 생성 시도');
+                                    final gameId = await getValidGameId(
+                                      date: currentDate,
+                                      myTeam: todaySchedule!.myTeam,
+                                      opponentTeam: todaySchedule!.opponentTeam,
+                                    );
+                                    print('🎯 gameId 결과: $gameId');
+                                    if (gameId == null) {
+                                      print('❌ 유효한 gameId 찾기 실패');
+                                      return;
+                                    }
+
+                                    print('📤 uploadJournal 호출 시도');
+                                    final journalId = await ApiService
+                                        .uploadJournal(
+                                      gameId: gameId,
+                                      gameDateTime: DateTime.parse(
+                                          todaySchedule!.gameDateTime),
+                                      stadiumShortCode: todaySchedule!.stadium,
+                                      opponentTeamShortCode: todaySchedule!
+                                          .opponentTeam,
+                                      ourScore: int.parse(ourScore),
+                                      theirScore: int.parse(opponentScore),
+                                      fileName: (fileName != null &&
+                                          fileName!.isNotEmpty)
+                                          ? fileName!
+                                          : null,
+                                      // ✅ null로 전달
+                                      emotion: getEmotionKor(
+                                          selectedEmotionIndex),
+                                      reviewText: reviewController.text
+                                          .trim()
+                                          .isNotEmpty
+                                          ? reviewController.text.trim()
+                                          : ' ',
+                                    );
+
+                                    print('📦 journalId 응답: $journalId');
+
+                                    if (journalId == null) {
+                                      print('❌ 업로드 실패로 journalId가 null입니다.');
+                                      return;
+                                    }
+
+                                    if (context.mounted) {
+                                      print('🚀 context.go 실행');
+                                      context.go('/diary');
+                                    }
+                                  } finally {
+                                    setState(() => isSaving = false); // 저장 종료
+                                  }
+                                }
+                                    : null,
 
 
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor:
-                                  isSeatButtonEnabled ? AppColors.primary700 : AppColors.gray200,
-                                  foregroundColor: Colors.black,
+                                  isFormValid ? Colors.white : AppColors
+                                      .gray200,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(30),
-                                    side:  isSeatButtonEnabled
-                                        ? const BorderSide(color: AppColors.primary700)
-                                        : BorderSide.none,
+                                    side: BorderSide(
+                                      color: isFormValid
+                                          ? AppColors.primary700
+                                          : Colors.transparent,
+                                    ),
                                   ),
                                 ),
                                 child: isSaving
@@ -816,135 +991,21 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                     color: Colors.white, // 버튼 배경색과 대비
                                   ),
                                 )
-                                 : Text(
-                                  '좌석 후기 작성하기',
+                                    : Text(
+                                  widget.isEditMode ? '수정 완료' : '작성 완료',
                                   style: TextStyle(
-                                    color:  isSeatButtonEnabled ? Colors.white : AppColors.gray700,
+                                    color:
+                                    isFormValid
+                                        ? AppColors.primary700
+                                        : AppColors.gray700,
                                     fontWeight: FontWeight.w700,
                                     fontSize: 16,
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          // ✅ 아래 버튼도 SizedBox로 감싸기
-                          SizedBox(
-                            width: 360,
-                            height: 54,
-                            child: ElevatedButton(
-                              // 작성 완료 버튼 내부
-                              onPressed: widget.isEditMode || isFormValid
-                                  ? () async {
-                                setState(() => isSaving = true);
-                                try{
-                                print('🟡 작성 모드 진입');
-
-                                if (todaySchedule == null) {
-                                  print('❗ 오늘 경기 정보가 없습니다.');
-                                  return;
-                                }
-                                print('✅ 오늘 경기 정보 있음');
-
-                                if (_pickedImage != null && _imageBytes != null) {
-                                  print('📸 이미지 있음, presigned URL 요청');
-                                  fileName = 'journal_${DateTime.now().millisecondsSinceEpoch}.jpeg';
-                                  final presignedUrl = await getPresignedUrl(fileName!, 'image/jpeg');
-                                  print('📫 presignedUrl: $presignedUrl');
-                                  if (presignedUrl == null) return;
-
-                                  final uploaded = await uploadImageToS3(presignedUrl, _imageBytes!); // ✅ Uint8List 사용
-                                  print('📤 이미지 업로드 결과: $uploaded');
-                                  if (!uploaded) return;
-                                }
-
-
-                                print('🎯 gameId 생성 시도');
-                                final gameId = await getValidGameId(
-                                  date: currentDate,
-                                  myTeam: todaySchedule!.myTeam,
-                                  opponentTeam: todaySchedule!.opponentTeam,
-                                );
-                                print('🎯 gameId 결과: $gameId');
-                                if (gameId == null) {
-                                  print('❌ 유효한 gameId 찾기 실패');
-                                  return;
-                                }
-
-                                print('📤 uploadJournal 호출 시도');
-                                final journalId = await ApiService.uploadJournal(
-                                  gameId: gameId,
-                                  gameDateTime: DateTime.parse(todaySchedule!.gameDateTime),
-                                  stadiumShortCode: todaySchedule!.stadium,
-                                  opponentTeamShortCode: todaySchedule!.opponentTeam,
-                                  ourScore: int.parse(ourScore),
-                                  theirScore: int.parse(opponentScore),
-                                  fileName: (fileName != null && fileName!.isNotEmpty) ? fileName! : null, // ✅ null로 전달
-                                  emotion: getEmotionKor(selectedEmotionIndex),
-                                  reviewText: reviewController.text.trim().isNotEmpty
-                                      ? reviewController.text.trim()
-                                      : ' ',
-                                );
-
-                                print('📦 journalId 응답: $journalId');
-
-                                if (journalId == null) {
-                                  print('❌ 업로드 실패로 journalId가 null입니다.');
-                                  return;
-                                }
-
-                                if (context.mounted) {
-                                  print('🚀 context.go 실행');
-                                  context.go('/diary');
-                                }
-                                } finally {
-                                  setState(() => isSaving = false); // 저장 종료
-                                }
-                              }
-                                  : null,
-
-
-
-
-
-
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                isFormValid ? Colors.white : AppColors.gray200,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                  side: BorderSide(
-                                    color: isFormValid
-                                        ? AppColors.primary700
-                                        : Colors.transparent,
-                                  ),
-                                ),
-                              ),
-                              child: isSaving
-                                  ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white, // 버튼 배경색과 대비
-                                ),
-                              )
-                              : Text(
-                                widget.isEditMode ? '수정 완료' : '작성 완료',
-                                style: TextStyle(
-                                  color:
-                                  isFormValid ? AppColors.primary700 : AppColors.gray700,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
+                          ],
+                        ),
 
 
                       const SizedBox(height: 32),
@@ -954,7 +1015,6 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
               ),
             ),
           ],
-        ),
         ),
       ),
     );
