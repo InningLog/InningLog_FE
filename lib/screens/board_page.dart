@@ -27,9 +27,9 @@ class BoardPage extends StatelessWidget {
                     children: const [
                       Text('팀 게시판',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 19,
                             color: Color(0xFF6B7280),
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                           )),
                       SizedBox(width: 4),
                       Icon(Icons.chevron_right_rounded,
@@ -37,9 +37,9 @@ class BoardPage extends StatelessWidget {
                       SizedBox(width: 4),
                       Text('두산 베어스 🐻',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 19,
                             color: Color(0xFF111827),
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                           )),
                     ],
                   ),
