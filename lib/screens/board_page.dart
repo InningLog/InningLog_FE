@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import '../app_colors.dart';
 import '../widgets/common_header.dart';
 
@@ -24,18 +25,21 @@ class BoardPage extends StatelessWidget {
                 children: [
                   // breadcrumb
                   Row(
-                    children: const [
-                      Text('팀 게시판',
+                    children: [
+                      const Text('팀 게시판',
                           style: TextStyle(
                             fontSize: 19,
                             color: Color(0xFF6B7280),
                             fontWeight: FontWeight.w700,
                           )),
-                      SizedBox(width: 4),
-                      Icon(Icons.chevron_right_rounded,
-                          size: 20, color: Color(0xFF9CA3AF)),
-                      SizedBox(width: 4),
-                      Text('두산 베어스 🐻',
+                      const SizedBox(width: 4),
+                      SvgPicture.asset(
+                        'assets/icons/month_right.svg',
+                        width: 8,
+                        height: 14,
+                      ),
+                      const SizedBox(width: 4),
+                      const Text('두산 베어스 🐻',
                           style: TextStyle(
                             fontSize: 19,
                             color: Color(0xFF111827),
