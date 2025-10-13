@@ -9,7 +9,7 @@ class BoardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7F9),
+      backgroundColor: const Color(0xFFFFFFFF),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF3CC14B),
         onPressed: () {},
@@ -31,23 +31,25 @@ class BoardPage extends StatelessWidget {
                             fontSize: 19,
                             color: Color(0xFF6B7280),
                             fontWeight: FontWeight.w700,
+                            fontFamily: 'Pretendard',
                           )),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 8),
                       SvgPicture.asset(
                         'assets/icons/month_right.svg',
                         width: 8,
                         height: 14,
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 8),
                       const Text('두산 베어스 🐻',
                           style: TextStyle(
                             fontSize: 19,
                             color: Color(0xFF111827),
                             fontWeight: FontWeight.w700,
+                            fontFamily: 'Pretendard',
                           )),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
                   ///여기 뭔가가 들어가야 함
 
@@ -105,13 +107,6 @@ class _PostTile extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0D000000),
-                blurRadius: 10,
-                offset: Offset(0, 4),
-              ),
-            ],
           ),
           child: Row(
             children: [
@@ -126,6 +121,7 @@ class _PostTile extends StatelessWidget {
                         fontSize: 12,
                         color: AppColors.gray800,
                         fontWeight: FontWeight.w600,
+                        fontFamily: 'Pretendard',
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -135,18 +131,19 @@ class _PostTile extends StatelessWidget {
                         fontSize: 10,
                         color: AppColors.gray700,
                         fontWeight: FontWeight.w500,
+                        fontFamily: 'Pretendard',
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 10),
                     Text(
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 15,
-                        height: 1.1,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF111827),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.gray900,
+                        fontFamily: 'Pretendard',
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -155,27 +152,41 @@ class _PostTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF6B7280),
-                        height: 1.25,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.gray900,
+                        fontFamily: 'Pretendard',
                       ),
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.favorite_border,
-                            size: 16, color: Color(0xFF6B7280)),
+                        SvgPicture.asset(
+                          'assets/icons/heart',
+                          width: 16,
+                          height: 16,
+                        ),
                         const SizedBox(width: 4),
                         Text('$likes',
                             style: const TextStyle(
-                                fontSize: 12, color: Color(0xFF4B5563))),
-                        const SizedBox(width: 12),
-                        const Icon(Icons.mode_comment_outlined,
-                            size: 16, color: Color(0xFF6B7280)),
+                                fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF4E4E4E),
+                              fontFamily: 'Pretendard',)
+                        ),
+                        const SizedBox(width: 11),
+                        SvgPicture.asset(
+                          'assets/icons/comment',
+                          width: 16,
+                          height: 16,
+                        ),
                         const SizedBox(width: 4),
                         Text('$comments',
                             style: const TextStyle(
-                                fontSize: 12, color: Color(0xFF4B5563))),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF4E4E4E),
+                              fontFamily: 'Pretendard',)),
                       ],
                     ),
                   ],
