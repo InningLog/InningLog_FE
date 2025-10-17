@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
-import '../app_colors.dart';
+import 'package:inninglog/app_colors.dart';
 import '../widgets/common_header.dart';
 
 class BoardPage extends StatelessWidget {
@@ -9,234 +8,67 @@ class BoardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF3CC14B),
-        onPressed: () {},
-        child: const Icon(Icons.add, size: 30, color: Colors.white),
-      ),
+      backgroundColor: AppColors.primary50,
       body: SafeArea(
-        child: Column(
-          children: [
-            const CommonHeader(title: '커뮤니티'),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-                children: [
-                  // breadcrumb
-                  Row(
-                    children: [
-                      const Text('팀 게시판',
-                          style: TextStyle(
-                            fontSize: 19,
-                            color: Color(0xFF6B7280),
-                            fontWeight: FontWeight.w700,
-                            fontFamily: 'Pretendard',
-                          )),
-                      const SizedBox(width: 8),
-                      SvgPicture.asset(
-                        'assets/icons/month_right.svg',
-                        width: 8,
-                        height: 14,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('두산 베어스 🐻',
-                          style: TextStyle(
-                            fontSize: 19,
-                            color: Color(0xFF111827),
-                            fontWeight: FontWeight.w700,
-                            fontFamily: 'Pretendard',
-                          )),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  ///여기 뭔가가 들어가야 함
-
-                  // 목록
-                  ...List.generate(_posts.length, (i) {
-                    final p = _posts[i];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _PostTile(
-                        nickname: p.nickname,
-                        time: p.time,
-                        title: p.title,
-                        snippet: p.snippet,
-                        likes: p.likes,
-                        comments: p.comments,
-                        badge: i == 1 ? 5 : null,
-                      ),
-                    );
-                  }),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PostTile extends StatelessWidget {
-  final String nickname, time, title, snippet;
-  final int likes, comments;
-  final int? badge;
-
-  const _PostTile({
-    required this.nickname,
-    required this.time,
-    required this.title,
-    required this.snippet,
-    required this.likes,
-    required this.comments,
-    this.badge,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      elevation: 0,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {},
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 텍스트 영역
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '$nickname',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.gray800,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Pretendard',
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$time',
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: AppColors.gray700,
-                        fontWeight: FontWeight.w500,
-                        fontFamily: 'Pretendard',
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.gray900,
-                        fontFamily: 'Pretendard',
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      snippet,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.gray900,
-                        fontFamily: 'Pretendard',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        SvgPicture.asset(
-                          'assets/icons/heart',
-                          width: 16,
-                          height: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Text('$likes',
-                            style: const TextStyle(
-                                fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF4E4E4E),
-                              fontFamily: 'Pretendard',)
-                        ),
-                        const SizedBox(width: 11),
-                        SvgPicture.asset(
-                          'assets/icons/comment',
-                          width: 16,
-                          height: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Text('$comments',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF4E4E4E),
-                              fontFamily: 'Pretendard',)),
-                      ],
-                    ),
-                  ],
+              const CommonHeader(title: '커뮤니티'),
+
+              // MY TEAM
+              const _SectionTitle('MY TEAM'),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _BannerCard(
+                  imagePath: 'assets/images/mydoo_banner.png', // 네모 배너 이미지
+                  height: 88,
+                  onTap: () {
+                    // TODO: 내 팀 보드로 이동
+                  },
                 ),
               ),
-              const SizedBox(width: 10),
-              // 썸네일 + 배지
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: 62,
-                    height: 62,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE5E7EB),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  if (badge != null)
-                    Positioned(
-                      right: -2,
-                      bottom: -2,
-                      child: Container(
-                        width: 24,
-                        height: 24,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE74B3C),
-                          borderRadius: BorderRadius.circular(12),
-                          border:
-                          Border.all(color: Colors.white, width: 2),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x29000000),
-                              blurRadius: 6,
-                              offset: Offset(0, 2),
-                            )
-                          ],
-                        ),
-                        child: Text(
-                          '$badge',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+              const SizedBox(height: 40),
+
+              // KBO 전체 게시판
+              const _SectionTitle('KBO 전체 게시판'),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _BannerCard(
+                  imagePath: 'assets/images/kbo_banner.png',
+                  height: 88,
+                  onTap: () {
+                    // TODO: KBO 전체 게시판으로 이동
+                  },
+                ),
+              ),
+              const SizedBox(height: 40),
+
+              // 팀 게시판
+              const _SectionTitle('팀 게시판'),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _TeamGrid(
+                  items: const [
+                    TeamItem('기아 타이거즈 🐯', 'assets/images/card_kia.png'),
+                    TeamItem('한화 이글스 🦅', 'assets/images/card_hh.png'),
+                    TeamItem('키움 히어로즈 🦸🏻️', 'assets/images/card_kw.png'),
+                    TeamItem('LG 트윈스 👶🏻👶🏻', 'assets/images/card_lg.png'),
+                    TeamItem('NC 다이노스 🦖', 'assets/images/card_nc.png'),
+                    TeamItem('SSG 랜더스 🗺️', 'assets/images/card_ssg.png'),
+                    TeamItem('삼성 라이온즈 🦁', 'assets/images/card_ss.png'),
+                    TeamItem('롯데 자이언츠 🌊️', 'assets/images/card_lt.png'),
+                    TeamItem('KT 위즈 🧙🏻', 'assets/images/card_kt.png'),
+                  ],
+                  onTap: (item) {
+                    // TODO: 각 팀 게시판 라우팅
+                    // context.push('/boards/${teamShortCode}');
+                  },
+                ),
               ),
             ],
           ),
@@ -246,18 +78,144 @@ class _PostTile extends StatelessWidget {
   }
 }
 
-/* 더미 데이터 */
-class _Post {
-  final String nickname, time, title, snippet;
-  final int likes, comments;
-  _Post(this.nickname, this.time, this.title, this.snippet, this.likes, this.comments);
+/// 섹션 타이틀
+class _SectionTitle extends StatelessWidget {
+  final String text;
+  const _SectionTitle(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 19,
+          fontFamily: 'pretendard',
+          fontWeight: FontWeight.w700,
+          color: Colors.black,
+        ),
+      ),
+    );
+  }
 }
 
-final _posts = <_Post>[
-  _Post('닉네임 및 자까진 되더라', '2025/05/25(일) 11:02',
-      '제목_공백 포함 최대 20자까지 가능', '본문은 보여지는 건 최대 24자까지 가능', 2, 2),
-  _Post('닉네임 및 자까진 되더라', '2025/05/25(일) 11:02',
-      '제목_공백 포함 최대 20자까지 가능', '본문은 보여지는 건 최대 24자까지 가능', 2, 2),
-  _Post('닉네임 및 자까진 되더라', '2025/05/25(일) 11:02',
-      '제목_공백 포함 최대 20자까지 가능', '본문은 보여지는 건 최대 24자까지 가능', 2, 2),
-];
+/// 상단 배너(내 팀 / KBO 전체)
+class _BannerCard extends StatelessWidget {
+  final String imagePath;
+  final double height;
+  final VoidCallback? onTap;
+
+  const _BannerCard({
+    required this.imagePath,
+    this.height = 88,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 343 / 88, // 대략 디자인 비율
+      child: _ImageButton(
+        imagePath: imagePath,
+        borderRadius: 10,
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+/// 팀 카드 그리드
+class _TeamGrid extends StatelessWidget {
+  final List<TeamItem> items;
+  final void Function(TeamItem) onTap;
+  const _TeamGrid({required this.items, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      itemCount: items.length,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 8,
+        childAspectRatio: 1.9, // 네모 느낌
+      ),
+      itemBuilder: (_, i) => _TeamTile(
+        item: items[i],
+        onTap: () => onTap(items[i]),
+      ),
+    );
+  }
+}
+
+class TeamItem {
+  final String label;     // 버튼 위에 얹을 텍스트 (이모지 포함)
+  final String imagePath; // 네모 배경 이미지
+  const TeamItem(this.label, this.imagePath);
+}
+
+class _TeamTile extends StatelessWidget {
+  final TeamItem item;
+  final VoidCallback onTap;
+  const _TeamTile({required this.item, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: _ImageButton(
+            imagePath: item.imagePath,
+            borderRadius: 8,
+            onTap: onTap,
+          ),
+        ),
+        // 중앙 텍스트 오버레이
+        Positioned.fill(
+          child: Center(
+            child: Text(
+              item.label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+                fontFamily: 'pretendard',
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 공통: 이미지 배경 + 라운드 + 탭 효과
+class _ImageButton extends StatelessWidget {
+  final String imagePath;
+  final double borderRadius;
+  final VoidCallback? onTap;
+
+  const _ImageButton({
+    required this.imagePath,
+    this.borderRadius = 12,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(borderRadius),
+      clipBehavior: Clip.antiAlias,
+      child: Ink.image(
+        image: AssetImage(imagePath),
+        fit: BoxFit.cover,
+        child: InkWell(onTap: onTap),
+      ),
+    );
+  }
+}
