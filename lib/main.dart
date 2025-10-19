@@ -20,6 +20,7 @@ import 'package:inninglog/screens/diary_page.dart';
 import 'package:inninglog/screens/seat_page.dart';
 import 'package:inninglog/screens/board_page.dart';
 import 'package:inninglog/screens/my_page.dart';
+import 'package:inninglog/screens/teamboard_page.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
 import 'package:amplitude_flutter/amplitude.dart';
@@ -174,6 +175,11 @@ final GoRouter _router = GoRouter(
 
 
 
+// GoRouter 라우팅 예시
+        GoRoute(
+          path: '/boards/:code',
+          builder: (_, state) => TeamBoardPage(teamCode: state.pathParameters['code']!),
+        ),
 
 
 
