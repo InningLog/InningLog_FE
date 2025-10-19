@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:inninglog/app_colors.dart';
+import 'package:inninglog/screens/teamboard_page.dart';
 import '../widgets/common_header.dart';
 
 class BoardPage extends StatelessWidget {
@@ -54,19 +55,26 @@ class BoardPage extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: _TeamGrid(
                   items: const [
-                    TeamItem('기아 타이거즈 🐯', 'assets/images/card_kia.png'),
-                    TeamItem('한화 이글스 🦅', 'assets/images/card_hh.png'),
-                    TeamItem('키움 히어로즈 🦸🏻️', 'assets/images/card_kw.png'),
-                    TeamItem('LG 트윈스 👶🏻👶🏻', 'assets/images/card_lg.png'),
-                    TeamItem('NC 다이노스 🦖', 'assets/images/card_nc.png'),
-                    TeamItem('SSG 랜더스 🗺️', 'assets/images/card_ssg.png'),
-                    TeamItem('삼성 라이온즈 🦁', 'assets/images/card_ss.png'),
-                    TeamItem('롯데 자이언츠 🌊️', 'assets/images/card_lt.png'),
-                    TeamItem('KT 위즈 🧙🏻', 'assets/images/card_kt.png'),
+                    TeamItem('HT', '기아 타이거즈 🐯', 'assets/images/card_kia.png'),
+                    TeamItem('HH', '한화 이글스 🦅', 'assets/images/card_hh.png'),
+                    TeamItem('WO', '키움 히어로즈 🦸🏻️', 'assets/images/card_kw.png'),
+                    TeamItem('LG', 'LG 트윈스 👶🏻👶🏻', 'assets/images/card_lg.png'),
+                    TeamItem('NC', 'NC 다이노스 🦖', 'assets/images/card_nc.png'),
+                    TeamItem('SK', 'SSG 랜더스 🗺️', 'assets/images/card_ssg.png'),
+                    TeamItem('SS', '삼성 라이온즈 🦁', 'assets/images/card_ss.png'),
+                    TeamItem('LT', '롯데 자이언츠 🌊️', 'assets/images/card_lt.png'),
+                    TeamItem('KT', 'KT 위즈 🧙🏻', 'assets/images/card_kt.png'),
                   ],
                   onTap: (item) {
-                    // TODO: 각 팀 게시판 라우팅
-                    // context.push('/boards/${teamShortCode}');
+                    // GoRouter 사용 시:
+                    // context.push('/boards/${item.code}');
+                    // 또는 Navigator 사용 시:
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TeamBoardPage(teamCode: item.code),
+                      ),
+                    );
                   },
                 ),
               ),
@@ -152,9 +160,10 @@ class _TeamGrid extends StatelessWidget {
 }
 
 class TeamItem {
+  final String code;
   final String label;     // 버튼 위에 얹을 텍스트 (이모지 포함)
   final String imagePath; // 네모 배경 이미지
-  const TeamItem(this.label, this.imagePath);
+  const TeamItem(this.code, this.label, this.imagePath);
 }
 
 class _TeamTile extends StatelessWidget {
@@ -173,11 +182,10 @@ class _TeamTile extends StatelessWidget {
             onTap: onTap,
           ),
         ),
-        // 중앙 텍스트 오버레이
         Positioned.fill(
           child: Center(
             child: Text(
-              item.label,
+              item.label, // 이모지 포함 라벨
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 12,
@@ -192,6 +200,7 @@ class _TeamTile extends StatelessWidget {
     );
   }
 }
+
 
 /// 공통: 이미지 배경 + 라운드 + 탭 효과
 class _ImageButton extends StatelessWidget {
@@ -219,3 +228,24 @@ class _ImageButton extends StatelessWidget {
     );
   }
 }
+
+// team_codes.dart (예: lib/constants/team_codes.dart)
+const Map<String, String> teamShortCodesByName = {
+  'LG 트윈스': 'LG',
+  '두산 베어스': 'OB',
+  'SSG 랜더스': 'SK',
+  '한화 이글스': 'HH',
+  '삼성 라이온즈': 'SS',
+  'KT 위즈': 'KT',
+  '롯데 자이언츠': 'LT',
+  '기아 타이거즈': 'HT',
+  'NC 다이노스': 'NC',
+  '키움 히어로즈': 'WO',
+};
+
+final Map<String, String> teamFullNameByCode = {
+  for (final e in teamShortCodesByName.entries) e.value: e.key
+};
+
+String teamNameFromCode(String code) => teamFullNameByCode[code] ?? code;
+
