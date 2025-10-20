@@ -35,34 +35,58 @@ class _TeamBoardPageState extends State<TeamBoardPage>
     final title = teamNameFromCode(widget.teamCode);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF3CC14B),
-        onPressed: () {
-          // TODO: 글쓰기 라우팅
-        },
-        child: const Icon(Icons.add, size: 30, color: Colors.white),
+      backgroundColor: AppColors.primary50,
+      floatingActionButton: SizedBox(
+        width: 56,
+        height: 56,
+        child: FloatingActionButton(
+          backgroundColor: AppColors.primary700,
+          shape: const CircleBorder(), // ✅ 원형 강제
+          onPressed: () {
+            // TODO: 글쓰기 라우팅
+          },
+          child: const Icon(
+            Icons.add,
+            size: 40,
+            color: AppColors.primary50,
+          ),
+        ),
       ),
+
       body: SafeArea(
         child: Column(
           children: [
             // 상단 헤더 (뒤로가기 포함)
-            CommonHeader(title: title),
+            CommonHeader(
+              title: title,
+              leading: GestureDetector(
+                onTap: () {
+                  Navigator.of(context).pop(); // 뒤로가기 동작
+                },
+                child: SvgPicture.asset(
+                  'assets/images/back_board_but.svg',
+                  width: 26.5,
+                  height: 20,
+                ),
+              ),
+            ),
+
 
             // 카테고리 세그먼트 (오직완 / 자유 게시판 / 이닝 장터 / 오늘의 뉴스)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
               child: _SegmentedTabs(controller: _tabController),
             ),
 
             // 정렬 탭 (최신 | 인기)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
-              child: _SortSwitch(
+              padding: const EdgeInsets.symmetric(horizontal: 0),
+              child: SortSwitch(
                 index: _sortIndex,
                 onChanged: (i) => setState(() => _sortIndex = i),
               ),
             ),
+
 
             // 구분선
             const Divider(height: 1, thickness: 1, color: Color(0xFFE5E7EB)),
@@ -97,71 +121,159 @@ class _SegmentedTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dividerColor = AppColors.gray400;
+
     return Container(
-      height: 44,
+      height: 42,
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F9F2), // 살짝 연한 녹톤 배경
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        color: AppColors.primary100,
+        border: Border.all(color: dividerColor),
       ),
-      child: TabBar(
-        controller: controller,
-        dividerColor: Colors.transparent,
-        indicator: BoxDecoration(
-          color: const Color(0xFFEFF5E6), // 선택 칸 배경
-          borderRadius: BorderRadius.circular(8),
-        ),
-        labelColor: const Color(0xFF111827),
-        unselectedLabelColor: const Color(0xFF6B7280),
-        labelStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-          fontFamily: 'Pretendard',
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          fontFamily: 'Pretendard',
-        ),
-        overlayColor: WidgetStateProperty.all(Colors.transparent),
-        indicatorSize: TabBarIndicatorSize.tab,
-        labelPadding: const EdgeInsets.symmetric(horizontal: 8),
-        tabs: const [
-          Tab(text: '오직완'),
-          Tab(text: '자유 게시판'),
-          Tab(text: '이닝 장터'),
-          Tab(text: '오늘의 뉴스'),
+      child: Stack(
+        children: [
+          // 1) 세로 구분선: "배경"에 먼저 깔기 (indicator가 위에서 덮어씀)
+          Positioned.fill(
+            child: Row(
+              children: List.generate(
+                // 탭 개수 - 1 만큼만 선을 그림
+                (controller.length - 1).clamp(0, 100),
+                    (i) => Expanded(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Container(
+                      width: 1,
+                      margin: const EdgeInsets.symmetric(vertical: 0), // 테두리랑 자연스럽게
+                      color: dividerColor,
+                    ),
+                  ),
+                ),
+              )
+              // 마지막 칸(오른쪽 끝) 추가
+                ..add(const Expanded(child: SizedBox())),
+            ),
+          ),
+
+          // 2) TabBar 본체 (indicator가 위에서 선을 덮음)
+          TabBar(
+            controller: controller,
+            dividerColor: Colors.transparent,
+            indicator: BoxDecoration(
+              color: AppColors.primary700,
+              // 모서리 둥글림이 필요하면 열어줘
+              // borderRadius: BorderRadius.zero,
+            ),
+            labelColor: AppColors.primary50,
+            unselectedLabelColor: AppColors.gray700,
+            labelStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'Pretendard',
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              fontFamily: 'Pretendard',
+            ),
+            overlayColor: WidgetStateProperty.all(Colors.transparent),
+            indicatorSize: TabBarIndicatorSize.tab,
+            labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+            tabs: const [
+              Tab(text: '오직완'),
+              Tab(text: '자유 게시판'),
+              Tab(text: '이닝 장터'),
+              Tab(text: '오늘의 뉴스'),
+            ],
+          ),
         ],
       ),
     );
   }
 }
 
+
 /// “최신 | 인기” 언더라인 스위치
-class _SortSwitch extends StatelessWidget {
+class SortSwitch extends StatelessWidget {
   final int index; // 0: 최신, 1: 인기
   final ValueChanged<int> onChanged;
-  const _SortSwitch({required this.index, required this.onChanged});
+
+  const SortSwitch({
+    super.key,
+    required this.index,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _SortTab(
-          text: '최신',
-          selected: index == 0,
-          onTap: () => onChanged(0),
-        ),
-        const SizedBox(width: 24),
-        _SortTab(
-          text: '인기',
-          selected: index == 1,
-          onTap: () => onChanged(1),
-        ),
-      ],
+    return Container(
+      height: 40,
+      color: AppColors.primary50,
+      child: Row(
+        children: [
+          // ▶ 최신 탭
+          Expanded(
+            child: InkWell(
+              onTap: () => onChanged(0),
+              splashColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+              child: Container(
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: index == 0
+                          ? AppColors.gray800
+                          : AppColors.gray200,
+                      width: index == 0 ? 1.5 : 1,
+                    ),
+                  ),
+                ),
+                child: const Text(
+                  '최신',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF000000),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // ▶ 인기 탭
+          Expanded(
+            child: InkWell(
+              onTap: () => onChanged(1),
+              splashColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+              child: Container(
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: index == 1
+                          ? AppColors.gray800
+                          : AppColors.gray200,
+                      width: index == 1 ? 1.5 : 1,
+                    ),
+                  ),
+                ),
+                child: const Text(
+                  '인기',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF000000),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
+
 
 class _SortTab extends StatelessWidget {
   final String text;
@@ -302,40 +414,51 @@ class _PostTileState extends State<_PostTile> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
+                        // 프로필 이미지 (기본 회색 원)
                         Container(
-                          width: 18, height: 18,
+                          width: 26,
+                          height: 26,
                           decoration: const BoxDecoration(
                             color: Color(0xFFE5E7EB),
                             shape: BoxShape.circle,
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            widget.nickname, // ← widget.
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.gray800,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'Pretendard',
+
+                        // 닉네임 + 시간 (세로 정렬)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              widget.nickname,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.gray800,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'Pretendard',
+                              ),
                             ),
-                          ),
+                            const SizedBox(height: 4),
+                            Text(
+                              widget.time,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: AppColors.gray700,
+                                fontWeight: FontWeight.w500,
+                                fontFamily: 'Pretendard',
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.time, // ← widget.
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: AppColors.gray700,
-                        fontWeight: FontWeight.w500,
-                        fontFamily: 'Pretendard',
-                      ),
-                    ),
+
+
                     const SizedBox(height: 10),
                     Text(
                       widget.title, // ← widget.
@@ -421,39 +544,32 @@ class _PostTileState extends State<_PostTile> {
                 clipBehavior: Clip.none,
                 children: [
                   Container(
-                    width: 62,
-                    height: 62,
+                    width: 85,
+                    height: 85,
                     decoration: BoxDecoration(
                       color: const Color(0xFFE5E7EB),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                   if (widget.badge != null)
                     Positioned(
-                      right: -2,
-                      bottom: -2,
+                      right: 5,
+                      bottom:4,
                       child: Container(
-                        width: 24,
-                        height: 24,
+                        width: 20,
+                        height: 20,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE74B3C),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white, width: 2),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x29000000),
-                              blurRadius: 6,
-                              offset: Offset(0, 2),
-                            )
-                          ],
+                          color: const Color(0xFF9E9E9E),
+                          borderRadius: BorderRadius.circular(4),
+
                         ),
                         child: Text(
                           '${widget.badge}',
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.gray300,
                             fontSize: 12,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w600,
                             fontFamily: 'Pretendard',
                           ),
                         ),
