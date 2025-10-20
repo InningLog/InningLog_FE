@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:inninglog/app_colors.dart';
 import '../constant/team_codes.dart';
 import '../widgets/common_header.dart';
+import 'post_compose_page.dart';
 
 class TeamBoardPage extends StatefulWidget {
   final String teamCode; // e.g. 'HT', 'LG', ...
@@ -41,9 +43,13 @@ class _TeamBoardPageState extends State<TeamBoardPage>
         height: 56,
         child: FloatingActionButton(
           backgroundColor: AppColors.primary700,
-          shape: const CircleBorder(), // ✅ 원형 강제
+          shape: const CircleBorder(),
           onPressed: () {
-            // TODO: 글쓰기 라우팅
+            final teamLabel = teamLabelFromCode(widget.teamCode);
+            context.push(
+              '/compose',
+              extra: teamLabel, // ✅ 전달
+            );
           },
           child: const Icon(
             Icons.add,
@@ -52,6 +58,7 @@ class _TeamBoardPageState extends State<TeamBoardPage>
           ),
         ),
       ),
+
 
       body: SafeArea(
         child: Column(

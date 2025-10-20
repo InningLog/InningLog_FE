@@ -9,6 +9,7 @@ import 'package:inninglog/screens/add_diary_page.dart';
 import 'package:inninglog/screens/add_seat_page.dart';
 import 'package:inninglog/screens/field_hashtag_filter_sheet.dart';
 import 'package:inninglog/screens/login_page.dart';
+import 'package:inninglog/screens/post_compose_page.dart';
 import 'package:inninglog/screens/seat_detail_page.dart';
 import 'package:inninglog/screens/onboarding_page6.dart';
 import 'package:inninglog/screens/signup_page.dart';
@@ -80,6 +81,14 @@ final GoRouter _router = GoRouter(
       builder: (context, state) => const KakaoLoginWebViewPage(),
     ),
 
+
+    GoRoute(
+      path: '/compose',
+      builder: (context, state) {
+        final teamLabel = state.extra as String; // extra로 받기
+        return PostComposePage(teamLabel: teamLabel);
+      },
+    ),
 
     GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
     GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),

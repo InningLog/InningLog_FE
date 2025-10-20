@@ -17,3 +17,21 @@ final Map<String, String> teamFullNameByCode = {
 };
 
 String teamNameFromCode(String code) => teamFullNameByCode[code] ?? code;
+
+
+// constant/team_codes.dart (또는 적절한 곳)
+const Map<String, String> teamLabelMap = {
+  'HT': '기아 타이거즈 🐯',
+  'HH': '한화 이글스 🦅',
+  'WO': '키움 히어로즈 🦸🏻️',
+  'LG': 'LG 트윈스 👶🏻👶🏻',
+  'NC': 'NC 다이노스 🦖',
+  'SK': 'SSG 랜더스 🗺️',
+  'SS': '삼성 라이온즈 🦁',
+  'LT': '롯데 자이언츠 🌊️',
+  'KT': 'KT 위즈 🧙🏻',
+};
+
+String teamLabelFromCode(String code) {
+  return teamLabelMap[code] ?? code; // 없으면 code 그대로
+}
