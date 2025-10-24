@@ -334,11 +334,11 @@ class _ToolbarIconButton extends StatelessWidget {
         width: 32,
         height: 32,
         child: Center(
-          child: SvgPicture.asset(
-            asset,
-            width: 22,
-            height: 22,
-            placeholderBuilder: (_) => const Icon(Icons.image_outlined, size: 20),
+          child: Image.asset(
+            'assets/images/image-uploa.png',
+            width: 24,
+            height: 24,
+            fit: BoxFit.contain,
           ),
         ),
       ),
@@ -359,8 +359,8 @@ class _Thumb extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         Container(
-          width: 56,
-          height: 56,
+          width: 62,
+          height: 62,
           decoration: BoxDecoration(
             color: const Color(0xFFE5E7EB),
             borderRadius: BorderRadius.circular(8),
@@ -368,19 +368,19 @@ class _Thumb extends StatelessWidget {
           ),
         ),
         Positioned(
-          right: -6,
-          top: -6,
+          right: 5,
+          top: 5,
           child: GestureDetector(
             onTap: onRemove,
             child: Container(
-              width: 18,
-              height: 18,
+              width: 20,
+              height: 20,
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.7),
+                color: const Color (0xFF6C6C6C),
                 shape: BoxShape.circle,
               ),
               child: const Center(
-                child: Icon(Icons.close, size: 12, color: Colors.white),
+                child: Icon(Icons.close, size: 12, color: AppColors.gray400),
               ),
             ),
           ),

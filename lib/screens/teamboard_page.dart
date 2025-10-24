@@ -71,7 +71,7 @@ class _TeamBoardPageState extends State<TeamBoardPage>
                   Navigator.of(context).pop(); // 뒤로가기 동작
                 },
                 child: SvgPicture.asset(
-                  'assets/images/back_but.svg',
+                  'assets/icons/back_but.svg',
                   width: 26.5,
                   height: 20,
                 ),
@@ -234,12 +234,14 @@ class SortSwitch extends StatelessWidget {
                     ),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   '최신',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF000000),
+                    color: index == 0
+                        ? const Color(0xFF000000) // 선택됨: 검정
+                        : AppColors.gray700,      // 비선택: 회색
                   ),
                 ),
               ),
@@ -264,12 +266,14 @@ class SortSwitch extends StatelessWidget {
                     ),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   '인기',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF000000),
+                    color: index == 1
+                        ? const Color(0xFF000000) // 선택됨: 검정
+                        : AppColors.gray700,      // 비선택: 회색
                   ),
                 ),
               ),
