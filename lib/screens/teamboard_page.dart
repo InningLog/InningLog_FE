@@ -71,7 +71,7 @@ class _TeamBoardPageState extends State<TeamBoardPage>
                   Navigator.of(context).pop(); // 뒤로가기 동작
                 },
                 child: SvgPicture.asset(
-                  'assets/images/back_board_but.svg',
+                  'assets/images/back_but.svg',
                   width: 26.5,
                   height: 20,
                 ),

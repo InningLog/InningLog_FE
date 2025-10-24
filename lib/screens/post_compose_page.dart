@@ -1,6 +1,9 @@
 // lib/pages/post_compose_page.dart
+import 'dart:io' show File;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:image_picker/image_picker.dart'; // ✅ 갤러리
 import 'package:inninglog/app_colors.dart';
 
 class PostComposePage extends StatefulWidget {
@@ -17,7 +20,14 @@ class _PostComposePageState extends State<PostComposePage> {
   final _titleFocus = FocusNode();
 
   bool _titleFocused = false;
-  ImageProvider? _attachedImage; // 데모: 1장만
+
+  // ✅ 여러 장 첨부 (최대 5장)
+  final List<ImageProvider> _attachedImages = [];
+  static const int _maxImages = 5;
+
+  // 하단 영역 고정 높이
+  static const double _toolbarHeight = 72;
+  static const double _footerHeight = 104; // 경고문구 영역 높이(디자인 여백 포함)
 
   @override
   void initState() {
@@ -35,16 +45,36 @@ class _PostComposePageState extends State<PostComposePage> {
     super.dispose();
   }
 
-  void _pickImage() async {
-    // TODO: image_picker 연동
-    // 데모용 회색 사각형 이미지 대체 (없으면 null 그대로)
-    setState(() {
-      _attachedImage = const AssetImage('assets/images/placeholder_square.png');
-    });
+  Future<void> _pickFromGallery() async {
+    if (_attachedImages.length >= _maxImages) return;
+
+    final remain = _maxImages - _attachedImages.length;
+    final picker = ImagePicker();
+
+    // ✅ 다중 선택
+    final files = await picker.pickMultiImage(
+      imageQuality: 85,
+      limit: remain, // 일부 기기만 적용, 초과 시 수동 컷
+    );
+
+    if (files.isEmpty) return;
+
+    final List<ImageProvider> next = [];
+    for (final x in files.take(remain)) {
+      if (kIsWeb) {
+        final bytes = await x.readAsBytes();
+        next.add(MemoryImage(bytes));
+      } else {
+        next.add(FileImage(File(x.path)));
+      }
+    }
+
+    if (!mounted) return;
+    setState(() => _attachedImages.addAll(next));
   }
 
-  void _removeImage() {
-    setState(() => _attachedImage = null);
+  void _removeImageAt(int index) {
+    setState(() => _attachedImages.removeAt(index));
   }
 
   void _submit() {
@@ -62,9 +92,12 @@ class _PostComposePageState extends State<PostComposePage> {
         bottom: false,
         child: Stack(
           children: [
-            // 본문 스크롤 영역
+            // 본문 스크롤: 하단 고정(푸터+툴바) 높이만큼 여유
             SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 120), // 하단바 공간
+              padding: const EdgeInsets.symmetric(horizontal: 20).copyWith(
+                top: 0,
+                bottom: _footerHeight + _toolbarHeight + 24, // ✅ 피그마처럼 하단과 충분히 띄움
+              ),
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,118 +173,73 @@ class _PostComposePageState extends State<PostComposePage> {
                       contentPadding: EdgeInsets.zero,
                     ),
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // 선택된 이미지 미리보기 (본문 영역에도 노출)
-                  if (_attachedImage != null)
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Container(
-                            width: 72,
-                            height: 72,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE5E7EB),
-                              borderRadius: BorderRadius.circular(8),
-                              image: DecorationImage(
-                                image: _attachedImage!,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            right: -6,
-                            top: -6,
-                            child: GestureDetector(
-                              onTap: _removeImage,
-                              child: Container(
-                                width: 22,
-                                height: 22,
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.7),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Center(
-                                  child: Icon(Icons.close, size: 14, color: Colors.white),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                 ],
               ),
             ),
 
-            // 하단 툴바 (키보드 위로 붙음)
+            // ✅ 하단 고정: [경고문구 푸터] + [툴바], 키보드 위로 함께 올라옴
             AnimatedPadding(
               duration: const Duration(milliseconds: 120),
               padding: EdgeInsets.only(bottom: bottomInset),
               child: Align(
-                alignment: Alignment.bottomLeft,
+                alignment: Alignment.bottomCenter,
                 child: SafeArea(
                   top: false,
-                  child: Container(
-                    height: 56,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      border: Border(
-                        top: BorderSide(color: Color(0xFFE5E7EB), width: 1),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        // 이미지 버튼 (좌측)
-                        _ToolbarIconButton(
-                          asset: 'assets/icons/image.svg', // 없으면 errorBuilder로 fallback
-                          onTap: _pickImage,
-                        ),
-                        const SizedBox(width: 12),
-
-                        // 썸네일 (작게, 스샷 우측 예시)
-                        if (_attachedImage != null)
-                          Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE5E7EB),
-                                  borderRadius: BorderRadius.circular(8),
-                                  image: DecorationImage(
-                                    image: _attachedImage!,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                right: -6,
-                                top: -6,
-                                child: GestureDetector(
-                                  onTap: _removeImage,
-                                  child: Container(
-                                    width: 18,
-                                    height: 18,
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.7),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Center(
-                                      child: Icon(Icons.close, size: 12, color: Colors.white),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // ===== 경고문구(푸터) =====
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          border: Border(
+                            top: BorderSide(color: Color(0xFFE5E7EB), width: 1),
+                            bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1),
                           ),
-                      ],
-                    ),
+                        ),
+                        child: const _GuidelinesFooter(), // ← 내용은 아래 위젯으로 교체
+                      ),
+
+
+                      // ===== 하단 툴바 =====
+                      Container(
+                        height: _toolbarHeight,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                        ),
+                        child: Row(
+                          children: [
+                            // 이미지 버튼
+                            Opacity(
+                              opacity: _attachedImages.length >= _maxImages ? 0.4 : 1,
+                              child: _ToolbarIconButton(
+                                asset: 'assets/icons/image.svg',
+                                onTap: _attachedImages.length >= _maxImages ? () {} : _pickFromGallery,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+
+                            // 썸네일 리스트
+                            Expanded(
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: _attachedImages.length,
+                                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                                itemBuilder: (context, index) {
+                                  return _Thumb(
+                                    image: _attachedImages[index],
+                                    onRemove: () => _removeImageAt(index),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -282,20 +270,11 @@ class _ComposeAppBar extends StatelessWidget {
       alignment: Alignment.center,
       child: Row(
         children: [
-          // 좌측 닫기(X) — back_board.svg 사용
           IconButton(
             onPressed: onClose,
-            icon: SvgPicture.asset(
-              'assets/icons/cancel_but.svg',
-              width: 15,
-              height: 15,
-              // 필요 시 색 입히기:
-              // colorFilter: const ColorFilter.mode(Color(0xFF1F2937), BlendMode.srcIn),
-            ),
+            icon: SvgPicture.asset('assets/icons/cancel_but.svg', width: 15, height: 15),
           ),
           const Spacer(),
-
-          // 중앙 타이틀/팀
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -321,13 +300,11 @@ class _ComposeAppBar extends StatelessWidget {
             ],
           ),
           const Spacer(),
-
-          // 우측 등록
           TextButton(
             onPressed: onSubmit,
             style: TextButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              foregroundColor: AppColors.gray400,
+              foregroundColor: AppColors.gray700,
               textStyle: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
@@ -361,13 +338,158 @@ class _ToolbarIconButton extends StatelessWidget {
             asset,
             width: 22,
             height: 22,
-            // SVG 없을 때 대비
             placeholderBuilder: (_) => const Icon(Icons.image_outlined, size: 20),
-            // 필요 시 색:
-            // colorFilter: const ColorFilter.mode(Color(0xFF4B5563), BlendMode.srcIn),
           ),
         ),
       ),
+    );
+  }
+}
+
+// ✅ 썸네일(56x56) + 삭제 버튼
+class _Thumb extends StatelessWidget {
+  final ImageProvider image;
+  final VoidCallback onRemove;
+
+  const _Thumb({required this.image, required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: const Color(0xFFE5E7EB),
+            borderRadius: BorderRadius.circular(8),
+            image: DecorationImage(image: image, fit: BoxFit.cover),
+          ),
+        ),
+        Positioned(
+          right: -6,
+          top: -6,
+          child: GestureDetector(
+            onTap: onRemove,
+            child: Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.7),
+                shape: BoxShape.circle,
+              ),
+              child: const Center(
+                child: Icon(Icons.close, size: 12, color: Colors.white),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ✅ 하단 고정용 경고문구 (피그마 위치)
+class _GuidelinesFooter extends StatelessWidget {
+  const _GuidelinesFooter();
+
+  @override
+  Widget build(BuildContext context) {
+    const p = TextStyle(
+      fontSize: 12,
+      height: 1.4,
+      color: AppColors.gray600,
+      fontFamily: 'Pretendard',
+      fontWeight: FontWeight.w400,
+    );
+    const strong = TextStyle(
+      fontSize: 12,
+      height: 1.4,
+      color: AppColors.gray700,
+      fontFamily: 'Pretendard',
+      fontWeight: FontWeight.w600,
+    );
+
+    Widget warning(String t) => Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('📝', style: TextStyle(fontSize: 12, color: AppColors.gray800, fontWeight: FontWeight.w300,)),
+        Expanded(child: Text(t, style: p)),
+      ],
+    );
+
+    Widget bullet(String t) => Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('-',  style: TextStyle(fontSize: 12, color: AppColors.gray800, fontWeight: FontWeight.w300,)),
+        Expanded(child: Text(t, style: p)),
+      ],
+    );
+
+    Widget warn(String t) => Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('⚠️️', style: TextStyle(fontSize: 12, color: AppColors.gray800, fontWeight: FontWeight.w300,)),
+        Expanded(child: Text(t, style: p)),
+      ],
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        warning('게시물 작성 시 유의사항'),
+        const SizedBox(height: 2),
+        bullet('불법 도박, 음란물, 폭력성·혐오 표현, 개인정보 유출, 특정인 비방 등의 내용은 작성이 제한될 수 있습니다.'),
+        const SizedBox(height: 2),
+        bullet('위반 시 게시글이 삭제되거나 계정이 제한될 수 있습니다.'),
+        const SizedBox(height: 8),
+        warn('커뮤니티 이용 규칙을 위반한 게시물은 사전 통보 없이 삭제될 수 있습니다.'),
+      ],
+
+    );
+  }
+}
+
+class _Bullet extends StatelessWidget {
+  final String text;
+  const _Bullet(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: const [
+        Text('•  ', style: TextStyle(fontSize: 12, color: AppColors.gray600)),
+        Expanded(
+          child: Text(
+            // 스타일 고정(푸터)
+            '',
+            style: TextStyle(fontSize: 12, height: 1.4, color: AppColors.gray600, fontFamily: 'Pretendard'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Warn extends StatelessWidget {
+  final String text;
+  const _Warn(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: const [
+        Text('⚠️ ', style: TextStyle(fontSize: 12)),
+        Expanded(
+          child: Text(
+            '',
+            style: TextStyle(fontSize: 12, height: 1.4, color: AppColors.gray700, fontFamily: 'Pretendard', fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
     );
   }
 }
