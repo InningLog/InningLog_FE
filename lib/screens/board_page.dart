@@ -39,7 +39,7 @@ class BoardPage extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: _BannerCard(
-                  imagePath: 'assets/images/kbo_banner.png',
+                  imagePath: 'assets/images/card_kbo.png',
                   height: 88,
                   onTap: () {
                     // TODO: KBO 전체 게시판으로 이동
