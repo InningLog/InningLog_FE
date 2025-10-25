@@ -36,7 +36,23 @@ class _PostComposePageState extends State<PostComposePage> {
     _titleFocus.addListener(() {
       setState(() => _titleFocused = _titleFocus.hasFocus);
     });
+
+    // ✅ 제목/본문 입력 변화 감지해서 _isFilled 갱신
+    _titleCtrl.addListener(_updateFilled);
+    _bodyCtrl.addListener(_updateFilled);
   }
+
+// ✅ 제목과 본문이 모두 채워져야 활성화
+  void _updateFilled() {
+    final filled = _titleCtrl.text.trim().isNotEmpty
+        && _bodyCtrl.text.trim().isNotEmpty; // ← AND로 변경
+    if (_isFilled != filled) {
+      setState(() => _isFilled = filled);
+    }
+  }
+
+
+
 
 
 
@@ -109,6 +125,7 @@ class _PostComposePageState extends State<PostComposePage> {
                     teamLabel: widget.teamLabel,
                     onClose: () => Navigator.of(context).pop(),
                     onSubmit: _submit,
+                    isFilled: _isFilled,
                   ),
                   const SizedBox(height: 12),
 
@@ -258,11 +275,13 @@ class _ComposeAppBar extends StatelessWidget {
   final String teamLabel;
   final VoidCallback onClose;
   final VoidCallback onSubmit;
+  final bool isFilled;
 
   const _ComposeAppBar({
     required this.teamLabel,
     required this.onClose,
     required this.onSubmit,
+    required this.isFilled,
   });
 
   @override
@@ -304,18 +323,34 @@ class _ComposeAppBar extends StatelessWidget {
           ),
           const Spacer(),
           TextButton(
-            onPressed: onSubmit,
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              foregroundColor: AppColors.gray700,
-              textStyle: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                fontFamily: 'Pretendard',
+            onPressed: isFilled ? onSubmit : null,
+            style: ButtonStyle(
+              foregroundColor: MaterialStateProperty.resolveWith<Color>((states) {
+                if (states.contains(MaterialState.disabled)) {
+                  return AppColors.gray700; // 비활성 색
+                }
+                return AppColors.primary700; // 활성 색
+              }),
+              padding: MaterialStateProperty.all(
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
+              textStyle: MaterialStateProperty.resolveWith<TextStyle>((states) {
+                final isDisabled = states.contains(MaterialState.disabled);
+                return TextStyle(
+                  fontSize: 16,
+                  fontWeight: isDisabled ? FontWeight.w400 : FontWeight.w700, // ✅ 두께 변경
+                  fontFamily: 'Pretendard',
+                );
+              }),
+              overlayColor: MaterialStateProperty.resolveWith<Color?>((states) {
+                if (states.contains(MaterialState.disabled)) return Colors.transparent;
+                return null;
+              }),
             ),
             child: const Text('등록'),
-          ),
+          )
+
+
         ],
       ),
     );
