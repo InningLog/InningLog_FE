@@ -20,6 +20,7 @@ class _PostComposePageState extends State<PostComposePage> {
   final _titleFocus = FocusNode();
 
   bool _titleFocused = false;
+  bool _isFilled = false;
 
   // ✅ 여러 장 첨부 (최대 5장)
   final List<ImageProvider> _attachedImages = [];
@@ -36,6 +37,8 @@ class _PostComposePageState extends State<PostComposePage> {
       setState(() => _titleFocused = _titleFocus.hasFocus);
     });
   }
+
+
 
   @override
   void dispose() {
