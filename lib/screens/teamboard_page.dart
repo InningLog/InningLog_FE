@@ -35,6 +35,7 @@ class _TeamBoardPageState extends State<TeamBoardPage>
   @override
   Widget build(BuildContext context) {
     final title = teamNameFromCode(widget.teamCode);
+    final teamLabel = teamLabelFromCode(widget.teamCode);
 
     return Scaffold(
       backgroundColor: AppColors.primary50,
@@ -45,11 +46,8 @@ class _TeamBoardPageState extends State<TeamBoardPage>
           backgroundColor: AppColors.primary700,
           shape: const CircleBorder(),
           onPressed: () {
-            final teamLabel = teamLabelFromCode(widget.teamCode);
-            context.push(
-              '/compose',
-              extra: teamLabel, // ✅ 전달
-            );
+            context.push('/boards/${widget.teamCode}/compose', extra: teamLabel);
+
           },
           child: const Icon(
             Icons.add,
@@ -103,14 +101,10 @@ class _TeamBoardPageState extends State<TeamBoardPage>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  // 오직완
-                  _PostList(sortIndex: _sortIndex),
-                  // 자유 게시판
-                  _PostList(sortIndex: _sortIndex),
-                  // 이닝 장터
-                  _PostList(sortIndex: _sortIndex),
-                  // 오늘의 뉴스
-                  _PostList(sortIndex: _sortIndex),
+                  _PostList(sortIndex: _sortIndex, teamCode: widget.teamCode, teamLabel: teamLabel),
+                  _PostList(sortIndex: _sortIndex, teamCode: widget.teamCode, teamLabel: teamLabel),
+                  _PostList(sortIndex: _sortIndex, teamCode: widget.teamCode, teamLabel: teamLabel),
+                  _PostList(sortIndex: _sortIndex, teamCode: widget.teamCode, teamLabel: teamLabel),
                 ],
               ),
             ),
@@ -333,7 +327,9 @@ class _SortTab extends StatelessWidget {
 /// 리스트 (피그마 카드)
 class _PostList extends StatelessWidget {
   final int sortIndex;
-  const _PostList({required this.sortIndex});
+  final String teamCode;
+  final String teamLabel;
+  const _PostList({required this.sortIndex, required this.teamCode, required this.teamLabel});
 
   @override
   Widget build(BuildContext context) {
@@ -356,6 +352,12 @@ class _PostList extends StatelessWidget {
           comments: p.comments,
           // 예시: 두 번째 카드에만 배지
           badge: i == 1 ? 5 : null,
+          onTap: () {
+               context.push(
+                    '/boards/$teamCode/post/${p.id}',
+                     extra: {'teamLabel': teamLabel},
+                 );
+            },
         );
       },
       separatorBuilder: (_, __) => const SizedBox(height: 12),
@@ -368,6 +370,7 @@ class _PostTile extends StatefulWidget {
   final String nickname, time, title, snippet;
   final int likes, comments;
   final int? badge;
+  final VoidCallback? onTap;
 
   const _PostTile({
     super.key,
@@ -378,7 +381,9 @@ class _PostTile extends StatefulWidget {
     required this.likes,
     required this.comments,
     this.badge,
+    this.onTap,
   });
+
 
   @override
   State<_PostTile> createState() => _PostTileState();
@@ -410,7 +415,7 @@ class _PostTileState extends State<_PostTile> {
       elevation: 0,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () {}, // TODO: 게시글 상세
+        onTap: widget.onTap,
         child: Container(
           padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
           decoration: BoxDecoration(
@@ -599,26 +604,21 @@ class _PostTileState extends State<_PostTile> {
 
 /* 더미 데이터 */
 class _Post {
+  final int id;
   final String nickname, time, title, snippet;
   final int likes, comments;
-  _Post(
-      this.nickname,
-      this.time,
-      this.title,
-      this.snippet,
-      this.likes,
-      this.comments,
-      );
-}
+  _Post(this.id, this.nickname, this.time, this.title, this.snippet, this.likes, this.comments);
+} // ← 클래스 닫기 꼭!
 
 final _posts = <_Post>[
-  _Post('닉네임 및 자까진 되더라', '2025/05/25(일) 11:02',
+  _Post(1, '닉네임 및 자까진 되더라', '2025/05/25(일) 11:02',
       '제목_공백 포함 최대 20자까지 가능', '본문은 보여지는 건 최대 24자까지 가능', 2, 2),
-  _Post('닉네임 및 자까진 되더라', '2025/05/25(일) 11:02',
+  _Post(22, '닉네임 및 자까진 되더라', '2025/05/25(일) 11:02',
       '제목_공백 포함 최대 20자까지 가능', '본문은 보여지는 건 최대 24자까지 가능', 7, 3),
-  _Post('닉네임 및 자까진 되더라', '2025/05/25(일) 11:02',
+  _Post(33333, '닉네임 및 자까진 되더라', '2025/05/25(일) 11:02',
       '제목_공백 포함 최대 20자까지 가능', '본문은 보여지는 건 최대 24자까지 가능', 4, 1),
 ];
+
 
 
 
