@@ -10,6 +10,7 @@ import 'package:inninglog/screens/add_seat_page.dart';
 import 'package:inninglog/screens/field_hashtag_filter_sheet.dart';
 import 'package:inninglog/screens/login_page.dart';
 import 'package:inninglog/screens/post_compose_page.dart';
+import 'package:inninglog/screens/post_detail_page.dart';
 import 'package:inninglog/screens/seat_detail_page.dart';
 import 'package:inninglog/screens/onboarding_page6.dart';
 import 'package:inninglog/screens/signup_page.dart';
@@ -183,17 +184,39 @@ final GoRouter _router = GoRouter(
         ),
 
 
-
-// GoRouter 라우팅 예시
         GoRoute(
           path: '/boards/:code',
           builder: (_, state) => TeamBoardPage(teamCode: state.pathParameters['code']!),
-        ),
+          routes: [
+            GoRoute(
+              path: 'post/:postId',
+              name: 'post_detail',
+              builder: (context, state) {
+                final teamCode = state.pathParameters['code']!;
+                final postId = int.parse(state.pathParameters['postId']!);
+                final teamLabel = (state.extra as Map?)?['teamLabel'] as String? ?? '';
+                return PostDetailPage( // 네 상세 위젯으로 바꾸세요
+                  args: PostDetailArgs(teamCode: teamCode, teamLabel: teamLabel, postId: postId),
+                );
+              },
+            ),
+            GoRoute(
+              path: 'compose',
+              name: 'post_compose',
+              builder: (context, state) {
+                final teamLabel = (state.extra as String?) ?? '';
+                return PostComposePage(teamLabel: teamLabel);
+              },
+            ),
+          ],
+        )
 
 
 
       ],
     ),
+
+
   ],
 );
 

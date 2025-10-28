@@ -332,7 +332,7 @@ class _ComposeAppBar extends StatelessWidget {
                 return AppColors.primary700; // 활성 색
               }),
               padding: MaterialStateProperty.all(
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
               ),
               textStyle: MaterialStateProperty.resolveWith<TextStyle>((states) {
                 final isDisabled = states.contains(MaterialState.disabled);
