@@ -17,179 +17,225 @@ class PostDetailPage extends StatefulWidget {
   final PostDetailArgs args;
   const PostDetailPage({super.key, required this.args});
 
+
   @override
   State<PostDetailPage> createState() => _PostDetailPageState();
 }
 
 class _PostDetailPageState extends State<PostDetailPage> {
+
+  // ▼ 대댓글 상태 저장 (기존 코드 보존)
+  final Map<int, List<_Reply>> _replies = {}; // 댓글 index -> 대댓글 목록
+  final Set<int> _replying = {};              // 대댓글 입력창 열려있는 댓글 index
+
+  int? _activeReplyIndex;
+  final _replyCtrl = TextEditingController();
+
+
   // 상태
   bool liked = false;
-  int agreeCount = 20;
-  bool showComments = false;
+  int likeCount = 20;
+
+  bool scrapped = false;
+  int scrapCount = 0;
 
   final _commentCtrl = TextEditingController();
 
   final List<_Comment> comments = [
     _Comment(
-      nickname: '엘지우승가즈아',
-      body: '한화꺼져',
+      nickname: '메롱',
+      body: '아아',
       time: '10/24(화) 14:10',
       liked: false,
       likes: 1,
     ),
     _Comment(
-      nickname: '신일즈를 숭배해',
-      body: '문보경김현수언제까지 잘할건대대대대',
+      nickname: '박해민가면안되ㅡㄴㄴ데',
+      body: '트중박이라고',
       time: '10/24(화) 14:13',
       liked: true,
-      likes: 9,
+      likes: 3,
     ),
   ];
 
   @override
   void dispose() {
     _commentCtrl.dispose();
+    _replyCtrl.dispose();
     super.dispose();
+
   }
 
   @override
   Widget build(BuildContext context) {
     final teamLabel = widget.args.teamLabel;
+    final commentCount = comments.length;
 
     return Scaffold(
       backgroundColor: AppColors.primary50,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        leading: GestureDetector(
-          onTap: () {
-            Navigator.of(context).pop(); // 뒤로가기 동작
-          },
-          child: SvgPicture.asset(
-            'assets/icons/back_but.svg',
-            width: 20,
-            height: 10,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(64),
+        child: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leadingWidth: 54,
+          leading: IconButton(
+            icon: SvgPicture.asset('assets/icons/back_but.svg', width: 10,height: 20,),
+            onPressed: () => Navigator.pop(context),
           ),
-        ),
-        title: const Text(
-          '자유 게시판',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
-        centerTitle: true,
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 8),
-            child: Icon(Icons.more_horiz, color: Color(0xFF9CA3AF)),
-          )
-        ],
-        // ▼ 피그마처럼 제목 아래 팀명
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(22),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              teamLabel,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF6B7280),
+          centerTitle: true,
+          title: Column(
+            children: [
+              const Text(
+                '자유 게시판',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.gray900,
+                ),
               ),
-            ),
+              const SizedBox(height: 4),
+              Text(
+                teamLabel,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.gray700,
+                ),
+              ),
+            ],
           ),
+          actions: [
+            IconButton(
+              icon: SvgPicture.asset('assets/icons/board_dots.svg', width: 18),
+              onPressed: () {},
+            ),
+          ],
         ),
       ),
 
-      // 하단 댓글 입력바
-      bottomNavigationBar: _CommentInputBar(
+      // 하단 입력바 (디자인 유지)
+      bottomNavigationBar: (_activeReplyIndex == null)
+      // 기본 댓글 입력창
+          ? _CommentInputBar(
         controller: _commentCtrl,
         onPressed: () {
           final text = _commentCtrl.text.trim();
           if (text.isEmpty) return;
           setState(() {
-            comments.add(_Comment(
-              nickname: '닉네임',
-              body: text,
-              time: '방금',
-              liked: false,
-              likes: 0,
-            ));
-            showComments = true;
+            comments.add(
+              _Comment(
+                nickname: '닉네임',
+                body: text,
+                time: '방금',
+                liked: false,
+                likes: 0,
+              ),
+            );
             _commentCtrl.clear();
+          });
+        },
+      )
+      // ✅ 대댓글 모드일 때
+          : _ReplyBottomBar(
+        nickname: comments[_activeReplyIndex!].nickname,
+        controller: _replyCtrl,
+        onCancel: () => setState(() => _activeReplyIndex = null),
+        onSubmit: () {
+          final text = _replyCtrl.text.trim();
+          if (text.isEmpty) return;
+          final i = _activeReplyIndex!;
+          setState(() {
+            final cur = List<_Reply>.from(_replies[i] ?? const []);
+            cur.add(_Reply(
+              nickname: '나나ㅏ나',
+              body: text.trim(),
+              time: '방금',
+              likes: 0,
+              liked: false,
+            ));
+
+            _replies[i] = cur;
+            _activeReplyIndex = null;
+            _replyCtrl.clear();
           });
         },
       ),
 
-      body: CustomScrollView(
-        slivers: [
-          // 상단 작성자/본문
-          SliverToBoxAdapter(child: _postHeader(teamLabel)),
-          const SliverToBoxAdapter(
-            child: Divider(height: 1, color: Color(0xFFE5E7EB)),
+
+      body: ListView(
+        children: [
+          _postHeader(),
+          // ✅ 액션 바: 한 군데만 존재
+          _ActionBar(
+            likeActive: liked,
+            likeCount: likeCount,
+            onTapLike: () {
+              setState(() {
+                liked = !liked;
+                liked ? likeCount++ : likeCount--;
+              });
+            },
+            scrapActive: scrapped,
+            scrapCount: scrapCount,
+            onTapScrap: () {
+              setState(() {
+                scrapped = !scrapped;
+                scrapped ? scrapCount++ : scrapCount--;
+              });
+            },
+            commentCount: commentCount,
           ),
-
-          // 공감/댓글 요약 바
-          SliverToBoxAdapter(
-            child: _ReactionSummaryBar(
-              agreeCount: agreeCount,
-              showAgree: (liked || agreeCount > 0),
-              showCommentIcon: showComments,
-            ),
-          ),
-
-          // 댓글 없을 때
-          if (!showComments)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: _EmptyComment(),
-            ),
-
-          // 댓글 있을 때
-          if (showComments) _commentListSliver(),
+          const Divider(height: 8, color: AppColors.gray200),
+          // 댓글은 고정 노출(토글 X)
+          if (comments.isEmpty) _EmptyComment() else ...comments.map(_commentItem),
+          const SizedBox(height: 6),
         ],
       ),
     );
   }
 
-  // ───────────────────────── UI 블록들 ─────────────────────────
-
-  Widget _postHeader(String teamLabel) {
+  //게시판
+  Widget _postHeader() {
     return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      color: AppColors.primary50,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 작성자 메타
+          // 작성자
           Row(
+            //작성자 프사 -> 어차피 바꿀거라
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: 40,
+                height: 40,
                 decoration: const BoxDecoration(
                   color: Color(0xFFE5E7EB),
                   shape: BoxShape.circle,
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
                   Text(
-                    '닉네임 / Head 9 (Sb) - 14pt',
+                    '디디는디디',
                     style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF374151),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.gray800,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  SizedBox(height: 0),
                   Text(
-                    '05/25(일) 11:02 / 시각 / Head 10(M) - 12pt',
+                    '05/25(일) 11:02',
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 12,
+                      color: AppColors.gray700,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF6B7280),
                     ),
                   ),
                 ],
@@ -198,231 +244,403 @@ class _PostDetailPageState extends State<PostDetailPage> {
           ),
           const SizedBox(height: 16),
 
-          // 제목
           const Text(
-            '제목_공백 포함 최대 20자까지 가능 / Head 5',
+            '강백호 ㅇㄷ 갈거가틈',
             style: TextStyle(
-              fontSize: 18,
-              height: 1.25,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF111827),
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // 본문
-          const Text(
-            '내용 / Body 1 (16pt, Regular)\n최대 글자 공백 포함 1,500자 정도 하면 되겠지?',
-            style: TextStyle(
-              fontSize: 16,
-              height: 1.5,
-              fontWeight: FontWeight.w400,
-              color: Color(0xFF111827),
+              fontSize: 19,
+              fontWeight: FontWeight.w700,
+              color: AppColors.gray850,
             ),
           ),
           const SizedBox(height: 16),
 
-          // 반응 버튼 (회색 배경, 아이콘 교체)
-          Row(
-            children: [
-              _ReactionButtonSvg(
-                asset: 'assets/icons/board_heart.svg',
-                label: '공감',
-                active: liked,
-                activeColor: const Color(0xFF7BC21F),
-                onTap: () {
-                  setState(() {
-                    liked = !liked;
-                    liked ? agreeCount++ : agreeCount--;
-                  });
-                },
-              ),
-              const SizedBox(width: 12),
-              _ReactionButtonSvg(
-                asset: 'assets/icons/board_comment.svg', // 파일명이 정확히 이거라면 사용
-                // 만약 파일명이 comment_board.svg 라면 위 라인을 'comment_board.svg'로 바꿔줘
-                label: '댓글',
-                active: false,
-                onTap: null,
-              ),
-            ],
+          const Text(
+            'ㅈㄱㄴ',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              color: AppColors.gray900,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _commentListSliver() {
-    return SliverList.separated(
-      itemCount: comments.length + 2,
-      separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFE5E7EB)),
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          // 댓글 상단 요약(“닉네임 / Head 10 ... 댓글 내용”)
-          return Container(
-            color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-            child: Row(
-              children: const [
-                _AvatarSmall(),
-                SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    '닉네임 / Head 10 (sb) - 12pt\n댓글 내용',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+
+  Widget _commentItem(_Comment c) {
+    // ▼ 리스트 밖에서 사전 계산 (컴파일 에러 원인 제거)
+    final idx = comments.indexOf(c);
+    final bool isReplyingThis = _activeReplyIndex == idx;
+    final List<_Reply> replies = _replies[idx] ?? const <_Reply>[];
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isReplyingThis ? AppColors.primary100 : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const _AvatarSmall(),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  c.nickname,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.gray800,
                   ),
                 ),
-              ],
-            ),
-          );
-        }
-        if (index == comments.length + 1) return const SizedBox(height: 60);
-
-        final c = comments[index - 1];
-        return Container(
-          color: Colors.white,
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 상단 라인
-              Row(
-                children: [
-                  const _AvatarSmall(),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      c.nickname,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF111827),
+              ),
+              // 옆 댓글하트박스
+              Container(
+                height: 24,
+                padding: const EdgeInsets.symmetric(horizontal: 0),
+                decoration: BoxDecoration(
+                  color: AppColors.gray100, // 연한 회색 배경
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 댓글 아이콘 (항상 회색) → 대댓글 입력 열기
+                    _IconButtonBox(
+                      onTap: () {
+                        setState(() {
+                          _activeReplyIndex = idx;
+                          _replyCtrl.clear();
+                        });
+                      },
+                      child: SvgPicture.asset(
+                        'assets/icons/board_comment.svg',
+                        width: 14,
+                        height: 12,
+                        colorFilter: const ColorFilter.mode(AppColors.gray400, BlendMode.srcIn),
                       ),
                     ),
-                  ),
-                  // 하트 + 개수 + 더보기
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => setState(() {
+
+
+                    _VBar(),
+
+                    // 하트 (토글 색상)
+                    _IconButtonBox(
+                      onTap: () {
+                        setState(() {
                           c.liked = !c.liked;
                           c.liked ? c.likes++ : c.likes--;
-                        }),
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: SvgPicture.asset(
-                            'assets/icons/board_heart.svg',
-                            colorFilter: ColorFilter.mode(
-                              c.liked ? const Color(0xFF7BC21F) : const Color(0xFF9CA3AF),
-                              BlendMode.srcIn,
-                            ),
-                          ),
+                        });
+                      },
+                      child: SvgPicture.asset(
+                        'assets/icons/board_heart.svg',
+                        width: 14,
+                        height: 12,
+                        colorFilter: ColorFilter.mode(
+                          c.liked ? AppColors.primary700 : AppColors.gray400,
+                          BlendMode.srcIn,
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${c.likes}',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-                      ),
-                      const SizedBox(width: 12),
-                      const Icon(Icons.more_horiz, size: 18, color: Color(0xFF9CA3AF)),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                c.body,
-                style: const TextStyle(fontSize: 14, height: 1.5, color: Color(0xFF111827)),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Text(c.time, style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF))),
-                ],
-              ),
+                    ),
+
+                    _VBar(),
+
+                    // 더보기 (세로 점 3개)
+                    _IconButtonBox(
+                      onTap: () {}, // 신고/삭제 등 메뉴 오픈
+                      child: const Icon(Icons.more_vert, size: 14, color: AppColors.gray400),
+                    ),
+                  ],
+                ),
+              )
             ],
           ),
-        );
-      },
+
+          const SizedBox(height: 8),
+
+          // 원댓글 본문 (작성중이면 하이라이트)
+          Container(
+            color: isReplyingThis ? AppColors.primary100 : Colors.transparent,
+            child: Text(
+              c.body,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.gray800,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          Text(
+            c.time,
+            style: const TextStyle(
+              fontSize: 10,
+              color: AppColors.gray600,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+
+          // ▼ 대댓글 리스트
+          if (replies.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Column(
+              children: replies.map((r) {
+                return Padding(
+                  padding: const EdgeInsets.only(left: 28, bottom: 10), // 들여쓰기
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ㄴ 모양 가이드
+                      Container(
+                        width: 10,
+                        height: 18,
+                        margin: const EdgeInsets.only(right: 6, top: 4),
+                        child: SvgPicture.asset(
+                          'assets/icons/board_reply.svg',
+                          width: 11,
+                          height: 15,
+                          colorFilter: const ColorFilter.mode(AppColors.gray300, BlendMode.srcIn),
+                        ),
+                      ),
+
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              r.nickname,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.gray800,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              r.body,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppColors.gray900,
+                                height: 1.5,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              r.time,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.gray500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        height: 24,
+                        padding: const EdgeInsets.symmetric(horizontal: 0),
+                        decoration: BoxDecoration(
+                          color: AppColors.gray100, // 연한 회색 배경
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+
+
+                            // 하트 (토글 색상)
+                            _IconButtonBox(
+                              onTap: () {
+                                setState(() {
+                                  c.liked = !c.liked;
+                                  c.liked ? c.likes++ : c.likes--;
+                                });
+                              },
+                              child: SvgPicture.asset(
+                                'assets/icons/board_heart.svg',
+                                width: 14,
+                                height: 12,
+                                colorFilter: ColorFilter.mode(
+                                  c.liked ? AppColors.primary700 : AppColors.gray400,
+                                  BlendMode.srcIn,
+                                ),
+                              ),
+                            ),
+
+                            _VBar(),
+
+                            // 더보기 (세로 점 3개)
+                            _IconButtonBox(
+                              onTap: () {}, // 신고/삭제 등 메뉴 오픈
+                              child: const Icon(Icons.more_vert, size: 14, color: AppColors.gray400),
+                            ),
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+
+        ],
+      ),
     );
+  }
+
+}
+
+
+/// ───────────────────────── 위젯들 ─────────────────────────
+
+class _ActionBar extends StatelessWidget {
+  final bool likeActive;
+  final int likeCount;
+  final VoidCallback onTapLike;
+
+  final bool scrapActive;
+  final int scrapCount;
+  final VoidCallback onTapScrap;
+
+  final int commentCount;
+
+  const _ActionBar({
+    required this.likeActive,
+    required this.likeCount,
+    required this.onTapLike,
+    required this.scrapActive,
+    required this.scrapCount,
+    required this.onTapScrap,
+    required this.commentCount,
+  });
+
+  String _labelWithCount(String base, int count) {
+    // 0이면 숫자 미표시, 그 외엔 "base n"
+    return count <= 0 ? base : '$base $count';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const gray = Color(0xFFD3D3D3);
+
+    return Container(
+      color: AppColors.primary50,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      child: Row(
+        children: [
+          // 공감
+          Expanded(
+            child: Center(
+              child: _InlineAction(
+                asset: 'assets/icons/board_heart.svg',
+                color: likeActive ? AppColors.primary700 : AppColors.gray500,
+                label: _labelWithCount('공감', likeCount),
+                onTap: onTapLike,
+                iconSize: 18, // ← 아이콘 크기
+              ),
+            ),
+          ),
+
+          // 댓글 (항상 회색, 숫자만 변화)
+          Expanded(
+            child: Center(
+              child: _InlineAction(
+                asset: 'assets/icons/board_comment.svg',
+                color: AppColors.gray500,
+                label: _labelWithCount('댓글', commentCount),
+                onTap: null, // 눌러도 아무 동작 없음
+                iconSize: 18,
+              ),
+            ),
+          ),
+
+          // 스크랩
+          Expanded(
+            child: Center(
+              child: _InlineAction(
+                asset: 'assets/icons/board_scrap.svg',
+                color: scrapActive ? AppColors.primary700 : AppColors.gray500,
+                label: _labelWithCount('스크랩', scrapCount),
+                onTap: onTapScrap,
+                iconSize: 18,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
   }
 }
 
-/// 공감/댓글 요약 바 (피그마 가운데 화면)
-class _ReactionSummaryBar extends StatelessWidget {
-  final int agreeCount;
-  final bool showAgree;
-  final bool showCommentIcon;
+class _InlineAction extends StatelessWidget {
+  final String asset;
+  final String label;
+  final Color color;
+  final VoidCallback? onTap;
+  final double iconSize;
 
-  const _ReactionSummaryBar({
-    required this.agreeCount,
-    required this.showAgree,
-    required this.showCommentIcon,
+  const _InlineAction({
+    required this.asset,
+    required this.label,
+    required this.color,
+    required this.onTap,
+    this.iconSize = 18,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Row(
-        children: [
-          if (showAgree) ...[
-            SizedBox(
-              width: 18,
-              height: 18,
-              child: SvgPicture.asset(
-                'assets/icons/board_heart.svg',
-                colorFilter: const ColorFilter.mode(Color(0xFF7BC21F), BlendMode.srcIn),
-              ),
-            ),
-            const SizedBox(width: 6),
-            const Text('공감 ', style: TextStyle(fontSize: 13, color: Color(0xFF7BC21F), fontWeight: FontWeight.w600)),
-            Text('$agreeCount', style: const TextStyle(fontSize: 13, color: Color(0xFF7BC21F), fontWeight: FontWeight.w600)),
-          ],
-          const Spacer(),
-          if (showCommentIcon)
-            Row(
-              children: [
-                SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: SvgPicture.asset(
-                    'assets/icons/board_comment.svg', // 파일명이 다르면 수정
-                    colorFilter: const ColorFilter.mode(Color(0xFF9CA3AF), BlendMode.srcIn),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                const Text('댓글', style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF))),
-              ],
-            ),
-        ],
+    final content = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SvgPicture.asset(
+          asset,
+          width: 16,
+          height: 16,
+          colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color),
+        ),
+      ],
+    );
+
+    if (onTap == null) return content;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        child: content,
       ),
     );
   }
 }
 
-/// 빈 댓글 상태(왼쪽 목업)
+/// 댓글 없을 때
 class _EmptyComment extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
       color: AppColors.primary50,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.only(top: 120),
+      alignment: Alignment.center,
       child: Column(
         children: [
-          const SizedBox(height: 60),
-          SizedBox(
-            width: 88,
-            height: 88,
-            child: SvgPicture.asset('assets/icons/board_bori.svg'),
-          ),
-          const SizedBox(height: 12),
+          SvgPicture.asset('assets/icons/board_bori.svg', width: 60, height: 60),
+          const SizedBox(height: 24),
           const Text(
             '첫 번째 댓글을 남겨주세요!',
-            style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+            style: TextStyle(fontSize: 16, color: AppColors.gray600, fontWeight:FontWeight.w400),
           ),
         ],
       ),
@@ -430,124 +648,88 @@ class _EmptyComment extends StatelessWidget {
   }
 }
 
-/// 댓글 입력 바 (하단 고정)
+/// 댓글 입력바
 class _CommentInputBar extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onPressed;
-
-  const _CommentInputBar({
-    required this.controller,
-    required this.onPressed,
-  });
+  const _CommentInputBar({required this.controller, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
+    final hasText = controller.text.isNotEmpty;
     return SafeArea(
       top: false,
       child: Container(
         color: Colors.white,
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
         child: Row(
           children: [
             Expanded(
               child: Container(
-                height: 40,
+                height: 45,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
+                  color: const Color(0xFFF8F8F8),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                alignment: Alignment.centerLeft,
+                alignment: Alignment.center,
                 child: TextField(
+                  cursorColor: AppColors.primary700,
                   controller: controller,
-                  decoration: const InputDecoration(
+                  onChanged: (_) => (context as Element).markNeedsBuild(),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.gray800,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  decoration: InputDecoration(
                     isDense: true,
                     border: InputBorder.none,
-                    hintText: '댓글로 의견을 남겨보세요.',
-                    hintStyle: TextStyle(
+                    hintText: '댓글을 입력하세요.',
+                    hintStyle: const TextStyle(
                       fontSize: 14,
-                      color: Color(0xFF9CA3AF),
+                      color: AppColors.gray600,
+                      fontWeight: FontWeight.w400,
                     ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            InkWell(
-              onTap: onPressed,
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                height: 40,
-                width: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE5E7EB),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: SvgPicture.asset(
-                    'assets/icons/board_vector.svg',
-                    width: 18,
-                    height: 18,
-                    colorFilter: const ColorFilter.mode(Color(0xFF6B7280), BlendMode.srcIn),
+                    // ✅ 텍스트필드 내부 오른쪽 버튼
+                    suffixIcon: Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: InkWell(
+                        onTap: onPressed,
+                        borderRadius: BorderRadius.circular(0),
+                        child: Container(
+                          height: 21.58,
+                          width: 32,
+                          decoration: BoxDecoration(
+                            color: hasText
+                                ? AppColors.primary700
+                                : const Color(0xFFC0C0C0),
+                            borderRadius: BorderRadius.circular(5.95),
+                          ),
+                          child: Center(
+                            child: SvgPicture.asset(
+                              'assets/icons/vector_board.svg',
+                              width: 9.39,
+                              height: 14.13,
+                              colorFilter: const ColorFilter.mode(
+                                AppColors.gray50,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // ✅ suffixIcon이 TextField 안쪽에 잘 맞게 패딩 조절
+                    suffixIconConstraints:
+                    const BoxConstraints(minWidth: 36, minHeight: 36),
                   ),
                 ),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
 
-/// 회색 배경 반응 버튼(SVG)
-class _ReactionButtonSvg extends StatelessWidget {
-  final String asset;
-  final String label;
-  final bool active;
-  final VoidCallback? onTap;
-  final Color activeColor;
-
-  const _ReactionButtonSvg({
-    required this.asset,
-    required this.label,
-    required this.active,
-    required this.onTap,
-    this.activeColor = const Color(0xFF111827),
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = active ? activeColor : const Color(0xFF9CA3AF);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        height: 32,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF3F4F6),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            SvgPicture.asset(
-              asset,
-              width: 16,
-              height: 16,
-              colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -555,16 +737,12 @@ class _ReactionButtonSvg extends StatelessWidget {
 
 class _AvatarSmall extends StatelessWidget {
   const _AvatarSmall();
-
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 26,
-      height: 26,
-      decoration: const BoxDecoration(
-        color: Color(0xFFE5E7EB),
-        shape: BoxShape.circle,
-      ),
+      width: 24,
+      height: 24,
+      decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFE5E7EB)),
     );
   }
 }
@@ -575,7 +753,6 @@ class _Comment {
   final String time;
   int likes;
   bool liked;
-
   _Comment({
     required this.nickname,
     required this.body,
@@ -584,3 +761,209 @@ class _Comment {
     required this.likes,
   });
 }
+
+class _IconButtonBox extends StatelessWidget {
+  final VoidCallback onTap;
+  final Widget child;
+  const _IconButtonBox({required this.onTap, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: SizedBox(
+        width: 36,
+        height: 36,
+        child: Center(child: child),
+      ),
+    );
+  }
+}
+
+class _VBar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 16,
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      color: const Color(0xFFE5E7EB), // 회색 200 정도
+    );
+  }
+}
+
+class _Reply {
+  final String nickname;
+  final String body;
+  final String time;
+  int likes;
+  bool liked;
+
+  _Reply({
+    required this.nickname,
+    required this.body,
+    required this.time,
+    this.likes = 0,
+    this.liked = false,
+  });
+}
+
+
+
+
+class _ElbowPainter extends CustomPainter {
+  final Color color;
+  const _ElbowPainter({required this.color});
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = Paint()
+      ..color = color
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+    final path = Path()
+      ..moveTo(size.width - 1, 0)
+      ..lineTo(size.width - 1, size.height - 6)
+      ..lineTo(0, size.height - 6);
+    canvas.drawPath(path, p);
+  }
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// ✅ 대댓글 입력 모드일 때 사용하는 하단바
+class _ReplyBottomBar extends StatelessWidget {
+  final String nickname;
+  final TextEditingController controller;
+  final VoidCallback onCancel;
+  final VoidCallback onSubmit;
+
+  const _ReplyBottomBar({
+    required this.nickname,
+    required this.controller,
+    required this.onCancel,
+    required this.onSubmit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasText = controller.text.isNotEmpty;
+
+    return SafeArea(
+      top: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 안내줄
+          Container(
+            height: 37,
+            margin: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(
+              color: Color(0xFFEFEFEF),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(8),
+                topRight: Radius.circular(8),
+              ),
+
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '$nickname님에게 대댓글 남기는 중',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.gray500,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+
+              ],
+            ),
+          ),
+          // 기존 입력창 그대로 재사용
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 45,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8F8F8),
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(8),
+                        bottomRight: Radius.circular(8),
+                      ),
+
+                    ),
+                    alignment: Alignment.center,
+                    child: TextField(
+                      controller: controller,
+                      cursorColor: AppColors.primary700,
+                      onChanged: (_) => (context as Element).markNeedsBuild(),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.gray800,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        border: InputBorder.none,
+                        hintText: '댓글을 입력하세요.',
+                        hintStyle: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.gray600,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        suffixIcon: Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: InkWell(
+                            onTap: onSubmit,
+                            borderRadius: BorderRadius.circular(0),
+                            child: Container(
+                              height: 21.58,
+                              width: 32,
+                              decoration: BoxDecoration(
+                                color: hasText
+                                    ? AppColors.primary700
+                                    : const Color(0xFFC0C0C0),
+                                borderRadius: BorderRadius.circular(5.95),
+                              ),
+                              child: Center(
+                                child: SvgPicture.asset(
+                                  'assets/icons/vector_board.svg',
+                                  width: 9.39,
+                                  height: 14.13,
+                                  colorFilter: const ColorFilter.mode(
+                                    AppColors.gray50,
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        suffixIconConstraints:
+                        const BoxConstraints(minWidth: 36, minHeight: 36),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+
+
