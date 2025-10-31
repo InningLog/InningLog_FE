@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:inninglog/app_colors.dart';
 import 'package:inninglog/screens/teamboard_page.dart';
 import '../widgets/common_header.dart';
+import 'community_search_page.dart';
 
 class BoardPage extends StatelessWidget {
   const BoardPage({super.key});
@@ -16,9 +17,18 @@ class BoardPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const CommonHeader(title: '커뮤니티'),
+            CommonHeader(
+            title: '커뮤니티',
+            onSearchPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CommunitySearchPage()),
+              );
+            },
+          ),
 
-              // MY TEAM
+
+            // MY TEAM
               const _SectionTitle('MY TEAM'),
               const SizedBox(height: 8),
               Padding(

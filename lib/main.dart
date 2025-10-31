@@ -7,6 +7,7 @@ import 'package:inninglog/navigation/main_navigation.dart';
 import 'package:inninglog/screens/KakaoLoginWebViewPage.dart';
 import 'package:inninglog/screens/add_diary_page.dart';
 import 'package:inninglog/screens/add_seat_page.dart';
+import 'package:inninglog/screens/community_search_page.dart';
 import 'package:inninglog/screens/field_hashtag_filter_sheet.dart';
 import 'package:inninglog/screens/login_page.dart';
 import 'package:inninglog/screens/post_compose_page.dart';
@@ -130,6 +131,7 @@ final GoRouter _router = GoRouter(
 
 
     GoRoute(path: '/onboarding6', builder: (_, __) => const OnboardingPage6()),
+    GoRoute(path: '/Search', builder: (_, __) => const CommunitySearchPage()),
 
 
     /// GNB 있는 ShellRoute
