@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:inninglog/screens/community_search_page.dart';
 
 import '../screens/alarm_page.dart';
 
@@ -9,12 +10,16 @@ class CommonHeader extends StatelessWidget {
   final VoidCallback? onAlarmPressed;
   final Widget? leading;   // 추가!
 
+  /// 검색 버튼 (null이면 표시 안 함)
+  final VoidCallback? onSearchPressed;
+
 
   const CommonHeader({
     super.key,
     required this.title,
     this.onAlarmPressed,
-    this.leading,          // 추가!
+    this.leading,
+    this.onSearchPressed,
   });
 
   @override
@@ -39,10 +44,29 @@ class CommonHeader extends StatelessWidget {
             ),
           ),
           const Spacer(),
+
+          // 검색 버튼 (있을 때만)
+          if (onSearchPressed != null) ...[
+            IconButton(
+              icon: SvgPicture.asset(
+                'assets/icons/search.svg', // 🔍 아이콘 파일명에 맞춰 수정
+                width: 33,
+              ),
+              onPressed: onSearchPressed ??
+                      () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const CommunitySearchPage()),
+                    );
+                  },
+              splashRadius: 33,
+            ),
+            const SizedBox(width:0), // Figma 느낌 간격
+          ],
+
           IconButton(
             icon: SvgPicture.asset(
               'assets/icons/Alarm.svg',
-              width: 18.05,
+              width: 19,
             ),
             onPressed: onAlarmPressed ??
                     () {
