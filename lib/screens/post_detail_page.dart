@@ -862,8 +862,8 @@ class _ReplyBottomBar extends StatelessWidget {
             decoration: BoxDecoration(
               color: Color(0xFFEFEFEF),
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(8),
-                topRight: Radius.circular(8),
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
               ),
 
             ),
@@ -897,8 +897,8 @@ class _ReplyBottomBar extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: const Color(0xFFF8F8F8),
                       borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(8),
-                        bottomRight: Radius.circular(8),
+                        bottomLeft: Radius.circular(12),
+                        bottomRight: Radius.circular(12),
                       ),
 
                     ),
