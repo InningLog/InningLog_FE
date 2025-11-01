@@ -392,7 +392,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
             Column(
               children: replies.map((r) {
                 return Padding(
-                  padding: const EdgeInsets.only(left: 28, bottom: 10), // 들여쓰기
+                  padding: const EdgeInsets.only(left: 0, bottom: 0), // 들여쓰기
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -400,7 +400,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                       Container(
                         width: 10,
                         height: 18,
-                        margin: const EdgeInsets.only(right: 6, top: 4),
+                        margin: const EdgeInsets.only(right: 0, top: 4,left: 0),
                         child: SvgPicture.asset(
                           'assets/icons/board_reply.svg',
                           width: 11,
@@ -785,10 +785,9 @@ class _VBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 1,
-      height: 16,
+      width: 1, height: 16,
       margin: const EdgeInsets.symmetric(horizontal: 8),
-      color: const Color(0xFFE5E7EB), // 회색 200 정도
+      color: AppColors.gray400,
     );
   }
 }

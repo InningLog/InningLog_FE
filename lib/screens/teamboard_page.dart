@@ -1110,7 +1110,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
             Column(
               children: replies.map((r) {
                 return Padding(
-                  padding: const EdgeInsets.only(left: 28, bottom: 10),
+                  padding: const EdgeInsets.only(left: 0, bottom: 0),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1214,21 +1214,25 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
+
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
-      child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.85,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          ///TODO 이거 실제 폰 연결해서 키보드 올릴 때 올라오는지 봐야됨
+          minHeight: MediaQuery.of(context).size.height * 0.668,
+          maxHeight: MediaQuery.of(context).size.height * 0.668,
+        ),
         child: Column(
           children: [
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             Container(
               width: 36, height: 4,
               decoration: BoxDecoration(
-                color: const Color(0xFFE5E7EB),
+                color: const Color(0xFF8F8F8F),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 12),
 
             // 상단 타이틀
             Padding(
@@ -1246,15 +1250,16 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
                 ),
               ),
             ),
+            const SizedBox(height: 4),
 
-            const Divider(height: 1, color: Color(0xFFE5E7EB)),
+            const Divider(height: 0.5, color: AppColors.gray200),
 
             // 내용
             Expanded(
               child: comments.isEmpty
                   ? _EmptyComment() // ← PostDetail과 동일 (board_bori.svg)
                   : ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                padding: const EdgeInsets.fromLTRB(0, 16, 0, 4),
                 itemBuilder: (_, i) => _commentItem(comments[i]),
                 separatorBuilder: (_, __) => const SizedBox(height: 6),
                 itemCount: comments.length,
@@ -1262,7 +1267,8 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
             ),
 
             // 하단 입력바 (PostDetail과 동일)
-            const Divider(height: 1, color: Color(0xFFE5E7EB)),
+            const Divider(height: 0.5, color: AppColors.gray200),
+
             (_activeReplyIndex == null)
                 ? _CommentInputBar(
               controller: _commentCtrl,
@@ -1348,7 +1354,7 @@ class _VBar extends StatelessWidget {
     return Container(
       width: 1, height: 16,
       margin: const EdgeInsets.symmetric(horizontal: 8),
-      color: const Color(0xFFE5E7EB),
+      color: AppColors.gray400,
     );
   }
 }
@@ -1401,6 +1407,7 @@ class _EmptyComment extends StatelessWidget {
               fontSize: 16,
               color: AppColors.gray600,
               fontWeight: FontWeight.w400,
+              letterSpacing: -0.16,
             ),
           ),
         ],
