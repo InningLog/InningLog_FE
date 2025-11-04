@@ -102,7 +102,7 @@ class _TeamBoardPageState extends State<TeamBoardPage>
 
 
             // 구분선
-            const Divider(height: 1, thickness: 1, color: Color(0xFFE5E7EB)),
+            const Divider(height: 1, thickness: 0.8, color: AppColors.gray400),
 
             // 탭별 컨텐츠
             Expanded(
@@ -322,6 +322,7 @@ class _SortTab extends StatelessWidget {
 }
 
 /// 리스트 (피그마 카드)
+///오직완 부분
 class _PostList extends StatelessWidget {
   final bool isOnlywan;
   final int sortIndex;
@@ -338,7 +339,7 @@ class _PostList extends StatelessWidget {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16,8 ),
       itemBuilder: (_, i) {
         final p = data[i];
         return _PostTile(
