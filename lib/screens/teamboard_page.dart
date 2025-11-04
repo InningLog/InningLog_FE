@@ -11,8 +11,9 @@ import 'post_compose_page.dart';
 
 class TeamBoardPage extends StatefulWidget {
   final String teamCode; // e.g. 'HT', 'LG', ...
+  final int initialTabIndex;
 
-  const TeamBoardPage({super.key, required this.teamCode});
+  const TeamBoardPage({super.key, required this.teamCode, this.initialTabIndex = 0,});
 
   @override
   State<TeamBoardPage> createState() => _TeamBoardPageState();
@@ -27,7 +28,12 @@ class _TeamBoardPageState extends State<TeamBoardPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+
+
+    final safeIndex = widget.initialTabIndex.clamp(0, 3);
+
+    _tabController = TabController(length: 4, vsync: this, initialIndex: safeIndex, );
+    _sectionIndex = safeIndex;
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return; // 애니메 중복 setState 방지
       setState(() {
@@ -54,19 +60,22 @@ class _TeamBoardPageState extends State<TeamBoardPage>
       floatingActionButton: SizedBox(
         width: 56,
         height: 56,
+
         child: FloatingActionButton(
           backgroundColor: AppColors.primary700,
           shape: const CircleBorder(),
           onPressed: () {
-            context.push('/boards/${widget.teamCode}/compose', extra: teamLabel);
+            final teamLabel = teamLabelFromCode(widget.teamCode);
 
+            if (_sectionIndex == 2) {
+              // 🛒 이닝 장터 탭일 때 → 장터 업로드 1단계로
+              context.push('/market/${widget.teamCode}/upload'); // 또는 '/market/upload/step1'
+            } else {
+              // 기존 게시판 글쓰기
+              context.push('/boards/${widget.teamCode}/compose', extra: teamLabel);
+            }
           },
-
-          child: const Icon(
-            Icons.add,
-            size: 40,
-            color: AppColors.primary50,
-          ),
+          child: const Icon(Icons.add, size: 40, color: AppColors.primary50),
         ),
       ),
 

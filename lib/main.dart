@@ -10,6 +10,9 @@ import 'package:inninglog/screens/add_seat_page.dart';
 import 'package:inninglog/screens/community_search_page.dart';
 import 'package:inninglog/screens/field_hashtag_filter_sheet.dart';
 import 'package:inninglog/screens/login_page.dart';
+import 'package:inninglog/screens/market_upload_step1.dart';
+import 'package:inninglog/screens/market_upload_step2.dart';
+import 'package:inninglog/screens/market_upload_step3.dart';
 import 'package:inninglog/screens/post_compose_page.dart';
 import 'package:inninglog/screens/post_detail_page.dart';
 import 'package:inninglog/screens/seat_detail_page.dart';
@@ -133,6 +136,24 @@ final GoRouter _router = GoRouter(
     GoRoute(path: '/onboarding6', builder: (_, __) => const OnboardingPage6()),
     GoRoute(path: '/Search', builder: (_, __) => const CommunitySearchPage()),
 
+    GoRoute(
+      path: '/market/:code/upload',
+      name: 'market_upload',
+      builder: (ctx, state) {
+        final code = state.pathParameters['code']!;
+        return MarketUploadStep1(teamCode: code);
+      },
+    ),
+
+    GoRoute(
+      path: '/market/:code/upload/step2',
+      builder: (ctx, state) => MarketUploadStep2(teamCode: state.pathParameters['code']!),
+    ),
+    GoRoute(
+      path: '/market/:code/upload/step3',
+      builder: (ctx, state) => MarketUploadStep3(teamCode: state.pathParameters['code']!),
+    ),
+
 
     /// GNB 있는 ShellRoute
     ShellRoute(
@@ -188,7 +209,17 @@ final GoRouter _router = GoRouter(
 
         GoRoute(
           path: '/boards/:code',
-          builder: (_, state) => TeamBoardPage(teamCode: state.pathParameters['code']!),
+          builder: (_, state) {
+            final code = state.pathParameters['code']!;         // 팀 코드
+            final tabStr = state.uri.queryParameters['tab'];    // 쿼리로 탭 받기
+            final initialTabIndex = int.tryParse(tabStr ?? '') ?? 0;
+            final tabParam = int.tryParse(state.uri.queryParameters['tab'] ?? '');
+            return TeamBoardPage(
+              teamCode: code,
+              initialTabIndex: tabParam ?? 0, // ✅ 기본 0
+            );
+          },
+
           routes: [
             GoRoute(
               path: 'post/:postId',
@@ -210,6 +241,8 @@ final GoRouter _router = GoRouter(
                 return PostComposePage(teamLabel: teamLabel);
               },
             ),
+
+
           ],
         )
 
