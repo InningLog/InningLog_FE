@@ -116,7 +116,7 @@ class _TeamBoardPageState extends State<TeamBoardPage>
                     teamLabel: teamLabel,
                   ),
                   _PostList(sortIndex: _sortIndex, teamCode: widget.teamCode, teamLabel: teamLabel),
-                  _PostList(sortIndex: _sortIndex, teamCode: widget.teamCode, teamLabel: teamLabel),
+                  const _InningMarketTab(), // ✅ 이닝 장터 탭
                   _PostList(sortIndex: _sortIndex, teamCode: widget.teamCode, teamLabel: teamLabel),
                 ],
               ),
@@ -1626,6 +1626,294 @@ class _CommentInputBar extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// ============================
+/// 🛒 이닝 장터 탭
+/// ============================
+class _InningMarketTab extends StatefulWidget {
+  const _InningMarketTab({super.key});
+
+  @override
+  State<_InningMarketTab> createState() => _InningMarketTabState();
+}
+
+class _InningMarketTabState extends State<_InningMarketTab> {
+  bool showOnSaleOnly = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final posts = [
+      {
+        'status': '판매중',
+        'title': '제목_공백 포함 최대 40자까지 가능 줄로 따지면 2줄까지 가능합니다',
+        'comments': 2,
+        'bookmarks': 2,
+        'time': '3분 전',
+        'onSale': true,
+      },
+      {
+        'status': '판매완료',
+        'title': '제목_공백 포함 최대 40자까지 가능 줄로 따지면 2줄까지 가능합니다',
+        'comments': 2,
+        'bookmarks': 2,
+        'time': '3분 전',
+        'onSale': false,
+      },
+      {
+        'status': '판매완료',
+        'title': '제목_공백 포함 최대 40자까지 가능 줄로 따지면 2줄까지 가능합니다',
+        'comments': 2,
+        'bookmarks': 2,
+        'time': '3분 전',
+        'onSale': false,
+      },
+      {
+        'status': '판매중',
+        'title': '제목_공백 포함 최대 40자까지 가능 줄로 따지면 2줄까지 가능합니다',
+        'comments': 2,
+        'bookmarks': 2,
+        'time': '3분 전',
+        'onSale': true,
+      },
+    ];
+
+    final filtered = showOnSaleOnly
+        ? posts.where((p) => p['onSale'] == true).toList()
+        : posts;
+
+    return Column(
+      children: [
+        // 🔹 고정 공지
+        Container(
+          width: double.infinity,
+          color: AppColors.gray200,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: const Center(
+            child: Text(
+              '★필독★ 이닝 장터 규정',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.gray800,
+                fontFamily: 'Pretendard',
+                letterSpacing: -0.15,
+              ),
+            ),
+          ),
+        ),
+
+        // 🔹 스위치 영역
+        Container(
+          color: Colors.white,
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+          child: Row(
+            children: [
+              CustomMarketSwitch(
+                value: showOnSaleOnly,
+                onChanged: (v) => setState(() => showOnSaleOnly = v),
+              ),
+              const SizedBox(width: 6),
+              const Text(
+                '판매중인 상품만 보기',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.gray800,
+                  fontWeight: FontWeight.w400,
+                  fontFamily: 'Pretendard',
+                  letterSpacing: -0.14,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+
+        // 🔹 게시글 리스트
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+            itemBuilder: (_, i) {
+              final p = filtered[i];
+              return Container(
+                decoration: BoxDecoration(
+                  color: AppColors.primary50,
+                  borderRadius: BorderRadius.circular(0),
+                  border: Border(
+                    bottom: BorderSide(
+                      color: AppColors.gray200,
+                      width: 1,
+                    ),
+                  ),
+                ),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                child: Row(
+                  children: [
+                    // 왼쪽 텍스트
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 🔸 상태 배지
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: p['status'] == '판매중'
+                                  ? AppColors.primary600
+                                  : const Color(0xFFC0C0C0),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              p['status']!.toString(),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary50,
+                                fontFamily: 'Pretendard',
+                                letterSpacing: -0.1,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+
+                          // 🔸 제목
+                          Text(
+                            p['title']!.toString(),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: AppColors.gray850,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Pretendard',
+                              letterSpacing: -0.16,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // 🔸 하단 정보 (댓글, 북마크, 시간)
+                          Row(
+                            children: [
+                              SvgPicture.asset('assets/icons/comment.svg',
+                                  width: 14.4, height: 14.4),
+                              const SizedBox(width: 4),
+                              Text('${p['comments']}',
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.gray700,
+                                      fontFamily: 'Pretendard',
+                                      fontWeight: FontWeight.w500,
+                                      letterSpacing: -0.12,
+                                  )),
+                              const SizedBox(width: 11),
+                              SvgPicture.asset('assets/icons/bookmark.svg',
+                                  width: 14, height: 14),
+                              const SizedBox(width: 4),
+                              Text('${p['bookmarks']}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.gray700,
+                                    fontFamily: 'Pretendard',
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: -0.12,)),
+                              const SizedBox(width: 98.6),
+                              Text(
+                                p['time']!.toString(),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.gray700,
+                                  fontFamily: 'Pretendard',
+                                  fontWeight: FontWeight.w400,
+                                  letterSpacing: -0.14,
+
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    // 오른쪽 썸네일 (정사각형)
+                    ///TODO 연동 후 분기처리
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE5E7EB),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemCount: filtered.length,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+//이닝장터 커스텀 스위치
+class CustomMarketSwitch extends StatefulWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const CustomMarketSwitch({
+    super.key,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  State<CustomMarketSwitch> createState() => _CustomMarketSwitchState();
+}
+
+class _CustomMarketSwitchState extends State<CustomMarketSwitch> {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => widget.onChanged(!widget.value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        width: 35,
+        height: 21,
+        padding: const EdgeInsets.symmetric(horizontal: 2.5),
+        decoration: BoxDecoration(
+          color: widget.value
+              ? const Color(0xFFAFD956) // 활성 시 연두
+              : const Color(0xFF8F8F8F), // 비활성 회색
+          borderRadius: BorderRadius.circular(36.5),
+        ),
+        alignment:
+        widget.value ? Alignment.centerRight : Alignment.centerLeft,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          width: 17.8,
+          height: 18.2,
+          decoration: BoxDecoration(
+            color: AppColors.primary50,
+            borderRadius: BorderRadius.circular(100), // 완전 둥글게
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                offset: const Offset(0, 1),
+                blurRadius: 2,
+              ),
+            ],
+          ),
         ),
       ),
     );
