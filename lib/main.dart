@@ -14,6 +14,7 @@ import 'package:inninglog/screens/market_upload_step1.dart';
 import 'package:inninglog/screens/market_upload_step2.dart';
 import 'package:inninglog/screens/market_upload_step3.dart';
 import 'package:inninglog/screens/post_compose_page.dart';
+import 'package:inninglog/screens/post_detail_market.dart';
 import 'package:inninglog/screens/post_detail_page.dart';
 import 'package:inninglog/screens/seat_detail_page.dart';
 import 'package:inninglog/screens/onboarding_page6.dart';
@@ -153,6 +154,16 @@ final GoRouter _router = GoRouter(
       path: '/market/:code/upload/step3',
       builder: (ctx, state) => MarketUploadStep3(teamCode: state.pathParameters['code']!),
     ),
+
+    GoRoute(
+      name: 'post_detail_market',
+      path: '/post/market/detail',
+      builder: (context, state) {
+        final args = state.extra as PostDetailMarketArgs;
+        return PostDetailMarketPage(args: args);
+      },
+    ),
+
 
 
     /// GNB 있는 ShellRoute

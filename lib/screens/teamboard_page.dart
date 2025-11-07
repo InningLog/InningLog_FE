@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inninglog/app_colors.dart';
+import 'package:inninglog/screens/post_detail_market.dart';
 import '../constant/team_codes.dart';
 import '../widgets/common_header.dart';
 import 'alarm_page.dart';
@@ -125,7 +126,11 @@ class _TeamBoardPageState extends State<TeamBoardPage>
                     teamLabel: teamLabel,
                   ),
                   _PostList(sortIndex: _sortIndex, teamCode: widget.teamCode, teamLabel: teamLabel),
-                  const _InningMarketTab(), // ✅ 이닝 장터 탭
+                  _InningMarketTab(
+                    teamCode: widget.teamCode,
+                    teamLabel: teamLabel,
+                  ),
+
                   _PostList(sortIndex: _sortIndex, teamCode: widget.teamCode, teamLabel: teamLabel),
                 ],
               ),
@@ -1645,11 +1650,19 @@ class _CommentInputBar extends StatelessWidget {
 /// 🛒 이닝 장터 탭
 /// ============================
 class _InningMarketTab extends StatefulWidget {
-  const _InningMarketTab({super.key});
+  final String teamCode;
+  final String teamLabel;
+
+  const _InningMarketTab({
+    super.key,
+    required this.teamCode,
+    required this.teamLabel,
+  });
 
   @override
   State<_InningMarketTab> createState() => _InningMarketTabState();
 }
+
 
 class _InningMarketTabState extends State<_InningMarketTab> {
   bool showOnSaleOnly = false;
@@ -1748,7 +1761,22 @@ class _InningMarketTabState extends State<_InningMarketTab> {
             padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
             itemBuilder: (_, i) {
               final p = filtered[i];
-              return Container(
+
+              return Material(
+                color: AppColors.primary50, // 배경 유지
+                child: InkWell(
+                  onTap: () {
+                    context.pushNamed(
+                      'post_detail_market',
+                      extra: PostDetailMarketArgs(
+                        teamCode: widget.teamCode,      // ex) 'LG', 'HT'
+                        teamLabel: widget.teamLabel,    // ex) 'LG 트윈스 👶🏻👶🏻'
+                        postId: i + 1,                  // 더미 ID (나중에 실제 값으로 교체)
+                      ),
+                    );
+                  },
+
+                  child:  Container(
                 decoration: BoxDecoration(
                   color: AppColors.primary50,
                   borderRadius: BorderRadius.circular(0),
@@ -1861,6 +1889,8 @@ class _InningMarketTabState extends State<_InningMarketTab> {
                       ),
                     ),
                   ],
+                ),
+                    ),
                 ),
               );
             },
