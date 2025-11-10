@@ -29,22 +29,28 @@ class BoardPage extends StatelessWidget {
           ),
 
 
-            // MY TEAM
+              // MY TEAM
               const _SectionTitle('MY TEAM'),
               const SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: _BannerCard(
-                  imagePath: 'assets/images/mydoo_banner.png', // 네모 배너 이미지
+                  imagePath: 'assets/images/mydoo_banner.png',
                   height: 88,
                   onTap: () {
-                    // TODO: 내 팀 보드로 이동
+                    // TODO: 실제 내 팀 코드로 교체
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TeamBoardPage(teamCode: 'OB'), // 두산 예시
+                      ),
+                    );
                   },
                 ),
               ),
               const SizedBox(height: 40),
 
-              // KBO 전체 게시판
+// KBO 전체 게시판
               const _SectionTitle('KBO 전체 게시판'),
               const SizedBox(height: 8),
               Padding(
@@ -53,10 +59,17 @@ class BoardPage extends StatelessWidget {
                   imagePath: 'assets/images/card_kbo.png',
                   height: 88,
                   onTap: () {
-                    // TODO: KBO 전체 게시판으로 이동
+                    // KBO 전체 게시판용
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TeamBoardPage(teamCode: 'KBO'),
+                      ),
+                    );
                   },
                 ),
               ),
+
               const SizedBox(height: 40),
 
               // 팀 게시판
@@ -283,7 +296,6 @@ class _PopularAndMySection extends StatelessWidget {
           const SizedBox(height: 8),
 
           // 게시물 카드 2개 (예시)
-          // 게시물 카드 2개 (예시)
           const _PopularPostCard(
             title: '제목_공백 포함 최대 20자까지 가능',
             preview: '본문 보이는 건 최대 24자 그 이상은 …',
@@ -314,35 +326,70 @@ class _PopularAndMySection extends StatelessWidget {
               letterSpacing: -0.19,
             ),
           ),
+          const SizedBox(height: 11),
+
           // MY 섹션
           Center(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(height: 11),
-                const _MyMenuButton(
+                // 내가 쓴 글
+                _MyMenuButton(
                   icon: '✏️',
                   label: '내가 쓴 글',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TeamBoardPage(
+                          teamCode: 'KBO', // 의미상 전체/내 활동용 아무 값
+                          mode: BoardMode.myPosts,
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 8),
-                const _MyMenuButton(
+
+                // 댓글 단 글
+                _MyMenuButton(
                   icon: '💬',
                   label: '댓글 단 글',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                        const TeamBoardPage(teamCode: '댓글 단 글'),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 8),
+
+                // 스크랩
                 _MyMenuButtonSvg(
                   svgPath: 'assets/icons/scrap_full.svg',
                   label: '스크랩',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                        const TeamBoardPage(teamCode: '스크랩'),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
           ),
-
         ],
       ),
     );
   }
 }
+
 
 //// 인기 게시물 카드 위젯
 class _PopularPostCard extends StatelessWidget {
@@ -488,104 +535,113 @@ class _PopularPostCard extends StatelessWidget {
 }
 
 /// MY 메뉴 버튼
+/// MY 메뉴 버튼
 class _MyMenuButton extends StatelessWidget {
   final String icon;
   final String label;
   final Color? iconColor;
+  final VoidCallback? onTap;
 
   const _MyMenuButton({
     required this.icon,
     required this.label,
     this.iconColor,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.gray100,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.gray300, width: 0.8 ),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16,vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-
-          Text(
-            icon,
-            style: TextStyle(
-              fontSize: 12,
-              color: iconColor ?? Colors.black,
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.12,
-
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.gray100,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.gray300, width: 0.8),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              icon,
+              style: TextStyle(
+                fontSize: 12,
+                color: iconColor ?? Colors.black,
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.12,
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.black,
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.12,
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.black,
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.12,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
-
 /// MY 메뉴 버튼 (SVG 버전)
 class _MyMenuButtonSvg extends StatelessWidget {
   final String svgPath;
   final String label;
+  final VoidCallback? onTap;
 
   const _MyMenuButtonSvg({
     required this.svgPath,
     required this.label,
+    this.onTap,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-
-      decoration: BoxDecoration(
-        color: AppColors.gray100,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.gray300, width: 0.8),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16,vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SvgPicture.asset(
-            svgPath,
-            width: 12,
-            height: 14,
-            colorFilter: const ColorFilter.mode(
-              AppColors.primary700,
-              BlendMode.srcIn,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.gray100,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.gray300, width: 0.8),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SvgPicture.asset(
+              svgPath,
+              width: 12,
+              height: 14,
+              colorFilter: const ColorFilter.mode(
+                AppColors.primary700,
+                BlendMode.srcIn,
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.black,
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.12,
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.black,
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.12,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
