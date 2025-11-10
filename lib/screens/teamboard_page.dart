@@ -10,11 +10,15 @@ import 'community_search_market.dart';
 import 'community_search_page.dart';
 import 'post_compose_page.dart';
 
+enum BoardMode { normal, myPosts, myComments, scraps }
+
+
 class TeamBoardPage extends StatefulWidget {
   final String teamCode; // e.g. 'HT', 'LG', ...
   final int initialTabIndex;
+  final BoardMode mode;
 
-  const TeamBoardPage({super.key, required this.teamCode, this.initialTabIndex = 0,});
+  const TeamBoardPage({super.key, required this.teamCode, this.initialTabIndex = 0, this.mode = BoardMode.normal,});
 
   @override
   State<TeamBoardPage> createState() => _TeamBoardPageState();
@@ -23,20 +27,28 @@ class TeamBoardPage extends StatefulWidget {
 class _TeamBoardPageState extends State<TeamBoardPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
-  int _sortIndex = 0; // 0: 최신, 1: 인기
-  int _sectionIndex = 0; // ✅ 0: 오직완, 1: 자유, 2: 이닝 장터, 3: 오늘의 뉴스
+  int _sortIndex = 0;
+  int _sectionIndex = 0;
+
+  bool get _hasNewsTab => widget.mode == BoardMode.normal;
 
   @override
   void initState() {
     super.initState();
 
+    final maxIndex = _hasNewsTab ? 3 : 2; // 0~3 or 0~2
+    final safeIndex = widget.initialTabIndex.clamp(0, maxIndex);
 
-    final safeIndex = widget.initialTabIndex.clamp(0, 3);
+    _tabController = TabController(
+      length: _hasNewsTab ? 4 : 3,
+      vsync: this,
+      initialIndex: safeIndex,
+    );
 
-    _tabController = TabController(length: 4, vsync: this, initialIndex: safeIndex, );
     _sectionIndex = safeIndex;
+
     _tabController.addListener(() {
-      if (_tabController.indexIsChanging) return; // 애니메 중복 setState 방지
+      if (_tabController.indexIsChanging) return;
       setState(() {
         _sectionIndex = _tabController.index;
       });
@@ -53,7 +65,18 @@ class _TeamBoardPageState extends State<TeamBoardPage>
 
   @override
   Widget build(BuildContext context) {
-    final title = teamNameFromCode(widget.teamCode);
+    final title = () {
+      switch (widget.mode) {
+        case BoardMode.myPosts:
+          return '내가 쓴 글';
+        case BoardMode.myComments:
+          return '댓글 단 글';
+        case BoardMode.scraps:
+          return '스크랩';
+        case BoardMode.normal:
+        default:
+          return teamNameFromCode(widget.teamCode);
+      } }();
     final teamLabel = teamLabelFromCode(widget.teamCode);
 
     return Scaffold(
@@ -98,7 +121,11 @@ class _TeamBoardPageState extends State<TeamBoardPage>
             // 카테고리 세그먼트 (오직완 / 자유 게시판 / 이닝 장터 / 오늘의 뉴스)
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-              child: _SegmentedTabs(controller: _tabController),
+              child: _SegmentedTabs(
+                controller: _tabController,
+                hasNewsTab: _hasNewsTab,
+              ),
+
             ),
 
             // 정렬 탭 (최신 | 인기)
@@ -118,23 +145,49 @@ class _TeamBoardPageState extends State<TeamBoardPage>
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                children: [
+                children: _hasNewsTab
+                    ? [
                   _PostList(
-                    isOnlywan: true,          // ✅ 0번 탭만 오직완 레이아웃
+                    isOnlywan: true,
                     sortIndex: _sortIndex,
                     teamCode: widget.teamCode,
                     teamLabel: teamLabel,
                   ),
-                  _PostList(sortIndex: _sortIndex, teamCode: widget.teamCode, teamLabel: teamLabel),
+                  _PostList(
+                    sortIndex: _sortIndex,
+                    teamCode: widget.teamCode,
+                    teamLabel: teamLabel,
+                  ),
                   _InningMarketTab(
                     teamCode: widget.teamCode,
                     teamLabel: teamLabel,
                   ),
-
-                  _PostList(sortIndex: _sortIndex, teamCode: widget.teamCode, teamLabel: teamLabel),
+                  _PostList(
+                    sortIndex: _sortIndex,
+                    teamCode: widget.teamCode,
+                    teamLabel: teamLabel, // 오늘의 뉴스용
+                  ),
+                ]
+                    : [
+                  _PostList(
+                    isOnlywan: true,
+                    sortIndex: _sortIndex,
+                    teamCode: widget.teamCode,
+                    teamLabel: teamLabel,
+                  ),
+                  _PostList(
+                    sortIndex: _sortIndex,
+                    teamCode: widget.teamCode,
+                    teamLabel: teamLabel,
+                  ),
+                  _InningMarketTab(
+                    teamCode: widget.teamCode,
+                    teamLabel: teamLabel,
+                  ),
                 ],
               ),
             ),
+
 
           ],
         ),
@@ -146,18 +199,21 @@ class _TeamBoardPageState extends State<TeamBoardPage>
 /// 연한 톤 배경의 세그먼트 탭 (피그마 느낌)
 class _SegmentedTabs extends StatelessWidget {
   final TabController controller;
-  const _SegmentedTabs({required this.controller});
+  final bool hasNewsTab;
+
+  const _SegmentedTabs({
+    required this.controller,
+    required this.hasNewsTab,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final dividerColor = AppColors.primary50;
-
     return Container(
       height: 40,
       decoration: const BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: AppColors.gray400, // 회색 밑줄 (불투명도 0.5)
+            color: AppColors.gray400,
             width: 0.5,
           ),
         ),
@@ -167,7 +223,7 @@ class _SegmentedTabs extends StatelessWidget {
         dividerColor: Colors.transparent,
         indicator: const UnderlineTabIndicator(
           borderSide: BorderSide(
-            color: AppColors.primary700, // 선택된 탭 밑줄
+            color: AppColors.primary700,
             width: 1.5,
           ),
         ),
@@ -188,19 +244,23 @@ class _SegmentedTabs extends StatelessWidget {
         ),
         overlayColor: WidgetStateProperty.all(Colors.transparent),
         labelPadding: const EdgeInsets.symmetric(horizontal: 8),
-        tabs: const [
+        tabs: hasNewsTab
+            ? const [
           Tab(text: '오직완'),
           Tab(text: '자유 게시판'),
           Tab(text: '이닝 장터'),
           Tab(text: '오늘의 뉴스'),
+        ]
+            : const [
+          Tab(text: '오직완'),
+          Tab(text: '자유 게시판'),
+          Tab(text: '이닝 장터'),
         ],
       ),
     );
-
-
-
   }
 }
+
 
 
 // /// “최신 | 인기” 언더라인 스위치
