@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inninglog/navigation/main_navigation.dart';
+import 'package:inninglog/screens/JamsilMap.dart';
 import 'package:inninglog/screens/KakaoLoginWebViewPage.dart';
 import 'package:inninglog/screens/add_diary_page.dart';
 import 'package:inninglog/screens/add_seat_page.dart';
@@ -132,7 +133,7 @@ final GoRouter _router = GoRouter(
 
 
 
-
+    GoRoute(path: '/jamsil', builder: (_, __) => const JamsilMap()),
 
     GoRoute(path: '/onboarding6', builder: (_, __) => const OnboardingPage6()),
     GoRoute(path: '/Search', builder: (_, __) => const CommunitySearchPage()),

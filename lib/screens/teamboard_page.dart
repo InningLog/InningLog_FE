@@ -93,7 +93,7 @@ class _TeamBoardPageState extends State<TeamBoardPage>
 
             if (_sectionIndex == 2) {
               // 🛒 이닝 장터 탭일 때 → 장터 업로드 1단계로
-              context.push('/market/${widget.teamCode}/upload'); // 또는 '/market/upload/step1'
+              context.push('/jamsil'); // 또는 '/market/upload/step1'
             } else {
               // 기존 게시판 글쓰기
               context.push('/boards/${widget.teamCode}/compose', extra: teamLabel);
