@@ -274,8 +274,8 @@ class _PopularAndMySection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
-            children: const [
-              Text(
+            children: [
+              const Text(
                 '인기 게시물',
                 style: TextStyle(
                   fontSize: 19,
@@ -285,11 +285,23 @@ class _PopularAndMySection extends StatelessWidget {
                   color: Colors.black,
                 ),
               ),
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 18,
-                color: Colors.grey,
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                      const TeamBoardPage(teamCode: '인기 게시물'),
+                    ),
+                  );
+                },
+                child: const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 18,
+                  color: Colors.grey,
+                ),
               ),
+
             ],
           ),
 
