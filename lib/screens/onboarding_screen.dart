@@ -179,7 +179,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: GestureDetector(
-                onTap: () => context.push('/board'), // GoRouter에 라우트 등록 필요
+                onTap: () => context.push('/kakaoWebView'),
                 child: SvgPicture.asset(
                   'assets/icons/kakao_button.svg',
                   height: 54,
