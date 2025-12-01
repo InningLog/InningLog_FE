@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:inninglog/screens/seat_page.dart';
-import '../analytics/AmplitudeFlutter.dart';
-import '../app_colors.dart';
-import '../main.dart';
-import '../widgets/common_header.dart';
+import 'package:inninglog/screens/Diary/seat_page.dart';
+import '../../analytics/AmplitudeFlutter.dart';
+import '../../app_colors.dart';
+import '../../main.dart';
+import '../../widgets/common_header.dart';
 import 'package:go_router/go_router.dart';
 
 

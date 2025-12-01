@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../screens/home_page.dart';
-import '../screens/diary_page.dart';
-import '../screens/board_page.dart';
-import '../screens/my_page.dart';
-import '../screens/seat_page.dart';
+import '../screens/Home/home_page.dart';
+import '../screens/Diary/diary_page.dart';
+import '../screens/Community/board_page.dart';
+import '../screens/Mypage/my_page.dart';
+import '../screens/Diary/seat_page.dart';
 import 'package:inninglog/navigation/main_navigation.dart';
 import 'package:go_router/go_router.dart';
 

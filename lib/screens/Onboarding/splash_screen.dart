@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:inninglog/app_colors.dart';
-import '../analytics/AmplitudeFlutter.dart'; // ✅ deviceId 전용 버전 불러오기
+import '../../analytics/AmplitudeFlutter.dart'; // ✅ deviceId 전용 버전 불러오기
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

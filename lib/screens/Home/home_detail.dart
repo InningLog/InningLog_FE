@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../analytics/AmplitudeFlutter.dart';
-import '../app_colors.dart';
-import '../main.dart';
-import '../service/api_service.dart';
+import '../../analytics/AmplitudeFlutter.dart';
+import '../../app_colors.dart';
+import '../../main.dart';
+import '../../service/api_service.dart';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;

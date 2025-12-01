@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../analytics/AmplitudeFlutter.dart';
-import '../app_colors.dart';
-import '../main.dart';
-import '../widgets/common_header.dart';
+import '../../analytics/AmplitudeFlutter.dart';
+import '../../app_colors.dart';
+import '../../main.dart';
+import '../../widgets/common_header.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'FieldSearchPage.dart';
+import '../Field/FieldSearchPage.dart';
 
 final List<_TeamStadium> teamStadiums = [
   _TeamStadium('assets/icons/seoul_seat.svg', '두산 & LG','잠실 야구장','잠실'),

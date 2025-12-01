@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:month_picker_dialog/month_picker_dialog.dart';
-import '../analytics/AmplitudeFlutter.dart';
-import '../app_colors.dart';
-import '../models/home_view.dart';
-import '../service/api_service.dart';
-import '../widgets/common_header.dart';
+import '../../analytics/AmplitudeFlutter.dart';
+import '../../app_colors.dart';
+import '../../models/home_view.dart';
+import '../../service/api_service.dart';
+import '../../widgets/common_header.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'add_diary_page.dart';
 import 'package:collection/collection.dart';
-import '../main.dart';
+import '../../main.dart';
 
 
 

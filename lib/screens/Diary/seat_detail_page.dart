@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../app_colors.dart';
-import '../models/home_view.dart';
-import '../service/api_service.dart';
+import '../../app_colors.dart';
+import '../../models/home_view.dart';
+import '../../service/api_service.dart';
 
 class SeatDetailPage extends StatefulWidget {
   final int seatViewId;
