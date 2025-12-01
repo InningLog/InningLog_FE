@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:inninglog/app_colors.dart';
-import 'package:inninglog/screens/teamboard_page.dart';
-import '../widgets/common_header.dart';
+import 'package:inninglog/screens/Community/teamboard_page.dart';
+import '../../widgets/common_header.dart';
 import 'community_search_page.dart';
 
 class BoardPage extends StatelessWidget {

@@ -8,16 +8,16 @@ import 'package:inninglog/service/api_service.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../analytics/AmplitudeFlutter.dart';
-import '../app_colors.dart';
+import '../../analytics/AmplitudeFlutter.dart';
+import '../../app_colors.dart';
 import 'dart:io';
-import '../main.dart';
-import '../models/home_view.dart';
-import '../service/api_service.dart';
+import '../../main.dart';
+import '../../models/home_view.dart';
+import '../../service/api_service.dart';
 import 'add_seat_page.dart';
 import 'package:http/http.dart' as http;
-import '../service/api_service.dart';
-import 'home_page.dart';
+import '../../service/api_service.dart';
+import '../Home/home_page.dart';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart'; // kIsWeb
 

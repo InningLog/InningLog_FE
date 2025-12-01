@@ -4,31 +4,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inninglog/navigation/main_navigation.dart';
-import 'package:inninglog/screens/JamsilMap.dart';
-import 'package:inninglog/screens/KakaoLoginWebViewPage.dart';
-import 'package:inninglog/screens/add_diary_page.dart';
-import 'package:inninglog/screens/add_seat_page.dart';
-import 'package:inninglog/screens/community_search_page.dart';
-import 'package:inninglog/screens/field_hashtag_filter_sheet.dart';
-import 'package:inninglog/screens/login_page.dart';
-import 'package:inninglog/screens/market_upload_step1.dart';
-import 'package:inninglog/screens/market_upload_step2.dart';
-import 'package:inninglog/screens/market_upload_step3.dart';
-import 'package:inninglog/screens/post_compose_page.dart';
-import 'package:inninglog/screens/post_detail_market.dart';
-import 'package:inninglog/screens/post_detail_page.dart';
-import 'package:inninglog/screens/seat_detail_page.dart';
-import 'package:inninglog/screens/onboarding_page6.dart';
-import 'package:inninglog/screens/signup_page.dart';
-import 'package:inninglog/screens/splash_screen.dart';
-import 'package:inninglog/screens/onboarding_screen.dart';
-import 'package:inninglog/screens/seatviewtest.dart';
-import 'package:inninglog/screens/home_page.dart';
-import 'package:inninglog/screens/diary_page.dart';
-import 'package:inninglog/screens/seat_page.dart';
-import 'package:inninglog/screens/board_page.dart';
-import 'package:inninglog/screens/my_page.dart';
-import 'package:inninglog/screens/teamboard_page.dart';
+import 'package:inninglog/screens/login/KakaoLoginWebViewPage.dart';
+import 'package:inninglog/screens/Diary/add_diary_page.dart';
+import 'package:inninglog/screens/Diary/add_seat_page.dart';
+import 'package:inninglog/screens/Community/community_search_page.dart';
+import 'package:inninglog/screens/Field/field_hashtag_filter_sheet.dart';
+import 'package:inninglog/screens/Community/market_upload_step1.dart';
+import 'package:inninglog/screens/Community/market_upload_step2.dart';
+import 'package:inninglog/screens/Community/market_upload_step3.dart';
+import 'package:inninglog/screens/Community/post_compose_page.dart';
+import 'package:inninglog/screens/Community/post_detail_market.dart';
+import 'package:inninglog/screens/Community/post_detail_page.dart';
+import 'package:inninglog/screens/Diary/seat_detail_page.dart';
+import 'package:inninglog/screens/Onboarding/onboarding_page6.dart';
+import 'package:inninglog/screens/Onboarding/splash_screen.dart';
+import 'package:inninglog/screens/Onboarding/onboarding_screen.dart';
+import 'package:inninglog/screens/Home/home_page.dart';
+import 'package:inninglog/screens/Diary/diary_page.dart';
+import 'package:inninglog/screens/Diary/seat_page.dart';
+import 'package:inninglog/screens/Community/board_page.dart';
+import 'package:inninglog/screens/Mypage/my_page.dart';
+import 'package:inninglog/screens/Community/teamboard_page.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
 import 'package:amplitude_flutter/amplitude.dart';
@@ -76,12 +72,7 @@ final GoRouter _router = GoRouter(
     ),
 
     /// GNB 없는 화면들
-    // GoRoute(
-    //   path: '/seatviewtest',
-    //   builder: (context, state) {
-    //     return const Seatviewtest(); // ✅ 그냥 기본 생성자만
-    //   },
-    // ),
+
     GoRoute(
       path: '/kakaoWebView',
       name: 'kakaoWebView',
@@ -99,8 +90,7 @@ final GoRouter _router = GoRouter(
 
     GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
     GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
-    GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
-    GoRoute(path: '/signup', builder: (_, __) => const SignupPage()),
+
     GoRoute(
       path: '/adddiary',
       builder: (context, state) {
@@ -131,9 +121,6 @@ final GoRouter _router = GoRouter(
     ),
 
 
-
-
-    GoRoute(path: '/jamsil', builder: (_, __) => const JamsilMap()),
 
     GoRoute(path: '/onboarding6', builder: (_, __) => const OnboardingPage6()),
     GoRoute(path: '/Search', builder: (_, __) => const CommunitySearchPage()),

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inninglog/app_colors.dart';
-import 'package:inninglog/screens/post_detail_market.dart';
-import '../constant/team_codes.dart';
-import '../widgets/common_header.dart';
+import 'package:inninglog/screens/Community/post_detail_market.dart';
+import '../../constant/team_codes.dart';
+import '../../widgets/common_header.dart';
 import 'alarm_page.dart';
 import 'community_search_market.dart';
 import 'community_search_page.dart';
@@ -93,7 +93,7 @@ class _TeamBoardPageState extends State<TeamBoardPage>
 
             if (_sectionIndex == 2) {
               // 🛒 이닝 장터 탭일 때 → 장터 업로드 1단계로
-              context.push('/jamsil'); // 또는 '/market/upload/step1'
+              context.push('/market/${widget.teamCode}/upload');
             } else {
               // 기존 게시판 글쓰기
               context.push('/boards/${widget.teamCode}/compose', extra: teamLabel);

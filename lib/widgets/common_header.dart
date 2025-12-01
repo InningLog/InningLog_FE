@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:inninglog/screens/community_search_page.dart';
-
-import '../screens/alarm_page.dart';
+import 'package:inninglog/screens/Community/community_search_page.dart';
+import '../screens/Community/alarm_page.dart';
 
 class CommonHeader extends StatelessWidget {
   final String title;

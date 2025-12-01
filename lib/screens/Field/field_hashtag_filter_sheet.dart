@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import '../analytics/AmplitudeFlutter.dart';
-import '../app_colors.dart';
-import '../main.dart';
-import '../models/home_view.dart';
-import '../service/api_service.dart';
-import '../widgets/common_header.dart';
+import '../../analytics/AmplitudeFlutter.dart';
+import '../../app_colors.dart';
+import '../../main.dart';
+import '../../models/home_view.dart';
+import '../../service/api_service.dart';
+import '../../widgets/common_header.dart';
 import 'FieldSearchPage.dart';
 
 class FieldHashtagSearchResultPage extends StatefulWidget {

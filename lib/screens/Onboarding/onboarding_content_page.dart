@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../app_colors.dart';
+import '../../app_colors.dart';
 
 class OnboardingContentPage extends StatelessWidget {
   final String image;
