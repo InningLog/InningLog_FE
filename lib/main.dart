@@ -21,7 +21,7 @@ import 'package:inninglog/feature/onboarding/screens/onboarding_screen.dart';
 import 'package:inninglog/feature/home/screens/home_page.dart';
 import 'package:inninglog/feature/diary/screens/diary_page.dart';
 import 'package:inninglog/feature/diary/screens/seat_page.dart';
-import 'package:inninglog/feature/community/screens/community_page.dart';
+import 'package:inninglog/feature/community/screens/root_page.dart';
 import 'package:inninglog/feature/mypage/screens/my_page.dart';
 import 'package:inninglog/feature/community/screens/teamboard_page.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
@@ -178,7 +178,10 @@ final GoRouter _router = GoRouter(
             ),
           ],
         ),
-        GoRoute(path: '/community', builder: (_, __) => const CommunityPage()),
+        GoRoute(
+          path: '/community',
+          builder: (_, __) => const CommunityRootPage(),
+        ),
         GoRoute(path: '/mypage', builder: (_, __) => const MyPage()),
 
         GoRoute(

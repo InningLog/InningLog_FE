@@ -8,8 +8,8 @@ import 'package:inninglog/feature/community/screens/teamboard_page.dart';
 import '../../../shared/widgets/common_header.dart';
 import 'community_search_page.dart';
 
-class CommunityPage extends StatelessWidget {
-  const CommunityPage({super.key});
+class CommunityRootPage extends StatelessWidget {
+  const CommunityRootPage({super.key});
 
   @override
   Widget build(BuildContext context) {
