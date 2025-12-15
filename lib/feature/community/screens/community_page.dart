@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:inninglog/feature/community/widgets/components/image_button.dart';
-import 'package:inninglog/feature/community/widgets/components/section_title.dart';
+import 'package:inninglog/feature/community/data/team_catalog.dart';
 import 'package:inninglog/feature/community/widgets/sections/banner_section.dart';
+import 'package:inninglog/feature/community/widgets/sections/team_boards_section.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:inninglog/feature/community/screens/teamboard_page.dart';
 import '../../../shared/widgets/common_header.dart';
@@ -62,38 +62,16 @@ class CommunityPage extends StatelessWidget {
             ),
 
             // 팀 게시판
-            const SectionTitle('팀 게시판'),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _TeamGrid(
-                items: const [
-                  TeamItem('HT', '기아 타이거즈 🐯', 'assets/images/card_kia.png'),
-                  TeamItem('HH', '한화 이글스 🦅', 'assets/images/card_hh.png'),
-                  TeamItem('WO', '키움 히어로즈 🦸🏻️', 'assets/images/card_kw.png'),
-                  TeamItem(
-                    'LG',
-                    'LG 트윈스 👶🏻👶🏻',
-                    'assets/images/card_lg.png',
+            TeamBoardsSection(
+              items: kboTeams,
+              onTap: (team) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TeamBoardPage(teamCode: team.code),
                   ),
-                  TeamItem('NC', 'NC 다이노스 🦖', 'assets/images/card_nc.png'),
-                  TeamItem('SK', 'SSG 랜더스 🗺️', 'assets/images/card_ssg.png'),
-                  TeamItem('SS', '삼성 라이온즈 🦁', 'assets/images/card_ss.png'),
-                  TeamItem('LT', '롯데 자이언츠 🌊️', 'assets/images/card_lt.png'),
-                  TeamItem('KT', 'KT 위즈 🧙🏻', 'assets/images/card_kt.png'),
-                ],
-                onTap: (item) {
-                  // GoRouter 사용 시:
-                  // context.push('/boards/${item.code}');
-                  // 또는 Navigator 사용 시:
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => TeamBoardPage(teamCode: item.code),
-                    ),
-                  );
-                },
-              ),
+                );
+              },
             ),
             const _PopularAndMySection(),
           ],
@@ -104,70 +82,6 @@ class CommunityPage extends StatelessWidget {
 }
 
 /// 팀 카드 그리드
-class _TeamGrid extends StatelessWidget {
-  final List<TeamItem> items;
-  final void Function(TeamItem) onTap;
-  const _TeamGrid({required this.items, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.builder(
-      itemCount: items.length,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 8,
-        childAspectRatio: 1.9, // 네모 느낌
-      ),
-      itemBuilder:
-          (_, i) => _TeamTile(item: items[i], onTap: () => onTap(items[i])),
-    );
-  }
-}
-
-class TeamItem {
-  final String code;
-  final String label; // 버튼 위에 얹을 텍스트 (이모지 포함)
-  final String imagePath; // 네모 배경 이미지
-  const TeamItem(this.code, this.label, this.imagePath);
-}
-
-class _TeamTile extends StatelessWidget {
-  final TeamItem item;
-  final VoidCallback onTap;
-  const _TeamTile({required this.item, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: ImageButton(
-            imagePath: item.imagePath,
-            borderRadius: 8,
-            onTap: onTap,
-          ),
-        ),
-        Positioned.fill(
-          child: Center(
-            child: Text(
-              item.label, // 이모지 포함 라벨
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-                fontFamily: 'pretendard',
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 // ▼ 인기 게시물 + MY 섹션
 class _PopularAndMySection extends StatelessWidget {
