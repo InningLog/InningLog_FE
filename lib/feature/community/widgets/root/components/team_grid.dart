@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:inninglog/feature/community/model/team_item.dart';
 
-import 'package:inninglog/feature/community/widgets/components/team_tile.dart';
+import 'package:inninglog/feature/community/widgets/root/components/team_tile.dart';
 
 class TeamGrid extends StatelessWidget {
   final List<TeamItem> items;

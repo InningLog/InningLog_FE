@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:inninglog/feature/community/data/team_catalog.dart';
-import 'package:inninglog/feature/community/widgets/sections/banner_section.dart';
-import 'package:inninglog/feature/community/widgets/sections/team_boards_section.dart';
+import 'package:inninglog/feature/community/widgets/root/sections/banner_section.dart';
+import 'package:inninglog/feature/community/widgets/root/sections/team_boards_section.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:inninglog/feature/community/screens/teamboard_page.dart';
 import '../../../shared/widgets/common_header.dart';

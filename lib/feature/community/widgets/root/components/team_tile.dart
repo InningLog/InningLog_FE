@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:inninglog/feature/community/model/team_item.dart';
-import 'package:inninglog/feature/community/widgets/components/image_button.dart';
+import 'package:inninglog/feature/community/widgets/root/components/image_button.dart';
 
 class TeamTile extends StatelessWidget {
   final TeamItem item;

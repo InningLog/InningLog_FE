@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:inninglog/feature/community/widgets/components/image_button.dart';
+import 'package:inninglog/feature/community/widgets/root/components/image_button.dart';
 
 /// 상단 배너(내 팀 / KBO 전체)
 class BannerCard extends StatelessWidget {

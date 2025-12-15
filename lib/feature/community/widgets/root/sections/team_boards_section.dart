@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:inninglog/feature/community/model/team_item.dart';
-import 'package:inninglog/feature/community/widgets/components/section_title.dart';
-import 'package:inninglog/feature/community/widgets/components/team_grid.dart';
+import 'package:inninglog/feature/community/widgets/root/components/section_title.dart';
+import 'package:inninglog/feature/community/widgets/root/components/team_grid.dart';
 
 class TeamBoardsSection extends StatelessWidget {
   final String title;
