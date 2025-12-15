@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:inninglog/feature/community/widgets/components/image_button.dart';
+import 'package:inninglog/feature/community/widgets/components/section_title.dart';
+import 'package:inninglog/feature/community/widgets/sections/banner_section.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:inninglog/feature/community/screens/teamboard_page.dart';
 import '../../../shared/widgets/common_header.dart';
 import 'community_search_page.dart';
 
-class BoardPage extends StatelessWidget {
-  const BoardPage({super.key});
+class CommunityPage extends StatelessWidget {
+  const CommunityPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.primary50,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-            CommonHeader(
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(56),
+        child: SafeArea(
+          child: CommonHeader(
             title: '커뮤니티',
             onSearchPressed: () {
               Navigator.push(
@@ -27,133 +27,77 @@ class BoardPage extends StatelessWidget {
               );
             },
           ),
-
-
-              // MY TEAM
-              const _SectionTitle('MY TEAM'),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _BannerCard(
-                  imagePath: 'assets/images/mydoo_banner.png',
-                  height: 88,
-                  onTap: () {
-                    // TODO: 실제 내 팀 코드로 교체
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const TeamBoardPage(teamCode: 'OB'), // 두산 예시
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 40),
-
-// KBO 전체 게시판
-              const _SectionTitle('KBO 전체 게시판'),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _BannerCard(
-                  imagePath: 'assets/images/card_kbo.png',
-                  height: 88,
-                  onTap: () {
-                    // KBO 전체 게시판용
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const TeamBoardPage(teamCode: 'KBO'),
-                      ),
-                    );
-                  },
-                ),
-              ),
-
-              const SizedBox(height: 40),
-
-              // 팀 게시판
-              const _SectionTitle('팀 게시판'),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _TeamGrid(
-                  items: const [
-                    TeamItem('HT', '기아 타이거즈 🐯', 'assets/images/card_kia.png'),
-                    TeamItem('HH', '한화 이글스 🦅', 'assets/images/card_hh.png'),
-                    TeamItem('WO', '키움 히어로즈 🦸🏻️', 'assets/images/card_kw.png'),
-                    TeamItem('LG', 'LG 트윈스 👶🏻👶🏻', 'assets/images/card_lg.png'),
-                    TeamItem('NC', 'NC 다이노스 🦖', 'assets/images/card_nc.png'),
-                    TeamItem('SK', 'SSG 랜더스 🗺️', 'assets/images/card_ssg.png'),
-                    TeamItem('SS', '삼성 라이온즈 🦁', 'assets/images/card_ss.png'),
-                    TeamItem('LT', '롯데 자이언츠 🌊️', 'assets/images/card_lt.png'),
-                    TeamItem('KT', 'KT 위즈 🧙🏻', 'assets/images/card_kt.png'),
-                  ],
-                  onTap: (item) {
-                    // GoRouter 사용 시:
-                    // context.push('/boards/${item.code}');
-                    // 또는 Navigator 사용 시:
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => TeamBoardPage(teamCode: item.code),
-                      ),
-                    );
-                  },
-                ),
-              ),const _PopularAndMySection(),
-
-
-            ],
-          ),
         ),
       ),
-    );
-  }
-}
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // MY TEAM
+            BannerSection(
+              title: 'MY TEAM',
+              imagePath: 'assets/images/mydoo_banner.png',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const TeamBoardPage(teamCode: 'OB'),
+                  ),
+                );
+              },
+            ),
+            //전체 게시판
+            BannerSection(
+              title: 'KBO 전체 게시판',
+              imagePath: 'assets/images/card_kbo.png',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const TeamBoardPage(teamCode: 'KBO'),
+                  ),
+                );
+              },
+            ),
 
-/// 섹션 타이틀
-class _SectionTitle extends StatelessWidget {
-  final String text;
-  const _SectionTitle(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 19,
-          fontFamily: 'pretendard',
-          fontWeight: FontWeight.w700,
-          color: Colors.black,
+            // 팀 게시판
+            const SectionTitle('팀 게시판'),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _TeamGrid(
+                items: const [
+                  TeamItem('HT', '기아 타이거즈 🐯', 'assets/images/card_kia.png'),
+                  TeamItem('HH', '한화 이글스 🦅', 'assets/images/card_hh.png'),
+                  TeamItem('WO', '키움 히어로즈 🦸🏻️', 'assets/images/card_kw.png'),
+                  TeamItem(
+                    'LG',
+                    'LG 트윈스 👶🏻👶🏻',
+                    'assets/images/card_lg.png',
+                  ),
+                  TeamItem('NC', 'NC 다이노스 🦖', 'assets/images/card_nc.png'),
+                  TeamItem('SK', 'SSG 랜더스 🗺️', 'assets/images/card_ssg.png'),
+                  TeamItem('SS', '삼성 라이온즈 🦁', 'assets/images/card_ss.png'),
+                  TeamItem('LT', '롯데 자이언츠 🌊️', 'assets/images/card_lt.png'),
+                  TeamItem('KT', 'KT 위즈 🧙🏻', 'assets/images/card_kt.png'),
+                ],
+                onTap: (item) {
+                  // GoRouter 사용 시:
+                  // context.push('/boards/${item.code}');
+                  // 또는 Navigator 사용 시:
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TeamBoardPage(teamCode: item.code),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const _PopularAndMySection(),
+          ],
         ),
-      ),
-    );
-  }
-}
-
-/// 상단 배너(내 팀 / KBO 전체)
-class _BannerCard extends StatelessWidget {
-  final String imagePath;
-  final double height;
-  final VoidCallback? onTap;
-
-  const _BannerCard({
-    required this.imagePath,
-    this.height = 88,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 343 / 88, // 대략 디자인 비율
-      child: _ImageButton(
-        imagePath: imagePath,
-        borderRadius: 10,
-        onTap: onTap,
       ),
     );
   }
@@ -177,17 +121,15 @@ class _TeamGrid extends StatelessWidget {
         crossAxisSpacing: 8,
         childAspectRatio: 1.9, // 네모 느낌
       ),
-      itemBuilder: (_, i) => _TeamTile(
-        item: items[i],
-        onTap: () => onTap(items[i]),
-      ),
+      itemBuilder:
+          (_, i) => _TeamTile(item: items[i], onTap: () => onTap(items[i])),
     );
   }
 }
 
 class TeamItem {
   final String code;
-  final String label;     // 버튼 위에 얹을 텍스트 (이모지 포함)
+  final String label; // 버튼 위에 얹을 텍스트 (이모지 포함)
   final String imagePath; // 네모 배경 이미지
   const TeamItem(this.code, this.label, this.imagePath);
 }
@@ -202,7 +144,7 @@ class _TeamTile extends StatelessWidget {
     return Stack(
       children: [
         Positioned.fill(
-          child: _ImageButton(
+          child: ImageButton(
             imagePath: item.imagePath,
             borderRadius: 8,
             onTap: onTap,
@@ -222,42 +164,10 @@ class _TeamTile extends StatelessWidget {
             ),
           ),
         ),
-
       ],
     );
   }
 }
-
-
-/// 공통: 이미지 배경 + 라운드 + 탭 효과
-class _ImageButton extends StatelessWidget {
-  final String imagePath;
-  final double borderRadius;
-  final VoidCallback? onTap;
-
-  const _ImageButton({
-    required this.imagePath,
-    this.borderRadius = 12,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(borderRadius),
-      clipBehavior: Clip.antiAlias,
-      child: Ink.image(
-        image: AssetImage(imagePath),
-        fit: BoxFit.cover,
-        child: InkWell(onTap: onTap),
-      ),
-    );
-  }
-}
-
-
-
 
 // ▼ 인기 게시물 + MY 섹션
 class _PopularAndMySection extends StatelessWidget {
@@ -290,8 +200,7 @@ class _PopularAndMySection extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                      const TeamBoardPage(teamCode: '인기 게시물'),
+                      builder: (_) => const TeamBoardPage(teamCode: '인기 게시물'),
                     ),
                   );
                 },
@@ -301,7 +210,6 @@ class _PopularAndMySection extends StatelessWidget {
                   color: Colors.grey,
                 ),
               ),
-
             ],
           ),
 
@@ -353,10 +261,11 @@ class _PopularAndMySection extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const TeamBoardPage(
-                          teamCode: 'KBO', // 의미상 전체/내 활동용 아무 값
-                          mode: BoardMode.myPosts,
-                        ),
+                        builder:
+                            (_) => const TeamBoardPage(
+                              teamCode: 'KBO', // 의미상 전체/내 활동용 아무 값
+                              mode: BoardMode.myPosts,
+                            ),
                       ),
                     );
                   },
@@ -371,8 +280,7 @@ class _PopularAndMySection extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) =>
-                        const TeamBoardPage(teamCode: '댓글 단 글'),
+                        builder: (_) => const TeamBoardPage(teamCode: '댓글 단 글'),
                       ),
                     );
                   },
@@ -387,8 +295,7 @@ class _PopularAndMySection extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) =>
-                        const TeamBoardPage(teamCode: '스크랩'),
+                        builder: (_) => const TeamBoardPage(teamCode: '스크랩'),
                       ),
                     );
                   },
@@ -401,7 +308,6 @@ class _PopularAndMySection extends StatelessWidget {
     );
   }
 }
-
 
 //// 인기 게시물 카드 위젯
 class _PopularPostCard extends StatelessWidget {
