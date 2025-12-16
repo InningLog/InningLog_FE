@@ -1,4 +1,3 @@
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -22,7 +21,7 @@ import 'package:inninglog/feature/onboarding/screens/onboarding_screen.dart';
 import 'package:inninglog/feature/home/screens/home_page.dart';
 import 'package:inninglog/feature/diary/screens/diary_page.dart';
 import 'package:inninglog/feature/diary/screens/seat_page.dart';
-import 'package:inninglog/feature/community/screens/board_page.dart';
+import 'package:inninglog/feature/community/screens/root_page.dart';
 import 'package:inninglog/feature/mypage/screens/my_page.dart';
 import 'package:inninglog/feature/community/screens/teamboard_page.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
@@ -36,7 +35,6 @@ import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
 import 'package:flutter/material.dart';
 import 'package:inninglog/shared/amplitude/AmplitudeFlutter.dart';
 import 'shared/amplitude/AmplitudeFlutter.dart';
-
 
 const amplitudeKey = String.fromEnvironment('AMPLITUDE_API_KEY');
 
@@ -54,8 +52,6 @@ Future<void> main() async {
   runApp(const InningLogApp());
 }
 
-
-
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -63,22 +59,15 @@ final GoRouter _router = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/',
 
-
-
   routes: [
-    GoRoute(
-      path: '/',
-      redirect: (_, __) => '/splash',
-    ),
+    GoRoute(path: '/', redirect: (_, __) => '/splash'),
 
     /// GNB 없는 화면들
-
     GoRoute(
       path: '/kakaoWebView',
       name: 'kakaoWebView',
       builder: (context, state) => const KakaoLoginWebViewPage(),
     ),
-
 
     GoRoute(
       path: '/compose',
@@ -106,8 +95,6 @@ final GoRouter _router = GoRouter(
       },
     ),
 
-
-
     GoRoute(
       path: '/addseat',
       builder: (context, state) {
@@ -119,8 +106,6 @@ final GoRouter _router = GoRouter(
         );
       },
     ),
-
-
 
     GoRoute(path: '/onboarding6', builder: (_, __) => const OnboardingPage6()),
     GoRoute(path: '/Search', builder: (_, __) => const CommunitySearchPage()),
@@ -136,11 +121,15 @@ final GoRouter _router = GoRouter(
 
     GoRoute(
       path: '/market/:code/upload/step2',
-      builder: (ctx, state) => MarketUploadStep2(teamCode: state.pathParameters['code']!),
+      builder:
+          (ctx, state) =>
+              MarketUploadStep2(teamCode: state.pathParameters['code']!),
     ),
     GoRoute(
       path: '/market/:code/upload/step3',
-      builder: (ctx, state) => MarketUploadStep3(teamCode: state.pathParameters['code']!),
+      builder:
+          (ctx, state) =>
+              MarketUploadStep3(teamCode: state.pathParameters['code']!),
     ),
 
     GoRoute(
@@ -152,8 +141,6 @@ final GoRouter _router = GoRouter(
       },
     ),
 
-
-
     /// GNB 있는 ShellRoute
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
@@ -163,32 +150,39 @@ final GoRouter _router = GoRouter(
       routes: [
         GoRoute(path: '/home', builder: (_, __) => const HomePage()),
         GoRoute(path: '/diary', builder: (_, __) => const DiaryPage()),
-        GoRoute(path: '/seat', builder: (_, __) => const SeatPage(), routes: [
+        GoRoute(
+          path: '/seat',
+          builder: (_, __) => const SeatPage(),
+          routes: [
+            /// ✅ 여기 안으로 옮긴다
+            GoRoute(
+              path: 'result', // => 실제 경로는 /seat/result
+              name: 'field_result',
+              builder: (context, state) {
+                final extra = state.extra as Map<String, dynamic>;
+                final index = extra['index'] as int;
+                final stadiumName = extra['stadiumName'] as String;
 
-          /// ✅ 여기 안으로 옮긴다
-          GoRoute(
-            path: 'result', // => 실제 경로는 /seat/result
-            name: 'field_result',
-            builder: (context, state) {
-              final extra = state.extra as Map<String, dynamic>;
-              final index = extra['index'] as int;
-              final stadiumName = extra['stadiumName'] as String;
-
-              return FieldHashtagSearchResultPage(
-                index: index,
-                stadiumName: stadiumName,
-                zone: extra['zone'],
-                section: extra['section'],
-                row: extra['row'],
-                selectedTags: Map<String, String>.from(extra['selectedTags'] ?? {}),
-                tagCategories: tagCategories,
-              );
-            },
-          ),
-        ]),
-        GoRoute(path: '/board', builder: (_, __) => const BoardPage()),
+                return FieldHashtagSearchResultPage(
+                  index: index,
+                  stadiumName: stadiumName,
+                  zone: extra['zone'],
+                  section: extra['section'],
+                  row: extra['row'],
+                  selectedTags: Map<String, String>.from(
+                    extra['selectedTags'] ?? {},
+                  ),
+                  tagCategories: tagCategories,
+                );
+              },
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/community',
+          builder: (_, __) => const CommunityRootPage(),
+        ),
         GoRoute(path: '/mypage', builder: (_, __) => const MyPage()),
-
 
         GoRoute(
           path: '/seat_detail',
@@ -198,21 +192,19 @@ final GoRouter _router = GoRouter(
             final int seatViewId = extra['seatViewId'];
             final String imageUrl = extra['imageUrl'];
 
-            return SeatDetailPage(
-              seatViewId: seatViewId,
-              imageUrl: imageUrl,
-            );
+            return SeatDetailPage(seatViewId: seatViewId, imageUrl: imageUrl);
           },
         ),
-
 
         GoRoute(
           path: '/boards/:code',
           builder: (_, state) {
-            final code = state.pathParameters['code']!;         // 팀 코드
-            final tabStr = state.uri.queryParameters['tab'];    // 쿼리로 탭 받기
+            final code = state.pathParameters['code']!; // 팀 코드
+            final tabStr = state.uri.queryParameters['tab']; // 쿼리로 탭 받기
             final initialTabIndex = int.tryParse(tabStr ?? '') ?? 0;
-            final tabParam = int.tryParse(state.uri.queryParameters['tab'] ?? '');
+            final tabParam = int.tryParse(
+              state.uri.queryParameters['tab'] ?? '',
+            );
             return TeamBoardPage(
               teamCode: code,
               initialTabIndex: tabParam ?? 0, // ✅ 기본 0
@@ -226,9 +218,15 @@ final GoRouter _router = GoRouter(
               builder: (context, state) {
                 final teamCode = state.pathParameters['code']!;
                 final postId = int.parse(state.pathParameters['postId']!);
-                final teamLabel = (state.extra as Map?)?['teamLabel'] as String? ?? '';
-                return PostDetailPage( // 네 상세 위젯으로 바꾸세요
-                  args: PostDetailArgs(teamCode: teamCode, teamLabel: teamLabel, postId: postId),
+                final teamLabel =
+                    (state.extra as Map?)?['teamLabel'] as String? ?? '';
+                return PostDetailPage(
+                  // 네 상세 위젯으로 바꾸세요
+                  args: PostDetailArgs(
+                    teamCode: teamCode,
+                    teamLabel: teamLabel,
+                    postId: postId,
+                  ),
                 );
               },
             ),
@@ -240,17 +238,10 @@ final GoRouter _router = GoRouter(
                 return PostComposePage(teamLabel: teamLabel);
               },
             ),
-
-
           ],
-        )
-
-
-
+        ),
       ],
     ),
-
-
   ],
 );
 
@@ -285,15 +276,10 @@ class InningLogApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('ko', 'KR'),
-      ],
+      supportedLocales: const [Locale('ko', 'KR')],
     );
   }
 }
-
-
-
 
 // 각 카테고리 정의
 final Map<String, List<String>> tagCategories = {
