@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
+import 'package:inninglog/router/app_routes.dart';
 import 'package:inninglog/shared/widgets/main_navigation.dart';
 import 'package:inninglog/feature/login/models/KakaoLoginWebViewPage.dart';
 import 'package:inninglog/feature/diary/screens/add_diary_page.dart';
@@ -11,7 +12,7 @@ import 'package:inninglog/feature/field/screens/field_hashtag_filter_sheet.dart'
 import 'package:inninglog/feature/community/screens/market_upload_step1.dart';
 import 'package:inninglog/feature/community/screens/market_upload_step2.dart';
 import 'package:inninglog/feature/community/screens/market_upload_step3.dart';
-import 'package:inninglog/feature/community/screens/post_compose_page.dart';
+import 'package:inninglog/feature/community/screens/writing_post_page.dart';
 import 'package:inninglog/feature/community/screens/post_detail_market.dart';
 import 'package:inninglog/feature/community/screens/post_detail_page.dart';
 import 'package:inninglog/feature/diary/screens/seat_detail_page.dart';
@@ -69,11 +70,12 @@ final GoRouter _router = GoRouter(
       builder: (context, state) => const KakaoLoginWebViewPage(),
     ),
 
+    // 커뮤니티 게시글 작성 페이지
     GoRoute(
-      path: '/compose',
+      path: AppRoutePaths.postWrite,
       builder: (context, state) {
         final teamLabel = state.extra as String; // extra로 받기
-        return PostComposePage(teamLabel: teamLabel);
+        return WritingPostPage(teamLabel: teamLabel);
       },
     ),
 
@@ -213,6 +215,14 @@ final GoRouter _router = GoRouter(
 
           routes: [
             GoRoute(
+              path: AppRoutePaths.boardPostWrite,
+              name: 'writing_post',
+              builder: (context, state) {
+                final teamLabel = (state.extra as String?) ?? '';
+                return WritingPostPage(teamLabel: teamLabel);
+              },
+            ),
+            GoRoute(
               path: 'post/:postId',
               name: 'post_detail',
               builder: (context, state) {
@@ -228,14 +238,6 @@ final GoRouter _router = GoRouter(
                     postId: postId,
                   ),
                 );
-              },
-            ),
-            GoRoute(
-              path: 'compose',
-              name: 'post_compose',
-              builder: (context, state) {
-                final teamLabel = (state.extra as String?) ?? '';
-                return PostComposePage(teamLabel: teamLabel);
               },
             ),
           ],

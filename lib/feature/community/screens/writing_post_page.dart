@@ -1,4 +1,3 @@
-// lib/pages/post_compose_page.dart
 import 'dart:io' show File;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -6,15 +5,15 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart'; // ✅ 갤러리
 import 'package:inninglog/shared/theme/app_colors.dart';
 
-class PostComposePage extends StatefulWidget {
+class WritingPostPage extends StatefulWidget {
   final String teamLabel; // 예: '두산 베어스 🐻'
-  const PostComposePage({super.key, required this.teamLabel});
+  const WritingPostPage({super.key, required this.teamLabel});
 
   @override
-  State<PostComposePage> createState() => _PostComposePageState();
+  State<WritingPostPage> createState() => _PostComposePageState();
 }
 
-class _PostComposePageState extends State<PostComposePage> {
+class _PostComposePageState extends State<WritingPostPage> {
   final _titleCtrl = TextEditingController();
   final _bodyCtrl = TextEditingController();
   final _titleFocus = FocusNode();
@@ -42,19 +41,15 @@ class _PostComposePageState extends State<PostComposePage> {
     _bodyCtrl.addListener(_updateFilled);
   }
 
-// ✅ 제목과 본문이 모두 채워져야 활성화
+  // ✅ 제목과 본문이 모두 채워져야 활성화
   void _updateFilled() {
-    final filled = _titleCtrl.text.trim().isNotEmpty
-        && _bodyCtrl.text.trim().isNotEmpty; // ← AND로 변경
+    final filled =
+        _titleCtrl.text.trim().isNotEmpty &&
+        _bodyCtrl.text.trim().isNotEmpty; // ← AND로 변경
     if (_isFilled != filled) {
       setState(() => _isFilled = filled);
     }
   }
-
-
-
-
-
 
   @override
   void dispose() {
@@ -115,7 +110,8 @@ class _PostComposePageState extends State<PostComposePage> {
             SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20).copyWith(
                 top: 0,
-                bottom: _footerHeight + _toolbarHeight + 24, // ✅ 피그마처럼 하단과 충분히 띄움
+                bottom:
+                    _footerHeight + _toolbarHeight + 24, // ✅ 피그마처럼 하단과 충분히 띄움
               ),
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               child: Column(
@@ -137,7 +133,10 @@ class _PostComposePageState extends State<PostComposePage> {
                     decoration: BoxDecoration(
                       border: Border(
                         bottom: BorderSide(
-                          color: _titleFocused ? AppColors.gray400 : Colors.transparent,
+                          color:
+                              _titleFocused
+                                  ? AppColors.gray400
+                                  : Colors.transparent,
                           width: 1,
                         ),
                       ),
@@ -216,28 +215,34 @@ class _PostComposePageState extends State<PostComposePage> {
                           color: Colors.white,
                           border: Border(
                             top: BorderSide(color: Color(0xFFE5E7EB), width: 1),
-                            bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1),
+                            bottom: BorderSide(
+                              color: Color(0xFFE5E7EB),
+                              width: 1,
+                            ),
                           ),
                         ),
                         child: const _GuidelinesFooter(), // ← 내용은 아래 위젯으로 교체
                       ),
 
-
                       // ===== 하단 툴바 =====
                       Container(
                         height: _toolbarHeight,
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                        ),
+                        decoration: const BoxDecoration(color: Colors.white),
                         child: Row(
                           children: [
                             // 이미지 버튼
                             Opacity(
-                              opacity: _attachedImages.length >= _maxImages ? 0.4 : 1,
+                              opacity:
+                                  _attachedImages.length >= _maxImages
+                                      ? 0.4
+                                      : 1,
                               child: _ToolbarIconButton(
                                 asset: 'assets/icons/image.svg',
-                                onTap: _attachedImages.length >= _maxImages ? () {} : _pickFromGallery,
+                                onTap:
+                                    _attachedImages.length >= _maxImages
+                                        ? () {}
+                                        : _pickFromGallery,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -247,7 +252,8 @@ class _PostComposePageState extends State<PostComposePage> {
                               child: ListView.separated(
                                 scrollDirection: Axis.horizontal,
                                 itemCount: _attachedImages.length,
-                                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                                separatorBuilder:
+                                    (_, __) => const SizedBox(width: 8),
                                 itemBuilder: (context, index) {
                                   return _Thumb(
                                     image: _attachedImages[index],
@@ -294,7 +300,11 @@ class _ComposeAppBar extends StatelessWidget {
         children: [
           IconButton(
             onPressed: onClose,
-            icon: SvgPicture.asset('assets/icons/cancel_but.svg', width: 15, height: 15),
+            icon: SvgPicture.asset(
+              'assets/icons/cancel_but.svg',
+              width: 15,
+              height: 15,
+            ),
           ),
           const Spacer(),
           Column(
@@ -325,7 +335,9 @@ class _ComposeAppBar extends StatelessWidget {
           TextButton(
             onPressed: isFilled ? onSubmit : null,
             style: ButtonStyle(
-              foregroundColor: MaterialStateProperty.resolveWith<Color>((states) {
+              foregroundColor: MaterialStateProperty.resolveWith<Color>((
+                states,
+              ) {
                 if (states.contains(MaterialState.disabled)) {
                   return AppColors.gray700; // 비활성 색
                 }
@@ -338,19 +350,19 @@ class _ComposeAppBar extends StatelessWidget {
                 final isDisabled = states.contains(MaterialState.disabled);
                 return TextStyle(
                   fontSize: 16,
-                  fontWeight: isDisabled ? FontWeight.w400 : FontWeight.w700, // ✅ 두께 변경
+                  fontWeight:
+                      isDisabled ? FontWeight.w400 : FontWeight.w700, // ✅ 두께 변경
                   fontFamily: 'Pretendard',
                 );
               }),
               overlayColor: MaterialStateProperty.resolveWith<Color?>((states) {
-                if (states.contains(MaterialState.disabled)) return Colors.transparent;
+                if (states.contains(MaterialState.disabled))
+                  return Colors.transparent;
                 return null;
               }),
             ),
             child: const Text('등록'),
-          )
-
-
+          ),
         ],
       ),
     );
@@ -414,7 +426,7 @@ class _Thumb extends StatelessWidget {
               width: 20,
               height: 20,
               decoration: BoxDecoration(
-                color: const Color (0xFF6C6C6C),
+                color: const Color(0xFF6C6C6C),
                 shape: BoxShape.circle,
               ),
               child: const Center(
@@ -452,7 +464,14 @@ class _GuidelinesFooter extends StatelessWidget {
     Widget warning(String t) => Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('📝', style: TextStyle(fontSize: 12, color: AppColors.gray800, fontWeight: FontWeight.w300,)),
+        const Text(
+          '📝',
+          style: TextStyle(
+            fontSize: 12,
+            color: AppColors.gray800,
+            fontWeight: FontWeight.w300,
+          ),
+        ),
         Expanded(child: Text(t, style: p)),
       ],
     );
@@ -460,7 +479,14 @@ class _GuidelinesFooter extends StatelessWidget {
     Widget bullet(String t) => Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('-',  style: TextStyle(fontSize: 12, color: AppColors.gray800, fontWeight: FontWeight.w300,)),
+        const Text(
+          '-',
+          style: TextStyle(
+            fontSize: 12,
+            color: AppColors.gray800,
+            fontWeight: FontWeight.w300,
+          ),
+        ),
         Expanded(child: Text(t, style: p)),
       ],
     );
@@ -468,7 +494,14 @@ class _GuidelinesFooter extends StatelessWidget {
     Widget warn(String t) => Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('⚠️️', style: TextStyle(fontSize: 12, color: AppColors.gray800, fontWeight: FontWeight.w300,)),
+        const Text(
+          '⚠️️',
+          style: TextStyle(
+            fontSize: 12,
+            color: AppColors.gray800,
+            fontWeight: FontWeight.w300,
+          ),
+        ),
         Expanded(child: Text(t, style: p)),
       ],
     );
@@ -484,7 +517,6 @@ class _GuidelinesFooter extends StatelessWidget {
         const SizedBox(height: 8),
         warn('커뮤니티 이용 규칙을 위반한 게시물은 사전 통보 없이 삭제될 수 있습니다.'),
       ],
-
     );
   }
 }
@@ -503,7 +535,12 @@ class _Bullet extends StatelessWidget {
           child: Text(
             // 스타일 고정(푸터)
             '',
-            style: TextStyle(fontSize: 12, height: 1.4, color: AppColors.gray600, fontFamily: 'Pretendard'),
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.4,
+              color: AppColors.gray600,
+              fontFamily: 'Pretendard',
+            ),
           ),
         ),
       ],
@@ -524,7 +561,13 @@ class _Warn extends StatelessWidget {
         Expanded(
           child: Text(
             '',
-            style: TextStyle(fontSize: 12, height: 1.4, color: AppColors.gray700, fontFamily: 'Pretendard', fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.4,
+              color: AppColors.gray700,
+              fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],

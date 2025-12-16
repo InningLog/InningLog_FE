@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:inninglog/router/app_routes.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:inninglog/feature/community/screens/post_detail_market.dart';
 import '../../../shared/constant/team_codes.dart';
@@ -8,17 +9,21 @@ import '../../../shared/widgets/common_header.dart';
 import 'alarm_page.dart';
 import 'community_search_market.dart';
 import 'community_search_page.dart';
-import 'post_compose_page.dart';
+import 'writing_post_page.dart';
 
 enum BoardMode { normal, myPosts, myComments, scraps }
-
 
 class TeamBoardPage extends StatefulWidget {
   final String teamCode; // e.g. 'HT', 'LG', ...
   final int initialTabIndex;
   final BoardMode mode;
 
-  const TeamBoardPage({super.key, required this.teamCode, this.initialTabIndex = 0, this.mode = BoardMode.normal,});
+  const TeamBoardPage({
+    super.key,
+    required this.teamCode,
+    this.initialTabIndex = 0,
+    this.mode = BoardMode.normal,
+  });
 
   @override
   State<TeamBoardPage> createState() => _TeamBoardPageState();
@@ -61,8 +66,6 @@ class _TeamBoardPageState extends State<TeamBoardPage>
     super.dispose();
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final title = () {
@@ -76,7 +79,8 @@ class _TeamBoardPageState extends State<TeamBoardPage>
         case BoardMode.normal:
         default:
           return teamNameFromCode(widget.teamCode);
-      } }();
+      }
+    }();
     final teamLabel = teamLabelFromCode(widget.teamCode);
 
     return Scaffold(
@@ -91,18 +95,15 @@ class _TeamBoardPageState extends State<TeamBoardPage>
           onPressed: () {
             final teamLabel = teamLabelFromCode(widget.teamCode);
 
-            if (_sectionIndex == 2) {
-              // 🛒 이닝 장터 탭일 때 → 장터 업로드 1단계로
-              context.push('/market/${widget.teamCode}/upload');
-            } else {
-              // 기존 게시판 글쓰기
-              context.push('/boards/${widget.teamCode}/compose', extra: teamLabel);
-            }
+            // 기존 게시판 글쓰기
+            context.push(
+              AppRoutePaths.boardPostWriteLocation(widget.teamCode),
+              extra: teamLabel,
+            );
           },
           child: const Icon(Icons.add, size: 40, color: AppColors.primary50),
         ),
       ),
-
 
       body: SafeArea(
         child: Column(
@@ -114,10 +115,6 @@ class _TeamBoardPageState extends State<TeamBoardPage>
               sectionIndex: _sectionIndex, // ✅ 현재 탭 넘김
             ),
 
-
-
-
-
             // 카테고리 세그먼트 (오직완 / 자유 게시판 / 이닝 장터 / 오늘의 뉴스)
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
@@ -125,7 +122,6 @@ class _TeamBoardPageState extends State<TeamBoardPage>
                 controller: _tabController,
                 hasNewsTab: _hasNewsTab,
               ),
-
             ),
 
             // 정렬 탭 (최신 | 인기)
@@ -137,7 +133,6 @@ class _TeamBoardPageState extends State<TeamBoardPage>
             //   ),
             // ),
 
-
             // 구분선
             const Divider(height: 1, thickness: 0.8, color: AppColors.gray400),
 
@@ -145,50 +140,49 @@ class _TeamBoardPageState extends State<TeamBoardPage>
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                children: _hasNewsTab
-                    ? [
-                  _PostList(
-                    isOnlywan: true,
-                    sortIndex: _sortIndex,
-                    teamCode: widget.teamCode,
-                    teamLabel: teamLabel,
-                  ),
-                  _PostList(
-                    sortIndex: _sortIndex,
-                    teamCode: widget.teamCode,
-                    teamLabel: teamLabel,
-                  ),
-                  _InningMarketTab(
-                    teamCode: widget.teamCode,
-                    teamLabel: teamLabel,
-                  ),
-                  _PostList(
-                    sortIndex: _sortIndex,
-                    teamCode: widget.teamCode,
-                    teamLabel: teamLabel, // 오늘의 뉴스용
-                  ),
-                ]
-                    : [
-                  _PostList(
-                    isOnlywan: true,
-                    sortIndex: _sortIndex,
-                    teamCode: widget.teamCode,
-                    teamLabel: teamLabel,
-                  ),
-                  _PostList(
-                    sortIndex: _sortIndex,
-                    teamCode: widget.teamCode,
-                    teamLabel: teamLabel,
-                  ),
-                  _InningMarketTab(
-                    teamCode: widget.teamCode,
-                    teamLabel: teamLabel,
-                  ),
-                ],
+                children:
+                    _hasNewsTab
+                        ? [
+                          _PostList(
+                            isOnlywan: true,
+                            sortIndex: _sortIndex,
+                            teamCode: widget.teamCode,
+                            teamLabel: teamLabel,
+                          ),
+                          _PostList(
+                            sortIndex: _sortIndex,
+                            teamCode: widget.teamCode,
+                            teamLabel: teamLabel,
+                          ),
+                          _InningMarketTab(
+                            teamCode: widget.teamCode,
+                            teamLabel: teamLabel,
+                          ),
+                          _PostList(
+                            sortIndex: _sortIndex,
+                            teamCode: widget.teamCode,
+                            teamLabel: teamLabel, // 오늘의 뉴스용
+                          ),
+                        ]
+                        : [
+                          _PostList(
+                            isOnlywan: true,
+                            sortIndex: _sortIndex,
+                            teamCode: widget.teamCode,
+                            teamLabel: teamLabel,
+                          ),
+                          _PostList(
+                            sortIndex: _sortIndex,
+                            teamCode: widget.teamCode,
+                            teamLabel: teamLabel,
+                          ),
+                          _InningMarketTab(
+                            teamCode: widget.teamCode,
+                            teamLabel: teamLabel,
+                          ),
+                        ],
               ),
             ),
-
-
           ],
         ),
       ),
@@ -201,10 +195,7 @@ class _SegmentedTabs extends StatelessWidget {
   final TabController controller;
   final bool hasNewsTab;
 
-  const _SegmentedTabs({
-    required this.controller,
-    required this.hasNewsTab,
-  });
+  const _SegmentedTabs({required this.controller, required this.hasNewsTab});
 
   @override
   Widget build(BuildContext context) {
@@ -212,20 +203,14 @@ class _SegmentedTabs extends StatelessWidget {
       height: 40,
       decoration: const BoxDecoration(
         border: Border(
-          bottom: BorderSide(
-            color: AppColors.gray400,
-            width: 0.5,
-          ),
+          bottom: BorderSide(color: AppColors.gray400, width: 0.5),
         ),
       ),
       child: TabBar(
         controller: controller,
         dividerColor: Colors.transparent,
         indicator: const UnderlineTabIndicator(
-          borderSide: BorderSide(
-            color: AppColors.primary700,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: AppColors.primary700, width: 1.5),
         ),
         indicatorSize: TabBarIndicatorSize.tab,
         labelColor: const Color(0xFF000000),
@@ -244,24 +229,23 @@ class _SegmentedTabs extends StatelessWidget {
         ),
         overlayColor: WidgetStateProperty.all(Colors.transparent),
         labelPadding: const EdgeInsets.symmetric(horizontal: 8),
-        tabs: hasNewsTab
-            ? const [
-          Tab(text: '오직완'),
-          Tab(text: '자유 게시판'),
-          Tab(text: '이닝 장터'),
-          Tab(text: '오늘의 뉴스'),
-        ]
-            : const [
-          Tab(text: '오직완'),
-          Tab(text: '자유 게시판'),
-          Tab(text: '이닝 장터'),
-        ],
+        tabs:
+            hasNewsTab
+                ? const [
+                  Tab(text: '오직완'),
+                  Tab(text: '자유 게시판'),
+                  Tab(text: '이닝 장터'),
+                  Tab(text: '오늘의 뉴스'),
+                ]
+                : const [
+                  Tab(text: '오직완'),
+                  Tab(text: '자유 게시판'),
+                  Tab(text: '이닝 장터'),
+                ],
       ),
     );
   }
 }
-
-
 
 // /// “최신 | 인기” 언더라인 스위치
 // class SortSwitch extends StatelessWidget {
@@ -350,7 +334,6 @@ class _SegmentedTabs extends StatelessWidget {
 //   }
 // }
 
-
 class _SortTab extends StatelessWidget {
   final String text;
   final bool selected;
@@ -374,7 +357,8 @@ class _SortTab extends StatelessWidget {
             style: TextStyle(
               fontSize: 15,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-              color: selected ? const Color(0xFF111827) : const Color(0xFF6B7280),
+              color:
+                  selected ? const Color(0xFF111827) : const Color(0xFF6B7280),
               fontFamily: 'Pretendard',
             ),
           ),
@@ -402,18 +386,25 @@ class _PostList extends StatelessWidget {
   final int sortIndex;
   final String teamCode;
   final String teamLabel;
-  const _PostList({required this.sortIndex, required this.teamCode, required this.teamLabel, this.isOnlywan = false,  });
+  const _PostList({
+    required this.sortIndex,
+    required this.teamCode,
+    required this.teamLabel,
+    this.isOnlywan = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     // 정렬에 따라 더미 데이터 순서만 살짝 바꿔보기
     final data = List<_Post>.from(_posts);
     if (sortIndex == 1) {
-      data.sort((a, b) => (b.likes + b.comments).compareTo(a.likes + a.comments));
+      data.sort(
+        (a, b) => (b.likes + b.comments).compareTo(a.likes + a.comments),
+      );
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16,8 ),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       itemBuilder: (_, i) {
         final p = data[i];
         return _PostTile(
@@ -424,16 +415,16 @@ class _PostList extends StatelessWidget {
           snippet: p.snippet,
           likes: p.likes,
           comments: p.comments,
-          mediaWidth: p.mediaWidth,          // ✅
-          mediaHeight: p.mediaHeight,        // ✅ (추가)
+          mediaWidth: p.mediaWidth, // ✅
+          mediaHeight: p.mediaHeight, // ✅ (추가)
           badge: i == 1 ? 5 : null,
           onTap: () {
-            context.push('/boards/$teamCode/post/${p.id}',
+            context.push(
+              '/boards/$teamCode/post/${p.id}',
               extra: {'teamLabel': teamLabel},
             );
           },
         );
-
       },
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemCount: data.length,
@@ -464,7 +455,6 @@ class _PostTile extends StatefulWidget {
     this.badge,
     this.onTap,
   });
-
 
   @override
   State<_PostTile> createState() => _PostTileState();
@@ -497,14 +487,14 @@ class _PostTileState extends State<_PostTile> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (_) => _CommentsBottomSheet(
-        postId: 0, // TODO: 실제 postId 넘겨도 됨
-        hasComments: hasComments,
-        initialCount: widget.comments,
-      ),
+      builder:
+          (_) => _CommentsBottomSheet(
+            postId: 0, // TODO: 실제 postId 넘겨도 됨
+            hasComments: hasComments,
+            initialCount: widget.comments,
+          ),
     );
   }
-
 
   // ✅ 비율 → 타겟 프레임(AspectRatio) 변환
   double _targetAspectRatio(double w, double h) {
@@ -512,9 +502,9 @@ class _PostTileState extends State<_PostTile> {
     if (ratio >= 1.25) {
       return 358 / 266; // 거의 4:3
     } else if (ratio <= 0.85) {
-      return 3 / 4;     // 0.75
+      return 3 / 4; // 0.75
     } else {
-      return 1.0;       // 1:1
+      return 1.0; // 1:1
     }
   }
 
@@ -532,9 +522,7 @@ class _PostTileState extends State<_PostTile> {
           onTap: widget.onTap,
           child: Container(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -543,7 +531,8 @@ class _PostTileState extends State<_PostTile> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
-                      width: 30, height: 30,
+                      width: 30,
+                      height: 30,
                       decoration: const BoxDecoration(
                         color: Color(0xFFE5E7EB),
                         shape: BoxShape.circle,
@@ -556,7 +545,8 @@ class _PostTileState extends State<_PostTile> {
                         children: [
                           Text(
                             widget.nickname,
-                            maxLines: 1, overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 14,
                               color: AppColors.gray800,
@@ -584,9 +574,7 @@ class _PostTileState extends State<_PostTile> {
                       'assets/icons/board_dots.svg',
                       width: 26,
                       height: 17.3,
-
                     ),
-
                   ],
                 ),
 
@@ -629,39 +617,72 @@ class _PostTileState extends State<_PostTile> {
                       onTap: _toggleLike,
                       borderRadius: BorderRadius.circular(4),
                       child: SvgPicture.asset(
-                        _liked ? 'assets/icons/Heart_fill.svg' : 'assets/icons/Heart.svg',
-                        width: 20.571, height: 18,
-
+                        _liked
+                            ? 'assets/icons/Heart_fill.svg'
+                            : 'assets/icons/Heart.svg',
+                        width: 20.571,
+                        height: 18,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text('$_likeCount', style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.gray800, fontFamily: 'Pretendard',letterSpacing: -0.15,
-                    )),
+                    Text(
+                      '$_likeCount',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.gray800,
+                        fontFamily: 'Pretendard',
+                        letterSpacing: -0.15,
+                      ),
+                    ),
 
                     const SizedBox(width: 20),
                     // ✅ 댓글 아이콘 + 숫자 탭 → 바텀시트
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => _openCommentsSheet(hasComments: widget.comments > 0),
+                      onTap:
+                          () => _openCommentsSheet(
+                            hasComments: widget.comments > 0,
+                          ),
                       child: Row(
                         children: [
-                          SvgPicture.asset('assets/icons/comment.svg', width: 19, height: 19),
+                          SvgPicture.asset(
+                            'assets/icons/comment.svg',
+                            width: 19,
+                            height: 19,
+                          ),
                           const SizedBox(width: 8),
-                          Text('${widget.comments}', style: const TextStyle(
-                            fontSize: 15, fontWeight: FontWeight.w500,
-                            color: AppColors.gray800, fontFamily: 'Pretendard', letterSpacing: -0.15,
-                          )),
+                          Text(
+                            '${widget.comments}',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.gray800,
+                              fontFamily: 'Pretendard',
+                              letterSpacing: -0.15,
+                            ),
+                          ),
                         ],
                       ),
                     ),
 
                     const SizedBox(width: 20),
-                    SvgPicture.asset('assets/icons/bookmark.svg', width: 16, height: 16),
+                    SvgPicture.asset(
+                      'assets/icons/bookmark.svg',
+                      width: 16,
+                      height: 16,
+                    ),
                     const SizedBox(width: 8),
-                    const Text('2', style: TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.gray800, fontFamily: 'Pretendard',letterSpacing: -0.15,
-                    )),
+                    const Text(
+                      '2',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.gray800,
+                        fontFamily: 'Pretendard',
+                        letterSpacing: -0.15,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -735,7 +756,6 @@ class _PostTileState extends State<_PostTile> {
                       ],
                     ),
 
-
                     const SizedBox(height: 10),
                     Text(
                       widget.title, // ← widget.
@@ -771,17 +791,17 @@ class _PostTileState extends State<_PostTile> {
                           child: SvgPicture.asset(
                             _liked
                                 ? 'assets/icons/Heart_fill.svg' // 채워진 하트
-                                : 'assets/icons/Heart.svg',      // 비워진 하트
+                                : 'assets/icons/Heart.svg', // 비워진 하트
                             width: 16,
                             height: 16,
                             colorFilter: ColorFilter.mode(
-                              _liked ? const Color(0xFF94C32C) : const Color(0xFF4E4E4E),
+                              _liked
+                                  ? const Color(0xFF94C32C)
+                                  : const Color(0xFF4E4E4E),
                               BlendMode.srcIn, // 필요 시 srcATop으로 교체
                             ),
                           ),
                         ),
-
-
 
                         const SizedBox(width: 4),
                         Text(
@@ -796,7 +816,8 @@ class _PostTileState extends State<_PostTile> {
                         const SizedBox(width: 11),
                         SvgPicture.asset(
                           'assets/icons/comment.svg',
-                          width: 16, height: 16,
+                          width: 16,
+                          height: 16,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -831,7 +852,7 @@ class _PostTileState extends State<_PostTile> {
                   if (widget.badge != null)
                     Positioned(
                       right: 5,
-                      bottom:4,
+                      bottom: 4,
                       child: Container(
                         width: 20,
                         height: 20,
@@ -839,7 +860,6 @@ class _PostTileState extends State<_PostTile> {
                         decoration: BoxDecoration(
                           color: const Color(0xFF9E9E9E),
                           borderRadius: BorderRadius.circular(4),
-
                         ),
                         child: Text(
                           '${widget.badge}',
@@ -862,7 +882,6 @@ class _PostTileState extends State<_PostTile> {
   }
 }
 
-
 /* 더미 데이터 */
 class _Post {
   final int id;
@@ -871,12 +890,17 @@ class _Post {
   final double mediaWidth;
   final double mediaHeight;
 
-  _Post(this.id, this.nickname, this.time, this.title, this.snippet, this.likes, this.comments,
-      {
-        required this.mediaWidth,
-        required this.mediaHeight,
-      }
-      );
+  _Post(
+    this.id,
+    this.nickname,
+    this.time,
+    this.title,
+    this.snippet,
+    this.likes,
+    this.comments, {
+    required this.mediaWidth,
+    required this.mediaHeight,
+  });
 } // ← 클래스 닫기 꼭!
 
 final _posts = <_Post>[
@@ -887,8 +911,10 @@ final _posts = <_Post>[
     '3분전',
     '제목_공백 포함 최대 20자까지 가능',
     '본문은 보여지는 건 최대 24자까지 가능',
-    23, 22,
-    mediaWidth: 1600, mediaHeight: 900,
+    23,
+    22,
+    mediaWidth: 1600,
+    mediaHeight: 900,
   ),
   // 정사각형 (사이값) → 1:1 프레임
   _Post(
@@ -897,8 +923,10 @@ final _posts = <_Post>[
     '3분전',
     '제목_공백 포함 최대 20자까지 가능',
     '본문은 보여지는 건 최대 24자까지 가능',
-    7, 3,
-    mediaWidth: 1000, mediaHeight: 1000,
+    7,
+    3,
+    mediaWidth: 1000,
+    mediaHeight: 1000,
   ),
   // 세로형 (ratio <= 0.85) → 3:4 프레임
   _Post(
@@ -907,18 +935,18 @@ final _posts = <_Post>[
     '3분전',
     '제목_공백 포함 최대 20자까지 가능',
     '본문은 보여지는 건 최대 24자까지 가능',
-    4, 1,
-    mediaWidth: 800, mediaHeight: 1400,
+    4,
+    1,
+    mediaWidth: 800,
+    mediaHeight: 1400,
   ),
 ];
 
-
-
 Widget communityHeader(
-    BuildContext context,
-    String title, {
-      required int sectionIndex, // ✅ 추가
-    }) {
+  BuildContext context,
+  String title, {
+  required int sectionIndex, // ✅ 추가
+}) {
   return Container(
     height: 56,
     color: Colors.white,
@@ -965,11 +993,15 @@ Widget communityHeader(
               onTap: () {
                 if (sectionIndex == 2) {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const CommunitySearchMarket()),
+                    MaterialPageRoute(
+                      builder: (_) => const CommunitySearchMarket(),
+                    ),
                   );
                 } else {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const CommunitySearchPage()),
+                    MaterialPageRoute(
+                      builder: (_) => const CommunitySearchPage(),
+                    ),
                   );
                 }
               },
@@ -990,7 +1022,9 @@ Widget communityHeader(
               behavior: HitTestBehavior.opaque,
               onTap: () {
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AlarmPage()), // ✅ 이동 경로
+                  MaterialPageRoute(
+                    builder: (_) => const AlarmPage(),
+                  ), // ✅ 이동 경로
                 );
               },
               child: SvgPicture.asset(
@@ -1008,6 +1042,7 @@ Widget communityHeader(
     ),
   );
 }
+
 // ==========================================
 // BottomSheet: PostDetailPage 댓글 UI "그대로" 사용
 // ==========================================
@@ -1113,7 +1148,9 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
                         width: 14,
                         height: 12,
                         colorFilter: const ColorFilter.mode(
-                            AppColors.gray400, BlendMode.srcIn),
+                          AppColors.gray400,
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
                     _VBar(),
@@ -1144,12 +1181,14 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
                         width: 14,
                         height: 14,
                         colorFilter: const ColorFilter.mode(
-                            AppColors.gray400, BlendMode.srcIn),
+                          AppColors.gray400,
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              )
+              ),
             ],
           ),
 
@@ -1183,100 +1222,107 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
           if (replies.isNotEmpty) ...[
             const SizedBox(height: 12),
             Column(
-              children: replies.map((r) {
-                return Padding(
-                  padding: const EdgeInsets.only(left: 0, bottom: 0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ㄴ 가이드
-                      Container(
-                        width: 10,
-                        height: 18,
-                        margin: const EdgeInsets.only(right: 6, top: 4),
-                        child: SvgPicture.asset(
-                          'assets/icons/board_reply.svg',
-                          width: 11,
-                          height: 15,
-                          colorFilter: const ColorFilter.mode(
-                              AppColors.gray300, BlendMode.srcIn),
-                        ),
-                      ),
+              children:
+                  replies.map((r) {
+                    return Padding(
+                      padding: const EdgeInsets.only(left: 0, bottom: 0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // ㄴ 가이드
+                          Container(
+                            width: 10,
+                            height: 18,
+                            margin: const EdgeInsets.only(right: 6, top: 4),
+                            child: SvgPicture.asset(
+                              'assets/icons/board_reply.svg',
+                              width: 11,
+                              height: 15,
+                              colorFilter: const ColorFilter.mode(
+                                AppColors.gray300,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                          ),
 
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              r.nickname,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.gray800,
-                              ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  r.nickname,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.gray800,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  r.body,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: AppColors.gray900,
+                                    height: 1.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  r.time,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.gray500,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              r.body,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: AppColors.gray900,
-                                height: 1.5,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              r.time,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.gray500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                          ),
 
-                      // 대댓글 우측 액션 박스 (하트/더보기)
-                      Container(
-                        height: 24,
-                        padding: const EdgeInsets.symmetric(horizontal: 0),
-                        decoration: BoxDecoration(
-                          color: AppColors.gray100,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _IconButtonBox(
-                              onTap: () {
-                                // 필요 시 r.like 토글로 확장 가능
-                              },
-                              child: SvgPicture.asset(
-                                'assets/icons/board_heart.svg',
-                                width: 14,
-                                height: 12,
-                                colorFilter: const ColorFilter.mode(
-                                    AppColors.gray400, BlendMode.srcIn),
-                              ),
+                          // 대댓글 우측 액션 박스 (하트/더보기)
+                          Container(
+                            height: 24,
+                            padding: const EdgeInsets.symmetric(horizontal: 0),
+                            decoration: BoxDecoration(
+                              color: AppColors.gray100,
+                              borderRadius: BorderRadius.circular(4),
                             ),
-                            _VBar(),
-                            _IconButtonBox(
-                              onTap: () {},
-                              child: SvgPicture.asset(
-                                'assets/icons/board_dots.svg',
-                                width: 14,
-                                height: 14,
-                                colorFilter: const ColorFilter.mode(
-                                    AppColors.gray400, BlendMode.srcIn),
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _IconButtonBox(
+                                  onTap: () {
+                                    // 필요 시 r.like 토글로 확장 가능
+                                  },
+                                  child: SvgPicture.asset(
+                                    'assets/icons/board_heart.svg',
+                                    width: 14,
+                                    height: 12,
+                                    colorFilter: const ColorFilter.mode(
+                                      AppColors.gray400,
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
+                                ),
+                                _VBar(),
+                                _IconButtonBox(
+                                  onTap: () {},
+                                  child: SvgPicture.asset(
+                                    'assets/icons/board_dots.svg',
+                                    width: 14,
+                                    height: 14,
+                                    colorFilter: const ColorFilter.mode(
+                                      AppColors.gray400,
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                );
-              }).toList(),
+                    );
+                  }).toList(),
             ),
           ],
         ],
@@ -1288,7 +1334,6 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-
 
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
@@ -1302,7 +1347,8 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
           children: [
             const SizedBox(height: 16),
             Container(
-              width: 36, height: 4,
+              width: 36,
+              height: 4,
               decoration: BoxDecoration(
                 color: const Color(0xFF8F8F8F),
                 borderRadius: BorderRadius.circular(2),
@@ -1331,14 +1377,15 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
 
             // 내용
             Expanded(
-              child: comments.isEmpty
-                  ? _EmptyComment() // ← PostDetail과 동일 (board_bori.svg)
-                  : ListView.separated(
-                padding: const EdgeInsets.fromLTRB(0, 16, 0, 4),
-                itemBuilder: (_, i) => _commentItem(comments[i]),
-                separatorBuilder: (_, __) => const SizedBox(height: 6),
-                itemCount: comments.length,
-              ),
+              child:
+                  comments.isEmpty
+                      ? _EmptyComment() // ← PostDetail과 동일 (board_bori.svg)
+                      : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(0, 16, 0, 4),
+                        itemBuilder: (_, i) => _commentItem(comments[i]),
+                        separatorBuilder: (_, __) => const SizedBox(height: 6),
+                        itemCount: comments.length,
+                      ),
             ),
 
             // 하단 입력바 (PostDetail과 동일)
@@ -1346,47 +1393,49 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
 
             (_activeReplyIndex == null)
                 ? _CommentInputBar(
-              controller: _commentCtrl,
-              onPressed: () {
-                final text = _commentCtrl.text.trim();
-                if (text.isEmpty) return;
-                setState(() {
-                  comments.add(
-                    _Comment(
-                      nickname: '닉네임',
-                      body: text,
-                      time: '방금',
-                      liked: false,
-                      likes: 0,
-                    ),
-                  );
-                  _commentCtrl.clear();
-                });
-              },
-            )
+                  controller: _commentCtrl,
+                  onPressed: () {
+                    final text = _commentCtrl.text.trim();
+                    if (text.isEmpty) return;
+                    setState(() {
+                      comments.add(
+                        _Comment(
+                          nickname: '닉네임',
+                          body: text,
+                          time: '방금',
+                          liked: false,
+                          likes: 0,
+                        ),
+                      );
+                      _commentCtrl.clear();
+                    });
+                  },
+                )
                 : _ReplyBottomBar(
-              nickname: comments[_activeReplyIndex!].nickname,
-              controller: _replyCtrl,
-              onCancel: () => setState(() => _activeReplyIndex = null),
-              onSubmit: () {
-                final text = _replyCtrl.text.trim();
-                if (text.isEmpty) return;
-                final i = _activeReplyIndex!;
-                setState(() {
-                  final cur = List<_Reply>.from(_replies[i] ?? const []);
-                  cur.add(_Reply(
-                    nickname: '나나ㅏ나',
-                    body: text.trim(),
-                    time: '방금',
-                    likes: 0,
-                    liked: false,
-                  ));
-                  _replies[i] = cur;
-                  _activeReplyIndex = null;
-                  _replyCtrl.clear();
-                });
-              },
-            ),
+                  nickname: comments[_activeReplyIndex!].nickname,
+                  controller: _replyCtrl,
+                  onCancel: () => setState(() => _activeReplyIndex = null),
+                  onSubmit: () {
+                    final text = _replyCtrl.text.trim();
+                    if (text.isEmpty) return;
+                    final i = _activeReplyIndex!;
+                    setState(() {
+                      final cur = List<_Reply>.from(_replies[i] ?? const []);
+                      cur.add(
+                        _Reply(
+                          nickname: '나나ㅏ나',
+                          body: text.trim(),
+                          time: '방금',
+                          likes: 0,
+                          liked: false,
+                        ),
+                      );
+                      _replies[i] = cur;
+                      _activeReplyIndex = null;
+                      _replyCtrl.clear();
+                    });
+                  },
+                ),
           ],
         ),
       ),
@@ -1401,9 +1450,12 @@ class _AvatarSmall extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 24, height: 24,
+      width: 24,
+      height: 24,
       decoration: const BoxDecoration(
-          shape: BoxShape.circle, color: Color(0xFFE5E7EB)),
+        shape: BoxShape.circle,
+        color: Color(0xFFE5E7EB),
+      ),
     );
   }
 }
@@ -1427,7 +1479,8 @@ class _VBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 1, height: 16,
+      width: 1,
+      height: 16,
       margin: const EdgeInsets.symmetric(horizontal: 8),
       color: AppColors.gray400,
     );
@@ -1474,7 +1527,11 @@ class _EmptyComment extends StatelessWidget {
       alignment: Alignment.center,
       child: Column(
         children: [
-          SvgPicture.asset('assets/icons/board_bori.svg', width: 60, height: 60),
+          SvgPicture.asset(
+            'assets/icons/board_bori.svg',
+            width: 60,
+            height: 60,
+          ),
           const SizedBox(height: 24),
           const Text(
             '첫 번째 댓글을 남겨주세요!',
@@ -1522,7 +1579,8 @@ class _ReplyBottomBar extends StatelessWidget {
             decoration: BoxDecoration(
               color: const Color(0xFFEFEFEF),
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12), topRight: Radius.circular(12),
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
               ),
             ),
             child: Row(
@@ -1559,8 +1617,7 @@ class _ReplyBottomBar extends StatelessWidget {
                       ),
                     ),
                     alignment: Alignment.center,
-                    child: TextField
-                      (
+                    child: TextField(
                       controller: controller,
                       cursorColor: AppColors.primary700,
                       onChanged: (_) => (context as Element).markNeedsBuild(),
@@ -1587,9 +1644,10 @@ class _ReplyBottomBar extends StatelessWidget {
                               height: 21.58,
                               width: 32,
                               decoration: BoxDecoration(
-                                color: hasText
-                                    ? AppColors.primary700
-                                    : const Color(0xFFC0C0C0),
+                                color:
+                                    hasText
+                                        ? AppColors.primary700
+                                        : const Color(0xFFC0C0C0),
                                 borderRadius: BorderRadius.circular(5.95),
                               ),
                               child: Center(
@@ -1606,8 +1664,10 @@ class _ReplyBottomBar extends StatelessWidget {
                             ),
                           ),
                         ),
-                        suffixIconConstraints:
-                        const BoxConstraints(minWidth: 36, minHeight: 36),
+                        suffixIconConstraints: const BoxConstraints(
+                          minWidth: 36,
+                          minHeight: 36,
+                        ),
                       ),
                     ),
                   ),
@@ -1674,9 +1734,10 @@ class _CommentInputBar extends StatelessWidget {
                           height: 21.58,
                           width: 32,
                           decoration: BoxDecoration(
-                            color: hasText
-                                ? AppColors.primary700
-                                : const Color(0xFFC0C0C0),
+                            color:
+                                hasText
+                                    ? AppColors.primary700
+                                    : const Color(0xFFC0C0C0),
                             borderRadius: BorderRadius.circular(5.95),
                           ),
                           child: Center(
@@ -1693,8 +1754,10 @@ class _CommentInputBar extends StatelessWidget {
                         ),
                       ),
                     ),
-                    suffixIconConstraints:
-                    const BoxConstraints(minWidth: 36, minHeight: 36),
+                    suffixIconConstraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
                   ),
                 ),
               ),
@@ -1722,7 +1785,6 @@ class _InningMarketTab extends StatefulWidget {
   @override
   State<_InningMarketTab> createState() => _InningMarketTabState();
 }
-
 
 class _InningMarketTabState extends State<_InningMarketTab> {
   bool showOnSaleOnly = false;
@@ -1764,9 +1826,10 @@ class _InningMarketTabState extends State<_InningMarketTab> {
       },
     ];
 
-    final filtered = showOnSaleOnly
-        ? posts.where((p) => p['onSale'] == true).toList()
-        : posts;
+    final filtered =
+        showOnSaleOnly
+            ? posts.where((p) => p['onSale'] == true).toList()
+            : posts;
 
     return Column(
       children: [
@@ -1814,7 +1877,6 @@ class _InningMarketTabState extends State<_InningMarketTab> {
           ),
         ),
 
-
         // 🔹 게시글 리스트
         Expanded(
           child: ListView.separated(
@@ -1829,128 +1891,138 @@ class _InningMarketTabState extends State<_InningMarketTab> {
                     context.pushNamed(
                       'post_detail_market',
                       extra: PostDetailMarketArgs(
-                        teamCode: widget.teamCode,      // ex) 'LG', 'HT'
-                        teamLabel: widget.teamLabel,    // ex) 'LG 트윈스 👶🏻👶🏻'
-                        postId: i + 1,                  // 더미 ID (나중에 실제 값으로 교체)
+                        teamCode: widget.teamCode, // ex) 'LG', 'HT'
+                        teamLabel: widget.teamLabel, // ex) 'LG 트윈스 👶🏻👶🏻'
+                        postId: i + 1, // 더미 ID (나중에 실제 값으로 교체)
                       ),
                     );
                   },
 
-                  child:  Container(
-                decoration: BoxDecoration(
-                  color: AppColors.primary50,
-                  borderRadius: BorderRadius.circular(0),
-                  border: Border(
-                    bottom: BorderSide(
-                      color: AppColors.gray200,
-                      width: 1,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.primary50,
+                      borderRadius: BorderRadius.circular(0),
+                      border: Border(
+                        bottom: BorderSide(color: AppColors.gray200, width: 1),
+                      ),
                     ),
-                  ),
-                ),
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                child: Row(
-                  children: [
-                    // 왼쪽 텍스트
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // 🔸 상태 배지
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: p['status'] == '판매중'
-                                  ? AppColors.primary600
-                                  : const Color(0xFFC0C0C0),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              p['status']!.toString(),
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primary50,
-                                fontFamily: 'Pretendard',
-                                letterSpacing: -0.1,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-
-                          // 🔸 제목
-                          Text(
-                            p['title']!.toString(),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: AppColors.gray850,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'Pretendard',
-                              letterSpacing: -0.16,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-
-                          // 🔸 하단 정보 (댓글, 북마크, 시간)
-                          Row(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                    child: Row(
+                      children: [
+                        // 왼쪽 텍스트
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              SvgPicture.asset('assets/icons/comment.svg',
-                                  width: 14.4, height: 14.4),
-                              const SizedBox(width: 4),
-                              Text('${p['comments']}',
+                              // 🔸 상태 배지
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      p['status'] == '판매중'
+                                          ? AppColors.primary600
+                                          : const Color(0xFFC0C0C0),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  p['status']!.toString(),
                                   style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primary50,
+                                    fontFamily: 'Pretendard',
+                                    letterSpacing: -0.1,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+
+                              // 🔸 제목
+                              Text(
+                                p['title']!.toString(),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: AppColors.gray850,
+                                  fontWeight: FontWeight.w600,
+                                  fontFamily: 'Pretendard',
+                                  letterSpacing: -0.16,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+
+                              // 🔸 하단 정보 (댓글, 북마크, 시간)
+                              Row(
+                                children: [
+                                  SvgPicture.asset(
+                                    'assets/icons/comment.svg',
+                                    width: 14.4,
+                                    height: 14.4,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${p['comments']}',
+                                    style: const TextStyle(
                                       fontSize: 12,
                                       color: AppColors.gray700,
                                       fontFamily: 'Pretendard',
                                       fontWeight: FontWeight.w500,
                                       letterSpacing: -0.12,
-                                  )),
-                              const SizedBox(width: 11),
-                              SvgPicture.asset('assets/icons/bookmark.svg',
-                                  width: 14, height: 14),
-                              const SizedBox(width: 4),
-                              Text('${p['bookmarks']}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.gray700,
-                                    fontFamily: 'Pretendard',
-                                    fontWeight: FontWeight.w500,
-                                    letterSpacing: -0.12,)),
-                              const SizedBox(width: 98.6),
-                              Text(
-                                p['time']!.toString(),
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: AppColors.gray700,
-                                  fontFamily: 'Pretendard',
-                                  fontWeight: FontWeight.w400,
-                                  letterSpacing: -0.14,
-
-                                ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 11),
+                                  SvgPicture.asset(
+                                    'assets/icons/bookmark.svg',
+                                    width: 14,
+                                    height: 14,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${p['bookmarks']}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.gray700,
+                                      fontFamily: 'Pretendard',
+                                      fontWeight: FontWeight.w500,
+                                      letterSpacing: -0.12,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 98.6),
+                                  Text(
+                                    p['time']!.toString(),
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.gray700,
+                                      fontFamily: 'Pretendard',
+                                      fontWeight: FontWeight.w400,
+                                      letterSpacing: -0.14,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
 
-                    const SizedBox(width: 12),
+                        const SizedBox(width: 12),
 
-                    // 오른쪽 썸네일 (정사각형)
-                    ///TODO 연동 후 분기처리
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE5E7EB),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                        // 오른쪽 썸네일 (정사각형)
+                        ///TODO 연동 후 분기처리
+                        Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE5E7EB),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                    ),
+                  ),
                 ),
               );
             },
@@ -1990,13 +2062,13 @@ class _CustomMarketSwitchState extends State<CustomMarketSwitch> {
         height: 21,
         padding: const EdgeInsets.symmetric(horizontal: 2.5),
         decoration: BoxDecoration(
-          color: widget.value
-              ? const Color(0xFFAFD956) // 활성 시 연두
-              : const Color(0xFF8F8F8F), // 비활성 회색
+          color:
+              widget.value
+                  ? const Color(0xFFAFD956) // 활성 시 연두
+                  : const Color(0xFF8F8F8F), // 비활성 회색
           borderRadius: BorderRadius.circular(36.5),
         ),
-        alignment:
-        widget.value ? Alignment.centerRight : Alignment.centerLeft,
+        alignment: widget.value ? Alignment.centerRight : Alignment.centerLeft,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
@@ -2018,4 +2090,3 @@ class _CustomMarketSwitchState extends State<CustomMarketSwitch> {
     );
   }
 }
-
