@@ -6,16 +6,12 @@ class BannerSection extends StatelessWidget {
   final String title;
   final String imagePath;
   final VoidCallback onTap;
-  final EdgeInsetsGeometry padding;
-  final double bottomSpacing;
 
   const BannerSection({
     super.key,
     required this.title,
     required this.imagePath,
     required this.onTap,
-    this.padding = const EdgeInsets.symmetric(horizontal: 16),
-    this.bottomSpacing = 40,
   });
 
   @override
@@ -23,13 +19,10 @@ class BannerSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionTitle(title),
+        SectionTitle(title: title),
         const SizedBox(height: 8),
-        Padding(
-          padding: padding,
-          child: BannerCard(imagePath: imagePath, onTap: onTap),
-        ),
-        SizedBox(height: bottomSpacing),
+        BannerCard(imagePath: imagePath, onTap: onTap),
+        // SizedBox(height: bottomSpacing),
       ],
     );
   }
