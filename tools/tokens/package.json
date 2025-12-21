@@ -1,0 +1,12 @@
+{
+  "name": "token-builder",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "@tokens-studio/sd-transforms": "^1.0.0",
+    "style-dictionary": "^4.0.0"
+  }
+}
