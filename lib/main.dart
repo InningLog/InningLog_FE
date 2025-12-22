@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
+import 'package:inninglog/app_scope.dart';
 import 'package:inninglog/router/app_routes.dart';
 import 'package:inninglog/shared/widgets/main_navigation.dart';
 import 'package:inninglog/feature/login/models/KakaoLoginWebViewPage.dart';
@@ -29,6 +30,7 @@ import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
 import 'package:amplitude_flutter/amplitude.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io' show Platform;
 import 'shared/amplitude/analytics.dart';
@@ -49,8 +51,9 @@ Future<void> main() async {
   } else {
     print('⚠️ AMPLITUDE_API_KEY is missing');
   }
+  final scope = await AppScope.create();
 
-  runApp(const InningLogApp());
+  runApp(Provider<AppScope>.value(value: scope, child: const InningLogApp()));
 }
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
