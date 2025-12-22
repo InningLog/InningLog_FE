@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:inninglog/app_scope.dart';
+import 'package:inninglog/feature/community/model/create_post_request.dart';
+import 'package:inninglog/feature/community/repositories/post_repository.dart';
 import 'package:inninglog/shared/service/image_pick_service.dart';
 
 class WritingPostViewModel extends ChangeNotifier {
@@ -13,6 +16,8 @@ class WritingPostViewModel extends ChangeNotifier {
   final List<ImageProvider> _images = [];
   List<ImageProvider> get images => List.unmodifiable(_images);
 
+  final CommunityPostRepository repo;
+
   bool _isPicking = false;
   bool get isPicking => _isPicking;
 
@@ -25,7 +30,11 @@ class WritingPostViewModel extends ChangeNotifier {
   bool get canPickMore => _images.length < maxImages;
   bool get canSubmit => _isFormFilled;
 
-  WritingPostViewModel({required this.imagePickService, this.maxImages = 5}) {
+  WritingPostViewModel({
+    required this.imagePickService,
+    this.maxImages = 5,
+    required this.repo,
+  }) {
     titleController.addListener(_handleTextChanged);
     bodyController.addListener(_handleTextChanged);
     titleFocusNode.addListener(_handleTitleFocusChanged);
@@ -56,6 +65,31 @@ class WritingPostViewModel extends ChangeNotifier {
     debugPrint('  title: "$title"');
     debugPrint('  body: "$body"');
     debugPrint('  imageCount: ${_images.length}');
+  }
+
+  Future<void> submit({required String teamCode}) async {
+    // submitting = true;
+    // error = null;
+    notifyListeners();
+    final title = titleController.text.trim();
+    final content = bodyController.text.trim();
+
+    try {
+      await repo.createPost(
+        teamCode: teamCode,
+        request: CreatePostRequest(
+          title: title,
+          content: content,
+          imageCreateReqDto: [],
+        ),
+      );
+    } catch (e) {
+      debugPrint(e.toString());
+      // error = e.toString();
+    } finally {
+      // submitting = false;
+      notifyListeners();
+    }
   }
 
   void removeImageAt(int index) {
