@@ -2,8 +2,7 @@ name: inninglog
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
-
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 version: 1.0.0+1
 
@@ -23,7 +22,6 @@ dependencies:
 
   url_launcher: ^6.2.5
 
-
   cupertino_icons: ^1.0.8
   flutter_svg: ^2.0.7
   image_picker: ^1.1.2
@@ -37,26 +35,20 @@ dependencies:
   flutter_dotenv: ^5.2.1
   fluttertoast: ^8.2.4
   device_info_plus: ^10.1.0
-  xml: ^6.5.0              # SVG XML 파싱
-  path_parsing: ^1.0.1     # d → Path 변환
+  xml: ^6.5.0 # SVG XML 파싱
+  path_parsing: ^1.0.1 # d → Path 변환
   path_drawing: ^1.0.1
   webview_flutter: ^4.13.0
-
-
-
-
+  dio: ^5.0.0
+  provider: ^6.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-
   flutter_lints: ^5.0.0
 
-
-
 flutter:
-
   uses-material-design: true
 
   assets:
@@ -68,8 +60,6 @@ flutter:
     - assets/images/onboarding_3.jpg
     - assets/images/onboarding_4.jpg
     - assets/jamsil.svg
-
-
 
   fonts:
     - family: MBC1961GulimOTF
@@ -87,5 +77,3 @@ flutter:
     - family: omyu pretty
       fonts:
         - asset: assets/fonts/omyu pretty.ttf
-
-
