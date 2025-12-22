@@ -74,8 +74,7 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: AppRoutePaths.postWrite,
       builder: (context, state) {
-        final teamLabel = state.extra as String; // extra로 받기
-        return WritingPostPage(teamLabel: teamLabel);
+        return WritingPostPage(teamCode: 'ALL');
       },
     ),
 
@@ -217,13 +216,13 @@ final GoRouter _router = GoRouter(
             GoRoute(
               path: AppRoutePaths.boardPostWrite,
               name: 'writing_post',
-              builder: (context, state) {
-                final teamLabel = (state.extra as String?) ?? '';
-                return WritingPostPage(teamLabel: teamLabel);
+              builder: (_, state) {
+                final code = state.pathParameters['code']!;
+                return WritingPostPage(teamCode: code);
               },
             ),
             GoRoute(
-              path: 'post/:postId',
+              path: 'posts/:postId',
               name: 'post_detail',
               builder: (context, state) {
                 final teamCode = state.pathParameters['code']!;

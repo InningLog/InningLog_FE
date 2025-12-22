@@ -9,7 +9,6 @@ import '../../../shared/widgets/common_header.dart';
 import 'alarm_page.dart';
 import 'community_search_market.dart';
 import 'community_search_page.dart';
-import 'writing_post_page.dart';
 
 enum BoardMode { normal, myPosts, myComments, scraps }
 
@@ -82,6 +81,7 @@ class _TeamBoardPageState extends State<TeamBoardPage>
       }
     }();
     final teamLabel = teamLabelFromCode(widget.teamCode);
+    debugPrint('[Team Board Page] teamCode: ${widget.teamCode}');
 
     return Scaffold(
       backgroundColor: AppColors.primary50,
@@ -93,13 +93,9 @@ class _TeamBoardPageState extends State<TeamBoardPage>
           backgroundColor: AppColors.primary700,
           shape: const CircleBorder(),
           onPressed: () {
-            final teamLabel = teamLabelFromCode(widget.teamCode);
-
             // 기존 게시판 글쓰기
-            context.push(
-              AppRoutePaths.boardPostWriteLocation(widget.teamCode),
-              extra: teamLabel,
-            );
+            context.push(AppRoutePaths.boardPostWriteLocation(widget.teamCode));
+            debugPrint('[Team Board Page] teamCode: ${widget.teamCode}');
           },
           child: const Icon(Icons.add, size: 40, color: AppColors.primary50),
         ),

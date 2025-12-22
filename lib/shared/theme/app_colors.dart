@@ -1,6 +1,9 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
 import 'package:flutter/material.dart';
 
 class AppColors {
+  const AppColors._();
+
   static const Color primary50 = Color(0xFFFDFEFC);
   static const Color primary100 = Color(0xFFF9FCF1);
   static const Color primary200 = Color(0xFFF0F8E0);
@@ -10,8 +13,8 @@ class AppColors {
   static const Color primary600 = Color(0xFFAFD956);
   static const Color primary700 = Color(0xFF94C32C);
   static const Color primary800 = Color(0xFF536E19);
-
-
+  static const Color primary900 = Color(0xFF2C3B0D);
+  static const Color primary950 = Color(0xFF1F2A09);
   static const Color gray50 = Color(0xFFFDFDFD);
   static const Color gray100 = Color(0xFFF8F8F8);
   static const Color gray200 = Color(0xFFEFEFEF);
@@ -23,6 +26,18 @@ class AppColors {
   static const Color gray800 = Color(0xFF4E4E4E);
   static const Color gray850 = Color(0xFF323232);
   static const Color gray900 = Color(0xFF272727);
+  static const Color gray950 = Color(0xFF1A1A1A);
+  static const Color secondary50 = Color(0xFFFEFDFD);
+  static const Color secondary100 = Color(0xFFFDF6F5);
+  static const Color secondary200 = Color(0xFFFAEAE9);
+  static const Color secondary300 = Color(0xFFF6DBD9);
+  static const Color secondary400 = Color(0xFFF1C6C3);
+  static const Color secondary500 = Color(0xFFEBADA8);
+  static const Color secondary600 = Color(0xFFE48F89);
+  static const Color secondary700 = Color(0xFFDC6D65);
+  static const Color secondary800 = Color(0xFF8B2720);
+  static const Color secondary900 = Color(0xFF42120F);
+  static const Color secondary950 = Color(0xFF2A0C09);
 
   static const Color red100 = Color(0xFFFDF6F5);
   static const Color red300 = Color(0xFFF6DBD9);
@@ -30,6 +45,4 @@ class AppColors {
 
   static const Color win = Color(0xFFAFD956);
   static const Color lose = Color(0xFFE48F89);
-
-
 }

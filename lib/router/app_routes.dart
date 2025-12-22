@@ -4,9 +4,8 @@ import 'package:flutter/foundation.dart';
 final class AppRoutePaths {
   const AppRoutePaths._();
 
-  static const postWrite = '/post/write'; // GNB 없는 legacy 글쓰기
-  static const boardPostWrite = 'post/write'; // /boards/:code 하위 상대경로
+  static const postWrite = '/post/new'; // GNB 없는 legacy 글쓰기
+  static const boardPostWrite = 'post/new'; // /boards/:code 하위 상대경로
 
-  static String boardPostWriteLocation(String code) =>
-      '/boards/$code/post/write';
+  static String boardPostWriteLocation(String code) => '/boards/$code/post/new';
 }
