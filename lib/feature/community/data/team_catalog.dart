@@ -47,3 +47,9 @@ const kboTeams = <TeamItem>[
     imagePath: 'assets/images/card_kt.png',
   ),
 ];
+
+final Map<String, TeamItem> kboTeamCatalog = {
+  for (final team in kboTeams) team.code: team,
+};
+
+String kboTeamLabelOf(String code) => kboTeamCatalog[code]?.label ?? '';
