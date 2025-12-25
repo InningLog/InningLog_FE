@@ -209,7 +209,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
           style: TextStyle(
             fontFamily: 'Pretendard',
             fontSize: 12,
-            letterSpacing: -0.26,
+            letterSpacing: -0.12,
             height: 1.5,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             color: isSelected ? AppColors.primary800 : AppColors.gray700,
@@ -652,8 +652,8 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
               height: 42,
               child: Row(
                 children: [
-                  Expanded(child: _buildTabButton(index: 0, label: '직접 검색')),
-                  Expanded(child: _buildTabButton(index: 1, label: '해시태그 검색')),
+                  Expanded(child: _buildTabButton(index: 0, label: '검색')),
+                  Expanded(child: _buildTabButton(index: 1, label: '추천')),
                 ],
               ),
             ),

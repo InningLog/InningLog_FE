@@ -7,6 +7,8 @@ import '../../../main.dart';
 import '../../../shared/widgets/common_header.dart';
 import 'package:go_router/go_router.dart';
 
+import '../widget/jamsil_map.dart';
+
 
 class FieldSearchPage extends StatefulWidget {
   final String stadiumName;
@@ -117,8 +119,8 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
               height: 42,
               child: Row(
                 children: [
-                  Expanded(child: _buildTabButton(index: 0, label: '직접 검색')),
-                  Expanded(child: _buildTabButton(index: 1, label: '해시태그 검색')),
+                  Expanded(child: _buildTabButton(index: 0, label: '검색')),
+                  Expanded(child: _buildTabButton(index: 1, label: '추천')),
                 ],
               ),
             ),
@@ -142,205 +144,63 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 22),
+                        const SizedBox(height: 24),
                         const Text(
-                          '좌석 검색',
+                          '원하는 구역을 선택해서 시야를 확인해보세요!',
                           style: TextStyle(
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w600,
                             fontSize: 16,
                             fontFamily: 'Pretendard',
+                            height : 1,
+                            letterSpacing: -0.16,
                           ),
                         ),
                         const SizedBox(height: 16),
 
-                        // 존 선택 드롭다운
+                        // SizedBox(
+                        //   width: 360,
+                        //   height: 360,
+                        //   child: InteractiveViewer(
+                        //     minScale: 1.0,
+                        //     maxScale: 4.0,
+                        //     boundaryMargin: const EdgeInsets.all(40),
+                        //     child: JamsilMap(),
+                        //   ),
+                        // )
+
+                        ///자연스러운 버전
                         SizedBox(
-                          width: double.infinity,
-                          child:DropdownButtonFormField<String>(
-                            dropdownColor: Colors.white,
-                            decoration: InputDecoration(
-                              hintText: '존을 선택하세요.',
-                              hintStyle: const TextStyle(
-                                color: AppColors.gray700,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                fontFamily: 'Pretendard',
-                              ),
-                              filled: true,
-                              fillColor: AppColors.gray100,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: AppColors.gray300),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: AppColors.gray300),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: Color(0xFFF94C32C)),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                          width: 360,
+                          height: 360,
+                          child: ClipRect(
+                            child: InteractiveViewer(
+                              panEnabled: true,
+                              scaleEnabled: true,
+                              minScale: 1,
+                              maxScale: 5,
+                              boundaryMargin: EdgeInsets.zero,
+                              child: JamsilMap(),
                             ),
-                            value: selectedZone,
-                            items: buildZoneItems(selectedStadiumCode),
-                            onChanged: (value) {
-                              setState(() {
-                                selectedZone = value;
-                              });
-                            },
                           ),
                         ),
 
+                        const SizedBox(height: 25),
 
-                        const SizedBox(height: 12),
-
-                        // 구역/열 입력 필드
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: sectionController,
-                                onChanged: (_) => setState(() {}),
-                                textAlign: TextAlign.center,
-                                decoration: InputDecoration(
-                                  hintText: 'ex) 314',
-                                  hintStyle: const TextStyle(
-                                    color: AppColors.gray700,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                    fontFamily: 'Pretendard',
-                                  ),
-                                  filled: true,
-                                  fillColor: AppColors.gray100,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(color: AppColors.gray300),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(color: AppColors.gray300),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(color: Color(0xFFF94C32C)),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              '구역',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: TextField(
-                                controller: rowController,
-                                textAlign: TextAlign.center,
-                                decoration: InputDecoration(
-                                  hintText: 'ex) 3',
-                                  hintStyle: const TextStyle(
-                                    color: AppColors.gray700,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                    fontFamily: 'Pretendard',
-                                  ),
-                                  filled: true,
-                                  fillColor: AppColors.gray100,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(color: AppColors.gray300),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(color: AppColors.gray300),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(color: Color(0xFFF94C32C)),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              '열',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 46),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 54,
-                          child: ElevatedButton(
-
-
-                            onPressed: isDirectSearchValid
-
-                                ? () {
-                              print('🚨 selectedZone: $selectedZone');
-                              print('🚨 section: ${sectionController.text}');
-                              print('🚨 row: ${rowController.text}');
-
-
-                              AmplitudeFlutter.getInstance().logEvent('enter_stadium_direct_search', eventProperties: {
-                                'event_type': 'Custom',
-                                'component': 'form_submit',
-                                'zone_name': stadiumZones[selectedStadiumCode]?[selectedZone] ?? selectedZone ?? '',
-                                'section': sectionController.text,
-                                'row': int.tryParse(rowController.text) ?? 0,
-                                'importance': 'High',
-                              });
-                              AmplitudeFlutter.getInstance().logEvent('execute_stadium_search', eventProperties: {
-                                'event_type': 'Custom',
-                                'component': 'btn_click',
-                                'search_type': 'direct',
-                              });
-                              context.pushNamed(
-                                'field_result',
-                                extra: {
-                                  'index': 0,
-                                  'stadiumName': widget.stadiumName,
-                                  'zone': selectedZone,
-                                  'section': sectionController.text,
-                                  'row': rowController.text,
-                                },
-                              );
-
-                            }
-                                : null,
-
-
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isDirectSearchValid? AppColors.primary700 : AppColors.gray200,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(36),
-                                side: BorderSide(
-                                  color: isDirectSearchValid ? AppColors.primary700 : Colors.transparent,
-                                  width: 1,
-                                ),
-                              ),
-                            ),
-                            child: Text(
-                              '작성 완료',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: isDirectSearchValid ? Colors.white : AppColors.gray700,
-                              ),
-                            ),
+                        const Text(
+                          '내가 최근에 검색한 좌석',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                            fontFamily: 'Pretendard',
+                            height : 1,
+                            letterSpacing: -0.16,
                           ),
                         ),
+
+                        const SizedBox(height: 16),
+
+
+
                       ],
                     ),
 
@@ -558,7 +418,7 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
           style: TextStyle(
             fontFamily: 'Pretendard',
             fontSize: 12,
-            letterSpacing: -0.26,
+            letterSpacing: -0.12,
             height: 1.5,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             color: isSelected ? AppColors.primary800 : AppColors.gray700,
