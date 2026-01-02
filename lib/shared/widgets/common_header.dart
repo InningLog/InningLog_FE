@@ -1,36 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:inninglog/feature/community/screens/community_search_page.dart';
+import 'package:go_router/go_router.dart';
+import 'package:inninglog/router/app_routes.dart';
 import '../../feature/community/screens/alarm_page.dart';
 
 class CommonHeader extends StatelessWidget {
   final String title;
+  final bool showBackButton;
   final VoidCallback? onAlarmPressed;
-  final Widget? leading;   // 추가!
-
-  /// 검색 버튼 (null이면 표시 안 함)
   final VoidCallback? onSearchPressed;
-
+  final VoidCallback? onBackPressed;
 
   const CommonHeader({
     super.key,
     required this.title,
     this.onAlarmPressed,
-    this.leading,
     this.onSearchPressed,
+    this.showBackButton = false,
+    this.onBackPressed,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: 16,vertical: 9),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
       alignment: Alignment.center,
       child: Row(
         children: [
-          if (leading != null) leading!,
-          if (leading != null) const SizedBox(width: 8),
+          if (showBackButton) ...[
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onBackPressed ?? () => context.pop(),
+              child: SvgPicture.asset(
+                'assets/icons/back_but.svg',
+                width: 24,
+                height: 24,
+                colorFilter: const ColorFilter.mode(
+                  Color(0xFF9A9A9A),
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+          ],
           Text(
             title,
             style: const TextStyle(
@@ -51,27 +64,21 @@ class CommonHeader extends StatelessWidget {
                 'assets/icons/search.svg', // 🔍 아이콘 파일명에 맞춰 수정
                 width: 33,
               ),
-              onPressed: onSearchPressed ??
-                      () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const CommunitySearchPage()),
-                    );
-                  },
+              onPressed:
+                  onSearchPressed ?? () => context.push(AppRoutePaths.search),
               splashRadius: 33,
             ),
-            const SizedBox(width:0), // Figma 느낌 간격
+            const SizedBox(width: 0), // Figma 느낌 간격
           ],
 
           IconButton(
-            icon: SvgPicture.asset(
-              'assets/icons/Alarm.svg',
-              width: 19,
-            ),
-            onPressed: onAlarmPressed ??
-                    () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const AlarmPage()),
-                  );
+            icon: SvgPicture.asset('assets/icons/Alarm.svg', width: 19),
+            onPressed:
+                onAlarmPressed ??
+                () {
+                  Navigator.of(
+                    context,
+                  ).push(MaterialPageRoute(builder: (_) => const AlarmPage()));
                 },
           ),
         ],
