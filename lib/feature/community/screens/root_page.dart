@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:inninglog/feature/community/data/team_catalog.dart';
 import 'package:inninglog/feature/community/widgets/root/sections/banner_section.dart';
 import 'package:inninglog/feature/community/widgets/root/sections/my_section.dart';
@@ -6,8 +7,8 @@ import 'package:inninglog/feature/community/widgets/root/sections/popular_posts_
 import 'package:inninglog/feature/community/widgets/root/sections/team_boards_section.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:inninglog/feature/community/screens/teamboard_page.dart';
+import 'package:inninglog/router/app_routes.dart';
 import '../../../shared/widgets/common_header.dart';
-import 'community_search_page.dart';
 
 class CommunityRootPage extends StatelessWidget {
   const CommunityRootPage({super.key});
@@ -21,12 +22,7 @@ class CommunityRootPage extends StatelessWidget {
         child: SafeArea(
           child: CommonHeader(
             title: '커뮤니티',
-            onSearchPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CommunitySearchPage()),
-              );
-            },
+            onSearchPressed: () => context.push(AppRoutePaths.search),
           ),
         ),
       ),
