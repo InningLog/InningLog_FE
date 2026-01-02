@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
+import 'package:inninglog/shared/theme/app_text_styles.dart';
 
 // ---------- public components ----------
 
+enum CountVariant { primary, neutral }
+
 class LikeCount extends StatelessWidget {
   final int count;
-  final Color color;
+  final CountVariant variant;
   const LikeCount({
     required this.count,
-    this.color = AppColors.primary700,
+    this.variant = CountVariant.primary,
     super.key,
   });
 
@@ -18,7 +21,7 @@ class LikeCount extends StatelessWidget {
     return _IconCount(
       assetPath: 'assets/icons/green_heart.svg',
       count: count,
-      color: color,
+      variant: variant,
       iconWidth: 12.3,
       iconHeight: 10.44,
     );
@@ -27,10 +30,10 @@ class LikeCount extends StatelessWidget {
 
 class CommentCount extends StatelessWidget {
   final int count;
-  final Color color;
+  final CountVariant variant;
   const CommentCount({
     required this.count,
-    this.color = AppColors.primary700,
+    this.variant = CountVariant.primary,
     super.key,
   });
 
@@ -39,7 +42,7 @@ class CommentCount extends StatelessWidget {
     return _IconCount(
       assetPath: 'assets/icons/green_comment.svg',
       count: count,
-      color: color,
+      variant: variant,
       iconWidth: 14,
       iconHeight: 14.4,
     );
@@ -48,10 +51,10 @@ class CommentCount extends StatelessWidget {
 
 class ScrapCount extends StatelessWidget {
   final int count;
-  final Color color;
+  final CountVariant variant;
   const ScrapCount({
     required this.count,
-    this.color = AppColors.primary700,
+    this.variant = CountVariant.primary,
     super.key,
   });
 
@@ -60,7 +63,7 @@ class ScrapCount extends StatelessWidget {
     return _IconCount(
       assetPath: 'assets/icons/green_bookmark.svg',
       count: count,
-      color: color,
+      variant: variant,
       iconWidth: 12.8,
       iconHeight: 14,
     );
@@ -72,30 +75,26 @@ class ScrapCount extends StatelessWidget {
 class _IconCount extends StatelessWidget {
   final String assetPath;
   final int count;
-  final Color color;
+  final CountVariant variant;
   final double iconWidth;
   final double iconHeight;
-  final double gap;
 
   const _IconCount({
     required this.assetPath,
     required this.count,
-    required this.color,
+    required this.variant,
     required this.iconWidth,
     required this.iconHeight,
-    this.gap = 4,
   });
 
-  static const TextStyle _baseTextStyle = TextStyle(
-    fontSize: 12,
-    fontFamily: 'Pretendard',
-    fontWeight: FontWeight.w500,
-    letterSpacing: -0.12,
-    height: 1.5,
-  );
+  static const TextStyle _baseTextStyle = AppTextStyles.bodyBody3M;
 
   @override
   Widget build(BuildContext context) {
+    final color =
+        variant == CountVariant.neutral
+            ? AppColors.gray800
+            : AppColors.primary700;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -106,8 +105,11 @@ class _IconCount extends StatelessWidget {
           // 단색 틴트
           colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
         ),
-        SizedBox(width: gap),
-        Text('$count', style: _baseTextStyle.copyWith(color: color)),
+        SizedBox(width: 4),
+        SizedBox(
+          width: 32,
+          child: Text('$count', style: _baseTextStyle.copyWith(color: color)),
+        ),
       ],
     );
   }

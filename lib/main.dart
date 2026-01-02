@@ -112,7 +112,7 @@ final GoRouter _router = GoRouter(
     ),
 
     GoRoute(path: '/onboarding6', builder: (_, __) => const OnboardingPage6()),
-    GoRoute(path: '/Search', builder: (_, __) => const CommunitySearchPage()),
+    GoRoute(path: AppRoutePaths.search, builder: (_, __) => const CommunitySearchPage()),
 
     GoRoute(
       path: '/market/:code/upload',
