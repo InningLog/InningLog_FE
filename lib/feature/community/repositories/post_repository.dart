@@ -1,7 +1,5 @@
-import 'dart:typed_data';
-
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../../shared/network/api_envelope.dart';
 import '../model/dto/create_post_dtos.dart';
@@ -73,14 +71,25 @@ class CommunityPostRepository {
 
     required String contentType,
   }) async {
-    final res = await http.put(
-      Uri.parse(target.presignedUrl),
-      headers: {'Content-Type': contentType},
-    );
+    try {
+      final res = await http.put(
+        Uri.parse(target.presignedUrl),
+        headers: {'Content-Type': contentType},
+      );
 
-    final status = res.statusCode;
-    if (status >= 400) {
-      throw Exception('Failed to upload image (status: $status)');
+      if (res.statusCode >= 400) {
+        // 최대 N바이트만 잘라서 남기면 길어지지 않음
+        final body = res.body;
+        throw Exception(
+          'Failed to upload image '
+          '(status: ${res.statusCode}, reason: ${res.reasonPhrase}, '
+          'headers: ${res.headers}, body: ${body.length > 500 ? body.substring(0, 500) : body})',
+        );
+      }
+    } catch (e, st) {
+      // 전역 로거/크래시리틱스가 있다면 여기서 함께 기록
+      debugPrint('uploadToS3 error: $e\n$st');
+      rethrow;
     }
   }
 }

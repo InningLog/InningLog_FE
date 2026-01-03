@@ -35,7 +35,7 @@ class _WritingPostView extends StatelessWidget {
   const _WritingPostView({required this.teamCode});
 
   void _submit(BuildContext context, WritingPostViewModel vm) {
-    vm.submit(teamCode: teamCode); // TODO: 등록 API 연동 시 vm.submit()로 변경
+    vm.submit(teamCode: teamCode);
     Navigator.of(context).pop();
   }
 
