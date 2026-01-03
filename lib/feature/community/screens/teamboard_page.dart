@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inninglog/feature/community/data/tabs_config.dart';
+import 'package:inninglog/feature/community/data/team_catalog.dart';
 import 'package:inninglog/feature/community/model/community_post.dart';
 import 'package:inninglog/feature/community/screens/community_search_page.dart';
 import 'package:inninglog/feature/community/widgets/post/post_item_card.dart';
@@ -87,7 +88,7 @@ class _TeamBoardPageState extends State<TeamBoardPage>
           children: [
             // 상단 헤더 (뒤로가기 포함)
             CommonHeader(
-              title: teamLabelFromCode(widget.teamCode),
+              title: kboTeamLabelOf(widget.teamCode),
               onSearchPressed: () => context.push(AppRoutePaths.search),
             ),
 
