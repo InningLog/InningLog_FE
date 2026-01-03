@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class ImageButton extends StatelessWidget {
   final String imagePath;
@@ -14,14 +15,29 @@ class ImageButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isSvg = imagePath.toLowerCase().endsWith('.svg');
+
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(borderRadius),
       clipBehavior: Clip.antiAlias,
-      child: Ink.image(
-        image: AssetImage(imagePath),
-        fit: BoxFit.cover,
-        child: InkWell(onTap: onTap),
+      child: InkWell(
+        onTap: onTap,
+        child: Ink(
+          child: isSvg
+              ? SvgPicture.asset(
+                  imagePath,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                )
+              : Image.asset(
+                  imagePath,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
+        ),
       ),
     );
   }
