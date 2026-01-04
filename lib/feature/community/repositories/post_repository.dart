@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:inninglog/feature/community/model/dto/post_dtos.dart';
 import '../../../shared/network/api_envelope.dart';
 import '../model/dto/create_post_dtos.dart';
 
@@ -91,5 +92,22 @@ class CommunityPostRepository {
       debugPrint('uploadToS3 error: $e\n$st');
       rethrow;
     }
+  }
+
+  Future<PostListResponse> getPostList({
+    required String teamCode,
+    required int page,
+    required int size,
+  }) async {
+    final res = await _dio.get(
+      '/community/posts/team/$teamCode',
+      queryParameters: {'page': page, 'size': size},
+    );
+
+    final json = res.data;
+    if (json is! Map<String, dynamic>) {
+      throw const FormatException('Unexpected post list response');
+    }
+    return PostListResponse.fromJson(json);
   }
 }
