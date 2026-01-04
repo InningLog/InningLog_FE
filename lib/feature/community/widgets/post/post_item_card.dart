@@ -36,13 +36,22 @@ class PostItemCard extends StatelessWidget {
                             color: Color(0xFFE5E7EB),
                             shape: BoxShape.circle,
                           ),
+                          clipBehavior: Clip.antiAlias,
+                          child:
+                              (item.profileUrl != null &&
+                                      item.profileUrl!.isNotEmpty)
+                                  ? Image.network(
+                                    item.profileUrl!,
+                                    fit: BoxFit.cover,
+                                  )
+                                  : null,
                         ),
                         const SizedBox(width: 8),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              item.nickName,
+                              item.nickName ?? '',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -52,7 +61,7 @@ class PostItemCard extends StatelessWidget {
                             ),
                             PostDateTimeText(
                               text: DateTimeUtils.formatToKoreanDateTime(
-                                item.createdAt,
+                                item.createdAt ?? '',
                               ),
                             ),
                           ],
@@ -92,7 +101,7 @@ class PostItemCard extends StatelessWidget {
               if (item.images.isNotEmpty)
                 ImageThumbnailWithBadge(
                   imageUrl: item.images.first.url,
-                  count: item.images.length,
+                  imageCount: item.imageCount ?? 0,
                 ),
             ],
           ),
@@ -104,12 +113,12 @@ class PostItemCard extends StatelessWidget {
 
 class ImageThumbnailWithBadge extends StatelessWidget {
   final String imageUrl;
-  final int count;
+  final int imageCount;
 
   const ImageThumbnailWithBadge({
     super.key,
     required this.imageUrl,
-    required this.count,
+    required this.imageCount,
   });
 
   @override
@@ -128,23 +137,24 @@ class ImageThumbnailWithBadge extends StatelessWidget {
                     : Image.network(imageUrl, fit: BoxFit.cover),
           ),
         ),
-        Positioned(
-          right: 4,
-          bottom: 4,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              '$count',
-              style: AppTextStyles.headHead8Sb.copyWith(
-                color: AppColors.gray300,
+        if (imageCount > 0)
+          Positioned(
+            right: 4,
+            bottom: 4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                '$imageCount',
+                style: AppTextStyles.headHead8Sb.copyWith(
+                  color: AppColors.gray300,
+                ),
               ),
             ),
           ),
-        ),
       ],
     );
   }

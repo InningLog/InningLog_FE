@@ -8,7 +8,6 @@ import 'package:inninglog/feature/community/widgets/root/sections/popular_posts_
 import 'package:inninglog/feature/community/widgets/root/sections/team_boards_section.dart';
 import 'package:inninglog/feature/community/viewmodel/root_view_model.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
-import 'package:inninglog/feature/community/screens/teamboard_page.dart';
 import 'package:inninglog/router/app_routes.dart';
 import '../../../shared/widgets/common_header.dart';
 import 'package:provider/provider.dart';
@@ -59,12 +58,8 @@ class _CommunityRootView extends StatelessWidget {
               title: 'MY TEAM',
               imagePath: kboTeamBannerCatalog[vm.myTeamCode] ?? '',
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder:
-                        (_) => TeamBoardPage(teamCode: vm.myTeamCode ?? 'OB'),
-                  ),
+                context.push(
+                  AppRoutePaths.boardLocation(vm.myTeamCode ?? 'OB'),
                 );
               },
             ),
@@ -73,12 +68,7 @@ class _CommunityRootView extends StatelessWidget {
               title: 'KBO 전체 게시판',
               imagePath: 'assets/images/card_kbo.png',
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const TeamBoardPage(teamCode: 'KBO'),
-                  ),
-                );
+                context.push(AppRoutePaths.boardLocation('ALL'));
               },
             ),
 
@@ -86,12 +76,7 @@ class _CommunityRootView extends StatelessWidget {
             TeamBoardsSection(
               items: vm.teamGridItems,
               onTap: (team) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => TeamBoardPage(teamCode: team.code),
-                  ),
-                );
+                context.push(AppRoutePaths.boardLocation(team.code));
               },
             ),
             PopularPostsSection(onTap: () {}),

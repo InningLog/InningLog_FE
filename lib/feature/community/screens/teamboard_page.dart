@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:inninglog/app_scope.dart';
 import 'package:inninglog/feature/community/data/tabs_config.dart';
 import 'package:inninglog/feature/community/data/team_catalog.dart';
-import 'package:inninglog/feature/community/model/community_post.dart';
-import 'package:inninglog/feature/community/screens/community_search_page.dart';
-import 'package:inninglog/feature/community/widgets/post/post_item_card.dart';
-import 'package:inninglog/feature/community/widgets/shared/board_list.dart';
+import 'package:inninglog/feature/community/viewmodel/post_list_view_model.dart';
 import 'package:inninglog/feature/community/widgets/shared/segmented_tabs.dart';
 import 'package:inninglog/router/app_routes.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:inninglog/feature/community/screens/post_detail_market.dart';
 import 'package:inninglog/shared/widgets/common_header.dart';
-import '../../../shared/constant/team_codes.dart';
+import 'package:provider/provider.dart';
+import 'tabs/free_board_tab.dart';
 
 enum BoardMode { normal, myPosts, myComments, scraps }
 
@@ -65,64 +64,70 @@ class _TeamBoardPageState extends State<TeamBoardPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primary50,
-      floatingActionButton: SizedBox(
-        width: 56,
-        height: 56,
+    return ChangeNotifierProvider(
+      create:
+          (_) => PostListViewModel(
+            repo: context.read<AppScope>().communityPostRepository,
+            teamCode: widget.teamCode,
+          ),
+      child: Scaffold(
+        backgroundColor: AppColors.primary50,
+        floatingActionButton: SizedBox(
+          width: 56,
+          height: 56,
 
-        child: FloatingActionButton(
-          backgroundColor: AppColors.primary700,
-          shape: const CircleBorder(),
-          onPressed: () {
-            // 기존 게시판 글쓰기
-            context.push(AppRoutePaths.boardPostWriteLocation(widget.teamCode));
-            debugPrint('[Team Board Page] teamCode: ${widget.teamCode}');
-          },
-          child: const Icon(Icons.add, size: 40, color: AppColors.primary50),
+          child: FloatingActionButton(
+            backgroundColor: AppColors.primary700,
+            shape: const CircleBorder(),
+            onPressed: () {
+              // 기존 게시판 글쓰기
+              context.push(
+                AppRoutePaths.boardPostWriteLocation(widget.teamCode),
+              );
+              debugPrint('[Team Board Page] teamCode: ${widget.teamCode}');
+            },
+            child: const Icon(Icons.add, size: 40, color: AppColors.primary50),
+          ),
         ),
-      ),
 
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 상단 헤더 (뒤로가기 포함)
-            CommonHeader(
-              title: kboTeamLabelOf(widget.teamCode),
-              onSearchPressed: () => context.push(AppRoutePaths.search),
-            ),
-
-            SegmentedTabs(controller: _tabController, items: _tabs),
-
-            // 구분선
-            const Divider(height: 1, thickness: 0.8, color: AppColors.gray400),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children:
-                    _tabs.map((tab) {
-                      switch (tab.type) {
-                        case BoardTab.onlywan:
-                          return Text('오직완 페이지');
-                        case BoardTab.free:
-                          return BoardList<CommunityPostItem>(
-                            items: dummyCommunityPosts,
-                            itemBuilder:
-                                (context, item) => PostItemCard(
-                                  item: item,
-                                  onTap:
-                                      () => context.push(
-                                        '/boards/${widget.teamCode}/post/${item.id}',
-                                      ),
-                                ),
-                          );
-                        case BoardTab.news:
-                          return Text('오늘의 뉴스');
-                      }
-                    }).toList(),
+        body: SafeArea(
+          child: Column(
+            children: [
+              // 상단 헤더 (뒤로가기 포함)
+              CommonHeader(
+                title:
+                    widget.teamCode == 'ALL'
+                        ? '전체 게시판'
+                        : kboTeamLabelOf(widget.teamCode),
+                onSearchPressed: () => context.push(AppRoutePaths.search),
               ),
-            ),
-          ],
+
+              SegmentedTabs(controller: _tabController, items: _tabs),
+
+              // 구분선
+              const Divider(
+                height: 1,
+                thickness: 0.8,
+                color: AppColors.gray400,
+              ),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children:
+                      _tabs.map((tab) {
+                        switch (tab.type) {
+                          case BoardTab.onlywan:
+                            return const Center(child: Text('오직완 페이지'));
+                          case BoardTab.free:
+                            return FreeBoardTab(teamCode: widget.teamCode);
+                          case BoardTab.news:
+                            return const Center(child: Text('오늘의 뉴스'));
+                        }
+                      }).toList(),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

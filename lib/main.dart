@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inninglog/app_scope.dart';
 import 'package:inninglog/router/app_routes.dart';
+import 'package:inninglog/router/route_observer.dart';
 import 'package:inninglog/shared/widgets/main_navigation.dart';
 import 'package:inninglog/feature/login/models/KakaoLoginWebViewPage.dart';
 import 'package:inninglog/feature/diary/screens/add_diary_page.dart';
@@ -62,6 +63,7 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 final GoRouter _router = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/',
+  observers: [rootRouteObserver],
 
   routes: [
     GoRoute(path: '/', redirect: (_, __) => '/splash'),
@@ -112,7 +114,10 @@ final GoRouter _router = GoRouter(
     ),
 
     GoRoute(path: '/onboarding6', builder: (_, __) => const OnboardingPage6()),
-    GoRoute(path: AppRoutePaths.search, builder: (_, __) => const CommunitySearchPage()),
+    GoRoute(
+      path: AppRoutePaths.search,
+      builder: (_, __) => const CommunitySearchPage(),
+    ),
 
     GoRoute(
       path: '/market/:code/upload',
@@ -148,6 +153,7 @@ final GoRouter _router = GoRouter(
     /// GNB 있는 ShellRoute
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
+      observers: [shellRouteObserver],
       builder: (context, state, child) {
         return MainNavigation(child: child); // ✅ 아래에서 정의할 MainNavigation
       },
@@ -201,7 +207,7 @@ final GoRouter _router = GoRouter(
         ),
 
         GoRoute(
-          path: '/boards/:code',
+          path: AppRoutePaths.board,
           builder: (_, state) {
             final code = state.pathParameters['code']!; // 팀 코드
             final tabStr = state.uri.queryParameters['tab']; // 쿼리로 탭 받기
