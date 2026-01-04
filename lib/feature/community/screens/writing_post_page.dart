@@ -34,9 +34,16 @@ class _WritingPostView extends StatelessWidget {
   final String teamCode;
   const _WritingPostView({required this.teamCode});
 
-  void _submit(BuildContext context, WritingPostViewModel vm) {
-    vm.submit(teamCode: teamCode);
-    Navigator.of(context).pop();
+  Future<void> _submit(BuildContext context, WritingPostViewModel vm) async {
+    final success = await vm.submit(teamCode: teamCode);
+    if (!context.mounted) return;
+    if (success) {
+      Navigator.of(context).pop(true);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('게시글 등록에 실패했습니다. 다시 시도해주세요.')),
+      );
+    }
   }
 
   @override

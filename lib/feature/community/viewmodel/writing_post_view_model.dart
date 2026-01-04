@@ -77,13 +77,14 @@ class WritingPostViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> submit({required String teamCode}) async {
-    if (_isDisposed || _isSubmitting) return;
+  Future<bool> submit({required String teamCode}) async {
+    if (_isDisposed || _isSubmitting) return false;
 
     _isSubmitting = true;
     _safeNotify();
     final title = titleController.text.trim();
     final content = bodyController.text.trim();
+    var success = false;
 
     try {
       debugPrint(
@@ -145,6 +146,7 @@ class WritingPostViewModel extends ChangeNotifier {
           imageCount: imageKeys.length,
         ),
       );
+      success = true;
     } catch (e) {
       debugPrint(e.toString());
       // error = e.toString();
@@ -152,6 +154,7 @@ class WritingPostViewModel extends ChangeNotifier {
       _isSubmitting = false;
       _safeNotify();
     }
+    return success;
   }
 
   void removeImageAt(int index) {
