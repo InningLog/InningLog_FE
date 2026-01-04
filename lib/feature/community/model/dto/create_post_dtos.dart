@@ -61,28 +61,19 @@ class CreatePostRequest {
   final String title;
   final String content;
   final List<ImageCreateReqDto> imageCreateReqDto;
+  final int imageCount;
 
   const CreatePostRequest({
     required this.title,
     required this.content,
     this.imageCreateReqDto = const [],
+    required this.imageCount,
   });
-
-  factory CreatePostRequest.fromJson(Map<String, dynamic> json) {
-    return CreatePostRequest(
-      title: json['title'] as String,
-      content: json['content'] as String,
-      imageCreateReqDto:
-          (json['imageCreateReqDto'] as List<dynamic>? ?? const [])
-              .whereType<Map<String, dynamic>>()
-              .map(ImageCreateReqDto.fromJson)
-              .toList(),
-    );
-  }
 
   Map<String, dynamic> toJson() => {
     'title': title,
     'content': content,
     'imageCreateReqDto': imageCreateReqDto.map((e) => e.toJson()).toList(),
+    'imageCount': imageCount,
   };
 }
