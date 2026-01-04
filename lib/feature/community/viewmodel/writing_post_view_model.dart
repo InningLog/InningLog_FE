@@ -142,6 +142,7 @@ class WritingPostViewModel extends ChangeNotifier {
           title: title,
           content: content,
           imageCreateReqDto: imageKeys,
+          imageCount: imageKeys.length,
         ),
       );
     } catch (e) {
