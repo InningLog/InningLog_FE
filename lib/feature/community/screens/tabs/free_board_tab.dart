@@ -5,6 +5,7 @@ import 'package:inninglog/feature/community/viewmodel/post_list_view_model.dart'
 import 'package:inninglog/feature/community/widgets/post/post_item_card.dart';
 import 'package:inninglog/feature/community/widgets/shared/board_list.dart';
 import 'package:inninglog/router/route_observer.dart';
+import 'package:inninglog/router/app_routes.dart';
 import 'package:inninglog/shared/widgets/empty_state.dart';
 import 'package:provider/provider.dart';
 
@@ -55,7 +56,8 @@ class _FreeBoardTabState extends State<FreeBoardTab> with RouteAware {
     final route = ModalRoute.of(context);
     if (route == null) return;
 
-    final observers = route.navigator?.widget.observers ?? const <NavigatorObserver>[];
+    final observers =
+        route.navigator?.widget.observers ?? const <NavigatorObserver>[];
 
     if (observers.contains(shellRouteObserver)) {
       shellRouteObserver.subscribe(this, route);
@@ -84,7 +86,10 @@ class _FreeBoardTabState extends State<FreeBoardTab> with RouteAware {
                 item: item,
                 onTap:
                     () => context.push(
-                      '/boards/${widget.teamCode}/post/${item.id}',
+                      AppRoutePaths.boardPostDetailLocation(
+                        widget.teamCode,
+                        item.id,
+                      ),
                     ),
               ),
         );

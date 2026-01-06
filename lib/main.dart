@@ -75,14 +75,6 @@ final GoRouter _router = GoRouter(
       builder: (context, state) => const KakaoLoginWebViewPage(),
     ),
 
-    // 커뮤니티 게시글 작성 페이지
-    GoRoute(
-      path: AppRoutePaths.postWrite,
-      builder: (context, state) {
-        return WritingPostPage(teamCode: 'ALL');
-      },
-    ),
-
     GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
     GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
 
@@ -210,8 +202,6 @@ final GoRouter _router = GoRouter(
           path: AppRoutePaths.board,
           builder: (_, state) {
             final code = state.pathParameters['code']!; // 팀 코드
-            final tabStr = state.uri.queryParameters['tab']; // 쿼리로 탭 받기
-            final initialTabIndex = int.tryParse(tabStr ?? '') ?? 0;
             final tabParam = int.tryParse(
               state.uri.queryParameters['tab'] ?? '',
             );
@@ -225,27 +215,20 @@ final GoRouter _router = GoRouter(
             GoRoute(
               path: AppRoutePaths.boardPostWrite,
               name: 'writing_post',
+              parentNavigatorKey: _rootNavigatorKey, // GNB 없는 화면
               builder: (_, state) {
                 final code = state.pathParameters['code']!;
                 return WritingPostPage(teamCode: code);
               },
             ),
             GoRoute(
-              path: 'posts/:postId',
+              path: AppRoutePaths.boardPostDetail,
               name: 'post_detail',
+              parentNavigatorKey: _rootNavigatorKey, // GNB 없는 화면
               builder: (context, state) {
                 final teamCode = state.pathParameters['code']!;
                 final postId = int.parse(state.pathParameters['postId']!);
-                final teamLabel =
-                    (state.extra as Map?)?['teamLabel'] as String? ?? '';
-                return PostDetailPage(
-                  // 네 상세 위젯으로 바꾸세요
-                  args: PostDetailArgs(
-                    teamCode: teamCode,
-                    teamLabel: teamLabel,
-                    postId: postId,
-                  ),
-                );
+                return PostDetailPage(teamCode: teamCode, postId: postId);
               },
             ),
           ],
