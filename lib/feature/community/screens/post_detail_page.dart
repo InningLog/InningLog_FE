@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:inninglog/feature/community/widgets/post_detail/post_detail_app_bar.dart';
 import 'package:inninglog/shared/constant/team_codes.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
 
@@ -60,58 +61,20 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final teamLabel = teamLabelFromCode(widget.teamCode);
+    final teamLabel =
+        widget.teamCode == 'ALL' ? '전체게시판' : teamLabelFromCode(widget.teamCode);
+
     final commentCount = comments.length;
 
     return Scaffold(
       backgroundColor: AppColors.primary50,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(64),
-        child: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leadingWidth: 54,
-          leading: IconButton(
-            icon: SvgPicture.asset(
-              'assets/icons/back_but.svg',
-              width: 10,
-              height: 20,
-            ),
-            onPressed: () => Navigator.pop(context),
-          ),
-          centerTitle: true,
-          title: Column(
-            children: [
-              const Text(
-                '자유 게시판',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.gray900,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                teamLabel,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.gray700,
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            IconButton(
-              icon: SvgPicture.asset('assets/icons/board_dots.svg', width: 18),
-              onPressed: () {},
-            ),
-          ],
-        ),
+      appBar: PostDetailAppBar(
+        teamLabel: teamLabel,
+        onBack: () => Navigator.pop(context),
+        onTapMore: () {
+          // TODO: 신고/삭제/공유 bottom sheet 등
+        },
       ),
-
       // 하단 입력바 (디자인 유지)
       bottomNavigationBar:
           (_activeReplyIndex == null)
