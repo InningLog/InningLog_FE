@@ -90,9 +90,20 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    _loadNicknameFromPrefs();
     fetchData();           // 홈 데이터 불러오기
     fetchMyWeaningRate();
   }
+
+  Future<void> _loadNicknameFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString('nickname');
+    if (saved != null && saved.isNotEmpty && mounted) {
+      setState(() => nickName = saved);
+    }
+  }
+
+
 
   void saveScheduleToPrefs(MyTeamSchedule schedule) async {
     final prefs = await SharedPreferences.getInstance();
@@ -111,7 +122,11 @@ class _HomePageState extends State<HomePage> {
       print('📦 저장할 키: $key');
       await prefs.setString(key, jsonEncode(schedule.toJson()));
     }
+
+
   }
+
+
 
 
 

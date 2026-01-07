@@ -83,9 +83,8 @@ class _KakaoLoginWebViewPageState extends State<KakaoLoginWebViewPage> {
                 final jsResult = await _controller
                     .runJavaScriptReturningResult('document.body.innerText');
 
-                final body = (jsResult as String)
-                    .replaceAll(RegExp(r'^"|"$'), '')
-                    .replaceAll(r'\"', '"');
+                final body = jsResult.toString();
+
 
                 _log('[LOGIN PAGE BODY] $body');
 
@@ -118,6 +117,8 @@ class _KakaoLoginWebViewPageState extends State<KakaoLoginWebViewPage> {
                 final body = (jsResult as String)
                     .replaceAll(RegExp(r'^"|"$'), '')
                     .replaceAll(r'\"', '"');
+
+
 
                 _log('[CALLBACK BODY RAW] $body');
 
