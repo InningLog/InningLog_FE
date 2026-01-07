@@ -5,7 +5,7 @@ import '../../../main.dart';
 import '../../../shared/widgets/common_header.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../field/screens/FieldSearchPage.dart';
+import 'FieldSearchPage.dart';
 
 final List<_TeamStadium> teamStadiums = [
   _TeamStadium('assets/icons/seoul_seat.svg', '두산 & LG','잠실 야구장','잠실'),

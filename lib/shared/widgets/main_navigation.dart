@@ -4,7 +4,7 @@ import '../../feature/home/screens/home_page.dart';
 import '../../feature/diary/screens/diary_page.dart';
 import '../../feature/community/screens/root_page.dart';
 import '../../feature/mypage/screens/my_page.dart';
-import '../../feature/diary/screens/seat_page.dart';
+import '../../feature/field/screens/seat_page.dart';
 import 'package:inninglog/shared/widgets/main_navigation.dart';
 import 'package:go_router/go_router.dart';
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:inninglog/feature/diary/screens/seat_page.dart';
+import 'package:inninglog/feature/field/screens/seat_page.dart';
 import '../../../shared/amplitude/AmplitudeFlutter.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../main.dart';
@@ -39,7 +39,7 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
     '좌석 공간': ['#아주_넓음', '#넓음', '#보통', '#좁음'],
   };
 
-  bool get isJamsil => widget.stadiumName == '잠실 야구장';
+  bool get isJamsil => widget.stadiumName == '잠실야구장';
 
   bool get isDirectSearchValid {
     final hasZone = selectedZone?.isNotEmpty ?? false;
@@ -71,25 +71,8 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    icon: SvgPicture.asset(
-                      'assets/icons/back_but.svg',
-                      width: 10,
-                      height: 20,
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => SeatPage(),
-                        ),
-                      );
-                    },
 
-
-                  ),
-                  const SizedBox(width: 0),
+                  const SizedBox(width: 15),
                   Text(
                     widget.stadiumName,
                     style: const TextStyle(
@@ -99,6 +82,43 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                       color: Color(0xFF272727),
                       fontFamily: 'MBC1961GulimOTF',
                     ),
+                  ),
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    icon: SvgPicture.asset(
+                      'assets/icons/month_move.svg',
+                      width: 24,
+                    ),
+                    onPressed: () async {
+                      final selectedStadiumName = await showModalBottomSheet<String>(
+                        useRootNavigator: true,
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => StadiumBottomSheet(
+                          currentStadiumName: widget.stadiumName,
+                        ),
+                      );
+
+                      if (selectedStadiumName == null) return;
+
+                      // ✅ 여기서 이동 (바텀시트 완전히 닫힌 뒤라 안전)
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => FieldSearchPage(stadiumName: selectedStadiumName),
+                        ),
+                      );
+
+                      // go_router를 쓰고 싶으면 이걸로:
+                      // context.goNamed('field_search', extra: {'stadiumName': selectedStadiumName});
+                    },
+
+
+
+
+
+
                   ),
                   const Spacer(),
                   IconButton(
@@ -429,8 +449,105 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
     );
   }
 }
+
+class StadiumBottomSheet extends StatelessWidget {
+  final String currentStadiumName; // ✅ 추가
+
+  const StadiumBottomSheet({
+    super.key,
+    required this.currentStadiumName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // ✅ 현재 구장 제외한 리스트(8개)
+    final filteredStadiums = teamStadiums
+        .where((s) => s.stadiumName != currentStadiumName)
+        .toList();
+
+    return SafeArea(
+      bottom: false,
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.45,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+        child: Column(
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.gray700,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              '타구장 이동',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'Pretendard',
+                letterSpacing: -0.16,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            Expanded(
+              child: GridView.builder(
+                itemCount: filteredStadiums.length, // ✅ 8개
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 60/ 90,
+                ),
+                itemBuilder: (context, index) {
+                  final stadium = filteredStadiums[index];
+
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.of(context, rootNavigator: true).pop(stadium.stadiumName);
+                    },
+
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SvgPicture.asset(
+                          stadium.assetPath,
+                          width: 80,
+                          height: 90,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          stadium.teamName,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Pretendard',
+                            letterSpacing: -0.12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
 final Map<String, String> stadiumNameToCode = {
-  '잠실 야구장': 'JAM',
+  '잠실야구장': 'JAM',
   '고척 스카이돔': 'GOC',
   '랜더스 필드': 'ICN',
   '위즈 파크': 'SUW',
