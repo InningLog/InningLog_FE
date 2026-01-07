@@ -23,7 +23,7 @@ import 'package:inninglog/feature/onboarding/screens/splash_screen.dart';
 import 'package:inninglog/feature/onboarding/screens/onboarding_screen.dart';
 import 'package:inninglog/feature/home/screens/home_page.dart';
 import 'package:inninglog/feature/diary/screens/diary_page.dart';
-import 'package:inninglog/feature/diary/screens/seat_page.dart';
+import 'package:inninglog/feature/field/screens/seat_page.dart';
 import 'package:inninglog/feature/community/screens/root_page.dart';
 import 'package:inninglog/feature/mypage/screens/my_page.dart';
 import 'package:inninglog/feature/community/screens/teamboard_page.dart';
