@@ -217,9 +217,36 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                           ),
                         ),
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 32.75),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 16, right: 16, bottom: 19),
 
+                        child:  Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
 
+                        Image.asset(
+                          'assets/images/bori_sleepy.jpg',
+                          width: 72.6,
+                          height: 60.5,
+                        ),
+                        const SizedBox(width: 13),
+
+                        // 📝 "경기가 없습니다" 텍스트 (오른쪽)
+                        const Text(
+                          '최근에 검색한 좌석이 없어요',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            fontFamily: 'omyu pretty',
+                            height: 1.37,
+                            letterSpacing: -0.16,
+                          ),
+                        ),
+                          ],
+                        ),
+                        ),
 
                       ],
                     ),
