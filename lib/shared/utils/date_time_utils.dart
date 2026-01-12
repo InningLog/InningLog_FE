@@ -20,6 +20,24 @@ class DateTimeUtils {
     return '$year/$month/$day($weekday) $hour:$minute';
   }
 
+  /// Formats a date string into "MM/dd(E) HH:mm" (e.g., "05/25(일) 11:02").
+  /// Returns the original [dateTimeString] if parsing fails.
+  static String formatToKoreanDateTimeShort(String dateTimeString) {
+    final parsed = _parse(dateTimeString);
+    if (parsed == null) return dateTimeString;
+    return formatDateTimeShort(parsed);
+  }
+
+  /// Formats a [DateTime] into "MM/dd(E) HH:mm" with Korean weekday.
+  static String formatDateTimeShort(DateTime dateTime) {
+    final month = dateTime.month.toString().padLeft(2, '0');
+    final day = dateTime.day.toString().padLeft(2, '0');
+    final weekday = _weekdaysKo[(dateTime.weekday - 1) % 7];
+    final hour = dateTime.hour.toString().padLeft(2, '0');
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    return '$month/$day($weekday) $hour:$minute';
+  }
+
   static DateTime? _parse(String raw) {
     final trimmed = raw.trim();
     if (trimmed.isEmpty) return null;

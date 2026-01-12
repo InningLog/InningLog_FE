@@ -5,15 +5,24 @@ import 'package:inninglog/shared/theme/app_text_styles.dart';
 class PostTitle extends StatelessWidget {
   final String text;
   final int maxLines;
+  final bool isPreview;
 
-  const PostTitle({required this.text, this.maxLines = 1, super.key});
+  const PostTitle({
+    required this.text,
+    this.maxLines = 1,
+    this.isPreview = false,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final titleTextStyle =
+        isPreview ? AppTextStyles.headHead6B : AppTextStyles.headHead4B;
+
     return _PostText(
       text,
       maxLines: maxLines,
-      style: AppTextStyles.headHead6B.copyWith(color: AppColors.gray900),
+      style: titleTextStyle.copyWith(color: AppColors.gray900),
     );
   }
 }
@@ -46,10 +55,12 @@ class PostBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bodyTextStyle =
+        isPreview ? AppTextStyles.bodyBody2M : AppTextStyles.bodyBody1Rg;
     return _PostText(
       text,
       maxLines: isPreview ? 1 : null,
-      style: AppTextStyles.bodyBody2M.copyWith(color: AppColors.gray900),
+      style: bodyTextStyle.copyWith(color: AppColors.gray900),
     );
   }
 }
