@@ -45,7 +45,7 @@ class PostDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
       trailing:
           showMore
               ? IconButton(
-                icon: SvgPicture.asset(moreIconAsset, width: 18),
+                icon: SvgPicture.asset(moreIconAsset, width: 36),
                 onPressed: onTapMore ?? () {},
               )
               : null,

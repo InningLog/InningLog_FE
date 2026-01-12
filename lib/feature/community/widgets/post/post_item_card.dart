@@ -69,7 +69,7 @@ class PostItemCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    PostTitle(text: item.title),
+                    PostTitle(text: item.title, isPreview: true),
                     const SizedBox(height: 4),
                     PostBody(text: item.content, isPreview: true),
                     const SizedBox(height: 8),

@@ -5,14 +5,23 @@ import 'package:inninglog/shared/theme/app_text_styles.dart';
 
 /// 공통 게시판 헤더: 좌측 아이콘, 중앙 타이틀/서브타이틀, 우측 액션을 재사용하도록 구성.
 class BoardHeaderBar extends StatelessWidget implements PreferredSizeWidget {
+  /// 중앙에 표시할 메인 타이틀 텍스트.
   final String title;
+  /// 타이틀 하단에 표시할 서브타이틀 텍스트.
   final String subtitle;
+  /// 좌측 아이콘의 SVG 에셋 경로.
   final String leadingIconAsset;
+  /// 좌측 아이콘 크기.
   final Size leadingIconSize;
+  /// 좌측 아이콘 탭 콜백.
   final VoidCallback onTapLeading;
+  /// 우측에 배치할 커스텀 위젯(없으면 좌측 폭과 동일한 여백).
   final Widget? trailing;
+  /// 헤더 전체 높이.
   final double height;
+  /// 좌측 아이콘 영역의 고정 폭.
   final double leadingWidth;
+  /// 헤더 배경색.
   final Color backgroundColor;
 
   const BoardHeaderBar({

@@ -23,7 +23,7 @@ class PopularPostCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: PostTitle(text: post.title)),
+              Expanded(child: PostTitle(text: post.title, isPreview: true)),
               const SizedBox(width: 8),
               PostDateTimeText(text: post.dateTime),
             ],

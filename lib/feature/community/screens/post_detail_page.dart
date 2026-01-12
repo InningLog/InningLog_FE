@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:inninglog/app_scope.dart';
+import 'package:inninglog/feature/community/viewmodel/post_detail_view_model.dart';
+import 'package:inninglog/feature/community/widgets/post_detail/post_action_bar.dart';
 import 'package:inninglog/feature/community/widgets/post_detail/post_detail_app_bar.dart';
+import 'package:inninglog/feature/community/widgets/post_detail/post_header_section.dart';
 import 'package:inninglog/shared/constant/team_codes.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
+import 'package:provider/provider.dart';
 
 class PostDetailPage extends StatefulWidget {
   final String teamCode;
@@ -19,19 +24,14 @@ class PostDetailPage extends StatefulWidget {
 }
 
 class _PostDetailPageState extends State<PostDetailPage> {
+  late final PostDetailViewModel _vm;
+
   // ▼ 대댓글 상태 저장 (기존 코드 보존)
   final Map<int, List<_Reply>> _replies = {}; // 댓글 index -> 대댓글 목록
   final Set<int> _replying = {}; // 대댓글 입력창 열려있는 댓글 index
 
   int? _activeReplyIndex;
   final _replyCtrl = TextEditingController();
-
-  // 상태
-  bool liked = false;
-  int likeCount = 20;
-
-  bool scrapped = false;
-  int scrapCount = 0;
 
   final _commentCtrl = TextEditingController();
 
@@ -53,7 +53,15 @@ class _PostDetailPageState extends State<PostDetailPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    final repo = context.read<AppScope>().communityPostRepository;
+    _vm = PostDetailViewModel(repo: repo, postId: widget.postId)..fetch();
+  }
+
+  @override
   void dispose() {
+    _vm.dispose();
     _commentCtrl.dispose();
     _replyCtrl.dispose();
     super.dispose();
@@ -61,172 +69,111 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final teamLabel =
-        widget.teamCode == 'ALL' ? '전체게시판' : teamLabelFromCode(widget.teamCode);
+    return ChangeNotifierProvider<PostDetailViewModel>.value(
+      value: _vm,
+      child: Consumer<PostDetailViewModel>(
+        builder: (context, vm, _) {
+          final post = vm.post;
+          final teamCode = post?.teamCode ?? widget.teamCode;
+          final teamLabel =
+              teamCode == 'ALL' ? 'KBO 전체게시판' : teamLabelFromCode(teamCode);
+          final commentCount =
+              vm.commentCount > 0 ? vm.commentCount : comments.length;
 
-    final commentCount = comments.length;
+          return Scaffold(
+            backgroundColor: AppColors.primary50,
+            appBar: PostDetailAppBar(
+              teamLabel: teamLabel,
+              onBack: () => Navigator.pop(context),
+              onTapMore: () {
+                // TODO: 신고/삭제/공유 bottom sheet 등
+              },
+            ),
+            // 하단 입력바 (디자인 유지)
+            bottomNavigationBar:
+                (_activeReplyIndex == null)
+                    // 기본 댓글 입력창
+                    ? _CommentInputBar(
+                      controller: _commentCtrl,
+                      onPressed: () {
+                        final text = _commentCtrl.text.trim();
+                        if (text.isEmpty) return;
+                        setState(() {
+                          comments.add(
+                            _Comment(
+                              nickname: '닉네임',
+                              body: text,
+                              time: '방금',
+                              liked: false,
+                              likes: 0,
+                            ),
+                          );
+                          _commentCtrl.clear();
+                        });
+                      },
+                    )
+                    // ✅ 대댓글 모드일 때
+                    : _ReplyBottomBar(
+                      nickname: comments[_activeReplyIndex!].nickname,
+                      controller: _replyCtrl,
+                      onCancel: () => setState(() => _activeReplyIndex = null),
+                      onSubmit: () {
+                        final text = _replyCtrl.text.trim();
+                        if (text.isEmpty) return;
+                        final i = _activeReplyIndex!;
+                        setState(() {
+                          final cur = List<_Reply>.from(
+                            _replies[i] ?? const [],
+                          );
+                          cur.add(
+                            _Reply(
+                              nickname: '나나ㅏ나',
+                              body: text.trim(),
+                              time: '방금',
+                              likes: 0,
+                              liked: false,
+                            ),
+                          );
 
-    return Scaffold(
-      backgroundColor: AppColors.primary50,
-      appBar: PostDetailAppBar(
-        teamLabel: teamLabel,
-        onBack: () => Navigator.pop(context),
-        onTapMore: () {
-          // TODO: 신고/삭제/공유 bottom sheet 등
-        },
-      ),
-      // 하단 입력바 (디자인 유지)
-      bottomNavigationBar:
-          (_activeReplyIndex == null)
-              // 기본 댓글 입력창
-              ? _CommentInputBar(
-                controller: _commentCtrl,
-                onPressed: () {
-                  final text = _commentCtrl.text.trim();
-                  if (text.isEmpty) return;
-                  setState(() {
-                    comments.add(
-                      _Comment(
-                        nickname: '닉네임',
-                        body: text,
-                        time: '방금',
-                        liked: false,
-                        likes: 0,
-                      ),
-                    );
-                    _commentCtrl.clear();
-                  });
-                },
-              )
-              // ✅ 대댓글 모드일 때
-              : _ReplyBottomBar(
-                nickname: comments[_activeReplyIndex!].nickname,
-                controller: _replyCtrl,
-                onCancel: () => setState(() => _activeReplyIndex = null),
-                onSubmit: () {
-                  final text = _replyCtrl.text.trim();
-                  if (text.isEmpty) return;
-                  final i = _activeReplyIndex!;
-                  setState(() {
-                    final cur = List<_Reply>.from(_replies[i] ?? const []);
-                    cur.add(
-                      _Reply(
-                        nickname: '나나ㅏ나',
-                        body: text.trim(),
-                        time: '방금',
-                        likes: 0,
-                        liked: false,
-                      ),
-                    );
+                          _replies[i] = cur;
+                          _activeReplyIndex = null;
+                          _replyCtrl.clear();
+                        });
+                      },
+                    ),
 
-                    _replies[i] = cur;
-                    _activeReplyIndex = null;
-                    _replyCtrl.clear();
-                  });
-                },
-              ),
-
-      body: ListView(
-        children: [
-          _postHeader(),
-          // ✅ 액션 바: 한 군데만 존재
-          _ActionBar(
-            likeActive: liked,
-            likeCount: likeCount,
-            onTapLike: () {
-              setState(() {
-                liked = !liked;
-                liked ? likeCount++ : likeCount--;
-              });
-            },
-            scrapActive: scrapped,
-            scrapCount: scrapCount,
-            onTapScrap: () {
-              setState(() {
-                scrapped = !scrapped;
-                scrapped ? scrapCount++ : scrapCount--;
-              });
-            },
-            commentCount: commentCount,
-          ),
-          const Divider(height: 8, color: AppColors.gray200),
-          // 댓글은 고정 노출(토글 X)
-          if (comments.isEmpty)
-            _EmptyComment()
-          else
-            ...comments.map(_commentItem),
-          const SizedBox(height: 6),
-        ],
-      ),
-    );
-  }
-
-  //게시판
-  Widget _postHeader() {
-    return Container(
-      color: AppColors.primary50,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 작성자
-          Row(
-            //작성자 프사 -> 어차피 바꿀거라
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE5E7EB),
-                  shape: BoxShape.circle,
+            body: ListView(
+              children: [
+                PostSection(
+                  content: post?.content ?? '',
+                  createAt: post?.createdAt ?? '',
+                  nickName: post?.nickName ?? '',
+                  title: post?.title ?? '',
+                  imageUrls:
+                      post?.images.map((e) => e.url).toList() ?? const [],
+                  profileUrl: post?.profileUrl,
                 ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    '디디는디디',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.gray800,
-                    ),
-                  ),
-                  SizedBox(height: 0),
-                  Text(
-                    '05/25(일) 11:02',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.gray700,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
+                PostActionBar(
+                  likeActive: vm.likedByMe,
+                  likeCount: vm.likeCount,
+                  onTapLike: vm.toggleLike,
+                  scrapActive: vm.scrapedByMe,
+                  scrapCount: vm.scrapCount,
+                  onTapScrap: vm.toggleScrap,
+                  commentCount: commentCount,
+                ),
+                const Divider(height: 8, color: AppColors.gray200),
 
-          const Text(
-            '강백호 ㅇㄷ 갈거가틈',
-            style: TextStyle(
-              fontSize: 19,
-              fontWeight: FontWeight.w700,
-              color: AppColors.gray850,
+                // 댓글은 고정 노출(토글 X)
+                if (comments.isEmpty)
+                  _EmptyComment()
+                else
+                  ...comments.map(_commentItem),
+                const SizedBox(height: 6),
+              ],
             ),
-          ),
-          const SizedBox(height: 16),
-
-          const Text(
-            'ㅈㄱㄴ',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              color: AppColors.gray900,
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -479,136 +426,6 @@ class _PostDetailPageState extends State<PostDetailPage> {
 }
 
 /// ───────────────────────── 위젯들 ─────────────────────────
-
-class _ActionBar extends StatelessWidget {
-  final bool likeActive;
-  final int likeCount;
-  final VoidCallback onTapLike;
-
-  final bool scrapActive;
-  final int scrapCount;
-  final VoidCallback onTapScrap;
-
-  final int commentCount;
-
-  const _ActionBar({
-    required this.likeActive,
-    required this.likeCount,
-    required this.onTapLike,
-    required this.scrapActive,
-    required this.scrapCount,
-    required this.onTapScrap,
-    required this.commentCount,
-  });
-
-  String _labelWithCount(String base, int count) {
-    // 0이면 숫자 미표시, 그 외엔 "base n"
-    return count <= 0 ? base : '$base $count';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    const gray = Color(0xFFD3D3D3);
-
-    return Container(
-      color: AppColors.primary50,
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-      child: Row(
-        children: [
-          // 공감
-          Expanded(
-            child: Center(
-              child: _InlineAction(
-                asset: 'assets/icons/board_heart.svg',
-                color: likeActive ? AppColors.primary700 : AppColors.gray500,
-                label: _labelWithCount('공감', likeCount),
-                onTap: onTapLike,
-                iconSize: 18, // ← 아이콘 크기
-              ),
-            ),
-          ),
-
-          // 댓글 (항상 회색, 숫자만 변화)
-          Expanded(
-            child: Center(
-              child: _InlineAction(
-                asset: 'assets/icons/board_comment.svg',
-                color: AppColors.gray500,
-                label: _labelWithCount('댓글', commentCount),
-                onTap: null, // 눌러도 아무 동작 없음
-                iconSize: 18,
-              ),
-            ),
-          ),
-
-          // 스크랩
-          Expanded(
-            child: Center(
-              child: _InlineAction(
-                asset: 'assets/icons/board_scrap.svg',
-                color: scrapActive ? AppColors.primary700 : AppColors.gray500,
-                label: _labelWithCount('스크랩', scrapCount),
-                onTap: onTapScrap,
-                iconSize: 18,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InlineAction extends StatelessWidget {
-  final String asset;
-  final String label;
-  final Color color;
-  final VoidCallback? onTap;
-  final double iconSize;
-
-  const _InlineAction({
-    required this.asset,
-    required this.label,
-    required this.color,
-    required this.onTap,
-    this.iconSize = 18,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final content = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SvgPicture.asset(
-          asset,
-          width: 16,
-          height: 16,
-          colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: color,
-          ),
-        ),
-      ],
-    );
-
-    if (onTap == null) return content;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        child: content,
-      ),
-    );
-  }
-}
 
 /// 댓글 없을 때
 class _EmptyComment extends StatelessWidget {
