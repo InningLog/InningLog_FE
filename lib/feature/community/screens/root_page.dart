@@ -58,9 +58,7 @@ class _CommunityRootView extends StatelessWidget {
               title: 'MY TEAM',
               imagePath: kboTeamBannerCatalog[vm.myTeamCode] ?? '',
               onTap: () {
-                context.push(
-                  AppRoutePaths.boardLocation(vm.myTeamCode ?? 'OB'),
-                );
+                context.push(AppRoutePaths.boardLocation(vm.myTeamCode ?? ''));
               },
             ),
             //전체 게시판

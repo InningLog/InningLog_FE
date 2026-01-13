@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:inninglog/app_scope.dart';
 import 'package:inninglog/feature/community/model/community_post.dart';
 import 'package:inninglog/feature/community/viewmodel/post_list_view_model.dart';
 import 'package:inninglog/feature/community/widgets/post/post_item_card.dart';
@@ -11,7 +12,12 @@ import 'package:provider/provider.dart';
 
 class FreeBoardTab extends StatefulWidget {
   final String teamCode;
-  const FreeBoardTab({super.key, required this.teamCode});
+  final bool isActive;
+  const FreeBoardTab({
+    super.key,
+    required this.teamCode,
+    this.isActive = false,
+  });
 
   @override
   State<FreeBoardTab> createState() => _FreeBoardTabState();
@@ -20,16 +26,36 @@ class FreeBoardTab extends StatefulWidget {
 class _FreeBoardTabState extends State<FreeBoardTab> with RouteAware {
   bool _initialized = false;
   NavigatorObserver? _subscribedObserver;
+  late final PostListViewModel _vm;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
       _initialized = true;
-      context.read<PostListViewModel>().ensureLoaded();
+      // 탭 최초 진입 시 한 번만 초기 목록을 불러온다.
+      _vm.ensureLoaded();
     }
 
+    // 상세/작성 페이지에서 돌아올 때 pop 이벤트를 받을 수 있도록
+    // 현재 네비게이터에 맞는 observer를 구독한다.
     _subscribeRouteObserver();
+  }
+
+  @override
+  void didUpdateWidget(covariant FreeBoardTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 다른 탭에서 자유게시판 탭으로 복귀하면 최신 데이터로 갱신한다.
+    if (!oldWidget.isActive && widget.isActive) {
+      _vm.refresh();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final repo = context.read<AppScope>().communityPostRepository;
+    _vm = PostListViewModel(repo: repo, teamCode: widget.teamCode);
   }
 
   @override
@@ -42,13 +68,15 @@ class _FreeBoardTabState extends State<FreeBoardTab> with RouteAware {
         rootRouteObserver.unsubscribe(this);
       }
     }
+    _vm.dispose();
     super.dispose();
   }
 
   @override
   void didPopNext() {
     if (!mounted) return;
-    context.read<PostListViewModel>().refresh();
+    // 상세/작성 화면에서 뒤로가기(pop)로 돌아오면 목록을 새로고침한다.
+    _vm.refresh();
   }
 
   void _subscribeRouteObserver() {
@@ -60,40 +88,41 @@ class _FreeBoardTabState extends State<FreeBoardTab> with RouteAware {
         route.navigator?.widget.observers ?? const <NavigatorObserver>[];
 
     if (observers.contains(shellRouteObserver)) {
+      // ShellRoute 내부라면 shell observer를 우선 사용한다.
       shellRouteObserver.subscribe(this, route);
       _subscribedObserver = shellRouteObserver;
-    } else if (observers.contains(rootRouteObserver)) {
-      rootRouteObserver.subscribe(this, route);
-      _subscribedObserver = rootRouteObserver;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<PostListViewModel>(
-      builder: (context, vm, _) {
-        if (vm.items.isEmpty && !vm.isLoading) {
-          return const EmptyState(message: '게시물이 없습니다.');
-        }
+    return ChangeNotifierProvider.value(
+      value: _vm,
+      child: Consumer<PostListViewModel>(
+        builder: (context, vm, _) {
+          if (vm.items.isEmpty && !vm.isLoading) {
+            return const EmptyState(message: '게시물이 없습니다.');
+          }
 
-        return BoardList<CommunityPostItem>(
-          items: vm.items,
-          hasNext: vm.hasNext,
-          isLoading: vm.isLoading,
-          onLoadMore: vm.loadMore,
-          itemBuilder:
-              (context, item) => PostItemCard(
-                item: item,
-                onTap:
-                    () => context.push(
-                      AppRoutePaths.boardPostDetailLocation(
-                        widget.teamCode,
-                        item.id,
+          return BoardList<CommunityPostItem>(
+            items: vm.items,
+            hasNext: vm.hasNext,
+            isLoading: vm.isLoading,
+            onLoadMore: vm.loadMore,
+            itemBuilder:
+                (context, item) => PostItemCard(
+                  item: item,
+                  onTap:
+                      () => context.push(
+                        AppRoutePaths.boardPostDetailLocation(
+                          widget.teamCode,
+                          item.id,
+                        ),
                       ),
-                    ),
-              ),
-        );
-      },
+                ),
+          );
+        },
+      ),
     );
   }
 }
