@@ -1,29 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:inninglog/app_scope.dart';
 import 'package:inninglog/feature/community/data/tabs_config.dart';
 import 'package:inninglog/feature/community/data/team_catalog.dart';
-import 'package:inninglog/feature/community/viewmodel/post_list_view_model.dart';
 import 'package:inninglog/feature/community/widgets/shared/segmented_tabs.dart';
 import 'package:inninglog/router/app_routes.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:inninglog/feature/community/screens/post_detail_market.dart';
 import 'package:inninglog/shared/widgets/common_header.dart';
-import 'package:provider/provider.dart';
 import 'tabs/free_board_tab.dart';
 
 enum BoardMode { normal, myPosts, myComments, scraps }
 
 class TeamBoardPage extends StatefulWidget {
   final String teamCode; // e.g. 'HT', 'LG', ...
-  final int initialTabIndex;
+  final BoardTab? activeTab;
   final BoardMode mode;
 
   const TeamBoardPage({
     super.key,
     required this.teamCode,
-    this.initialTabIndex = 0,
+    this.activeTab,
     this.mode = BoardMode.normal,
   });
 
@@ -35,6 +32,7 @@ class _TeamBoardPageState extends State<TeamBoardPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   late final List<CommunityTabItem> _tabs;
+  bool _isSyncingRoute = false;
 
   @override
   void initState() {
@@ -42,7 +40,7 @@ class _TeamBoardPageState extends State<TeamBoardPage>
 
     _tabs = communityTabsByMode(widget.mode);
 
-    final safeIndex = widget.initialTabIndex.clamp(0, _tabs.length - 1);
+    final safeIndex = _resolveTabIndex(widget.activeTab);
 
     _tabController = TabController(
       length: _tabs.length,
@@ -50,10 +48,7 @@ class _TeamBoardPageState extends State<TeamBoardPage>
       initialIndex: safeIndex,
     );
 
-    _tabController.addListener(() {
-      if (_tabController.indexIsChanging) return;
-      setState(() {});
-    });
+    _tabController.addListener(_handleTabChange);
   }
 
   @override
@@ -63,71 +58,90 @@ class _TeamBoardPageState extends State<TeamBoardPage>
   }
 
   @override
+  void didUpdateWidget(covariant TeamBoardPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.activeTab != widget.activeTab) {
+      final nextIndex = _resolveTabIndex(widget.activeTab);
+      if (_tabController.index != nextIndex) {
+        _isSyncingRoute = true;
+        _tabController.index = nextIndex;
+        _isSyncingRoute = false;
+      }
+    }
+  }
+
+  int _resolveTabIndex(BoardTab? tab) {
+    final resolvedTab = tab ?? BoardTab.onlywan;
+    final index = _tabs.indexWhere((item) => item.type == resolvedTab);
+    if (index >= 0) return index;
+    return 0;
+  }
+
+  void _handleTabChange() {
+    if (_tabController.indexIsChanging || _isSyncingRoute) return;
+    if (widget.mode != BoardMode.normal) return;
+    final tabType = _tabs[_tabController.index].type;
+    final tabPath = boardTabPath(tabType);
+    context.go(AppRoutePaths.boardLocation(widget.teamCode, tab: tabPath));
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create:
-          (_) => PostListViewModel(
-            repo: context.read<AppScope>().communityPostRepository,
-            teamCode: widget.teamCode,
-          ),
-      child: Scaffold(
-        backgroundColor: AppColors.primary50,
-        floatingActionButton: SizedBox(
-          width: 56,
-          height: 56,
+    return Scaffold(
+      backgroundColor: AppColors.primary50,
+      floatingActionButton: SizedBox(
+        width: 56,
+        height: 56,
 
-          child: FloatingActionButton(
-            backgroundColor: AppColors.primary700,
-            shape: const CircleBorder(),
-            onPressed: () {
-              // 기존 게시판 글쓰기
-              context.push(
-                AppRoutePaths.boardPostWriteLocation(widget.teamCode),
-              );
-              debugPrint('[Team Board Page] teamCode: ${widget.teamCode}');
-            },
-            child: const Icon(Icons.add, size: 40, color: AppColors.primary50),
-          ),
+        child: FloatingActionButton(
+          backgroundColor: AppColors.primary700,
+          shape: const CircleBorder(),
+          onPressed: () {
+            // 기존 게시판 글쓰기
+            context.push(AppRoutePaths.boardPostWriteLocation(widget.teamCode));
+            debugPrint('[Team Board Page] teamCode: ${widget.teamCode}');
+          },
+          child: const Icon(Icons.add, size: 40, color: AppColors.primary50),
         ),
+      ),
 
-        body: SafeArea(
-          child: Column(
-            children: [
-              // 상단 헤더 (뒤로가기 포함)
-              CommonHeader(
-                title:
-                    widget.teamCode == 'ALL'
-                        ? '전체 게시판'
-                        : kboTeamLabelOf(widget.teamCode),
-                onSearchPressed: () => context.push(AppRoutePaths.search),
-              ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // 상단 헤더 (뒤로가기 포함)
+            CommonHeader(
+              title:
+                  widget.teamCode == 'ALL'
+                      ? 'KBO 전체게시판'
+                      : kboTeamLabelOf(widget.teamCode),
+              onSearchPressed: () => context.push(AppRoutePaths.search),
+            ),
 
-              SegmentedTabs(controller: _tabController, items: _tabs),
+            SegmentedTabs(controller: _tabController, items: _tabs),
 
-              // 구분선
-              const Divider(
-                height: 1,
-                thickness: 0.8,
-                color: AppColors.gray400,
+            // 구분선
+            const Divider(height: 1, thickness: 0.8, color: AppColors.gray400),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: List.generate(_tabs.length, (index) {
+                  final tab = _tabs[index];
+                  final isActive = index == _tabController.index;
+                  switch (tab.type) {
+                    case BoardTab.onlywan:
+                      return const Center(child: Text('오직완 페이지'));
+                    case BoardTab.free:
+                      return FreeBoardTab(
+                        teamCode: widget.teamCode,
+                        isActive: isActive,
+                      );
+                    case BoardTab.news:
+                      return const Center(child: Text('오늘의 뉴스'));
+                  }
+                }),
               ),
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children:
-                      _tabs.map((tab) {
-                        switch (tab.type) {
-                          case BoardTab.onlywan:
-                            return const Center(child: Text('오직완 페이지'));
-                          case BoardTab.free:
-                            return FreeBoardTab(teamCode: widget.teamCode);
-                          case BoardTab.news:
-                            return const Center(child: Text('오늘의 뉴스'));
-                        }
-                      }).toList(),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -10,11 +10,15 @@ final class AppRoutePaths {
   static const boardPostWrite = 'post/new';
   // 게시판 상세 포스트 (중첩 라우터에서 상대 경로)
   static const boardPostDetail = 'posts/:postId';
+  // 팀 게시판 내 글쓰기 (절대 경로)
+  static const boardPostWriteAbs = '/boards/:code/post/new';
+  // 게시판 상세 포스트 (절대 경로)
+  static const boardPostDetailAbs = '/boards/:code/posts/:postId';
   // 커뮤니티 검색
   static const search = '/search';
 
-  static String boardLocation(String code, {int? tab}) {
-    final tabQuery = tab != null ? '?tab=$tab' : '';
+  static String boardLocation(String code, {String? tab}) {
+    final tabQuery = '?tab=${tab ?? 'onlywan'}';
     return '/boards/$code$tabQuery';
   }
 
@@ -23,4 +27,12 @@ final class AppRoutePaths {
   // 절대 경로: 팀 게시판 게시글 상세
   static String boardPostDetailLocation(String code, int postId) =>
       '/boards/$code/posts/$postId';
+}
+
+@immutable
+final class AppRouteNames {
+  const AppRouteNames._();
+
+  static const writingPost = 'writing_post';
+  static const postDetail = 'post_detail';
 }

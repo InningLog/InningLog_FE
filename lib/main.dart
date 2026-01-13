@@ -27,18 +27,9 @@ import 'package:inninglog/feature/field/screens/seat_page.dart';
 import 'package:inninglog/feature/community/screens/root_page.dart';
 import 'package:inninglog/feature/mypage/screens/my_page.dart';
 import 'package:inninglog/feature/community/screens/teamboard_page.dart';
-import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
-import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
-import 'package:amplitude_flutter/amplitude.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:inninglog/feature/community/widgets/shared/segmented_tabs.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:io' show Platform;
-import 'shared/amplitude/analytics.dart';
-import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
-import 'package:flutter/material.dart';
 import 'package:inninglog/shared/amplitude/AmplitudeFlutter.dart';
-import 'shared/amplitude/AmplitudeFlutter.dart';
 
 const amplitudeKey = String.fromEnvironment('AMPLITUDE_API_KEY');
 
@@ -147,7 +138,7 @@ final GoRouter _router = GoRouter(
       navigatorKey: _shellNavigatorKey,
       observers: [shellRouteObserver],
       builder: (context, state, child) {
-        return MainNavigation(child: child); // ✅ 아래에서 정의할 MainNavigation
+        return MainNavigation(child: child);
       },
       routes: [
         GoRoute(path: '/home', builder: (_, __) => const HomePage()),
@@ -180,10 +171,7 @@ final GoRouter _router = GoRouter(
             ),
           ],
         ),
-        GoRoute(
-          path: '/community',
-          builder: (_, __) => const CommunityRootPage(),
-        ),
+
         GoRoute(path: '/mypage', builder: (_, __) => const MyPage()),
 
         GoRoute(
@@ -197,25 +185,26 @@ final GoRouter _router = GoRouter(
             return SeatDetailPage(seatViewId: seatViewId, imageUrl: imageUrl);
           },
         ),
+        // 커뮤니티
+        GoRoute(
+          path: '/community',
+          builder: (_, __) => const CommunityRootPage(),
+        ),
 
         GoRoute(
           path: AppRoutePaths.board,
           builder: (_, state) {
-            final code = state.pathParameters['code']!; // 팀 코드
-            final tabParam = int.tryParse(
-              state.uri.queryParameters['tab'] ?? '',
-            );
+            final code = state.pathParameters['code']!;
+            final tabParam = state.uri.queryParameters['tab'] ?? 'onlywan';
             return TeamBoardPage(
               teamCode: code,
-              initialTabIndex: tabParam ?? 0, // ✅ 기본 0
+              activeTab: boardTabFromPath(tabParam),
             );
           },
-
           routes: [
             GoRoute(
               path: AppRoutePaths.boardPostWrite,
-              name: 'writing_post',
-              parentNavigatorKey: _rootNavigatorKey, // GNB 없는 화면
+              name: AppRouteNames.writingPost,
               builder: (_, state) {
                 final code = state.pathParameters['code']!;
                 return WritingPostPage(teamCode: code);
@@ -223,8 +212,7 @@ final GoRouter _router = GoRouter(
             ),
             GoRoute(
               path: AppRoutePaths.boardPostDetail,
-              name: 'post_detail',
-              parentNavigatorKey: _rootNavigatorKey, // GNB 없는 화면
+              name: AppRouteNames.postDetail,
               builder: (context, state) {
                 final teamCode = state.pathParameters['code']!;
                 final postId = int.parse(state.pathParameters['postId']!);
