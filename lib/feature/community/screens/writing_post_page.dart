@@ -51,143 +51,146 @@ class _WritingPostView extends StatelessWidget {
     final vm = context.watch<WritingPostViewModel>();
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      backgroundColor: Colors.white,
-
-      body: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              WritingPostAppBar(
-                teamLabel: kboTeamLabelOf(teamCode),
-                onClose: () => Navigator.of(context).pop(),
-                onSubmit: () => _submit(context, vm),
-                isSubmitEnabled: vm.canSubmit,
-              ),
-              const SizedBox(height: 12),
-
-              // 제목
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 160),
-                curve: Curves.easeOut,
-                padding: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color:
-                          vm.isTitleFocused
-                              ? AppColors.gray400
-                              : Colors.transparent,
-                      width: 1,
-                    ),
+    return Stack(
+      children: [
+        Scaffold(
+          resizeToAvoidBottomInset: true,
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  WritingPostAppBar(
+                    teamLabel: kboTeamLabelOf(teamCode),
+                    onClose: () => Navigator.of(context).pop(),
+                    onSubmit: () => _submit(context, vm),
+                    isSubmitEnabled: vm.canSubmit,
                   ),
-                ),
-                child: TextField(
-                  controller: vm.titleController,
-                  focusNode: vm.titleFocusNode,
-                  textInputAction: TextInputAction.next,
-                  onTapOutside:
-                      (_) => FocusManager.instance.primaryFocus?.unfocus(),
-                  inputFormatters: [LengthLimitingTextInputFormatter(20)],
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.gray900,
-                    fontFamily: 'Pretendard',
-                  ),
-                  decoration: const InputDecoration(
-                    hintText: '제목을 입력해주세요.',
-                    hintStyle: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.gray600,
-                      fontFamily: 'Pretendard',
+                  const SizedBox(height: 12),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
+                    curve: Curves.easeOut,
+                    padding: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color:
+                              vm.isTitleFocused
+                                  ? AppColors.gray400
+                                  : Colors.transparent,
+                          width: 1,
+                        ),
+                      ),
                     ),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  onSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              // 본문 (스크롤 영역)
-              Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => vm.bodyFocusNode.requestFocus(),
-                  child: TextField(
-                    controller: vm.bodyController,
-                    focusNode: vm.bodyFocusNode,
-                    onTapOutside:
-                        (_) => FocusManager.instance.primaryFocus?.unfocus(),
-                    inputFormatters: [LengthLimitingTextInputFormatter(1500)],
-                    expands: true,
-                    maxLines: null,
-                    textAlignVertical: TextAlignVertical.top,
-                    keyboardType: TextInputType.multiline,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.gray900,
-                      fontFamily: 'Pretendard',
-                    ),
-                    decoration: const InputDecoration(
-                      hintText: '내용을 입력하세요.',
-                      hintStyle: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: AppColors.gray600,
+                    child: TextField(
+                      controller: vm.titleController,
+                      focusNode: vm.titleFocusNode,
+                      textInputAction: TextInputAction.next,
+                      onTapOutside:
+                          (_) => FocusManager.instance.primaryFocus?.unfocus(),
+                      inputFormatters: [LengthLimitingTextInputFormatter(20)],
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.gray900,
                         fontFamily: 'Pretendard',
                       ),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
+                      decoration: const InputDecoration(
+                        hintText: '제목을 입력해주세요.',
+                        hintStyle: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.gray600,
+                          fontFamily: 'Pretendard',
+                        ),
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      onSubmitted: (_) => FocusScope.of(context).nextFocus(),
                     ),
                   ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-
-      // 바닥 고정 영역
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (bottomInset > 0)
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: IconButton(
-                    icon: const Icon(Icons.keyboard_hide),
-                    tooltip: '키보드 내리기',
-                    onPressed:
-                        () => FocusManager.instance.primaryFocus?.unfocus(),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => vm.bodyFocusNode.requestFocus(),
+                      child: TextField(
+                        controller: vm.bodyController,
+                        focusNode: vm.bodyFocusNode,
+                        onTapOutside:
+                            (_) =>
+                                FocusManager.instance.primaryFocus?.unfocus(),
+                        inputFormatters: [LengthLimitingTextInputFormatter(1500)],
+                        expands: true,
+                        maxLines: null,
+                        textAlignVertical: TextAlignVertical.top,
+                        keyboardType: TextInputType.multiline,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.gray900,
+                          fontFamily: 'Pretendard',
+                        ),
+                        decoration: const InputDecoration(
+                          hintText: '내용을 입력하세요.',
+                          hintStyle: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.gray600,
+                            fontFamily: 'Pretendard',
+                          ),
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              const SizedBox(height: 24),
-              WritingPostGuidelinesFooter(),
-              const SizedBox(height: 24),
-              ImageAttachmentBar(
-                images: vm.images,
-                maxImages: vm.maxImages,
-                onPickImages: vm.canPickMore ? vm.pickFromGallery : null,
-                onRemoveImageAt: vm.removeImageAt,
+                ],
               ),
-            ],
+            ),
+          ),
+          bottomNavigationBar: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (bottomInset > 0)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: IconButton(
+                        icon: const Icon(Icons.keyboard_hide),
+                        tooltip: '키보드 내리기',
+                        onPressed:
+                            () =>
+                                FocusManager.instance.primaryFocus?.unfocus(),
+                      ),
+                    ),
+                  const SizedBox(height: 24),
+                  WritingPostGuidelinesFooter(),
+                  const SizedBox(height: 24),
+                  ImageAttachmentBar(
+                    images: vm.images,
+                    maxImages: vm.maxImages,
+                    onPickImages: vm.canPickMore ? vm.pickFromGallery : null,
+                    onRemoveImageAt: vm.removeImageAt,
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
-      ),
+        if (vm.isSubmitting) ...[
+          const ModalBarrier(dismissible: false, color: Color(0x66000000)),
+          const Center(child: CircularProgressIndicator()),
+        ],
+      ],
     );
   }
 }
