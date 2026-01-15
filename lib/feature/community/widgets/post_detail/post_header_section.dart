@@ -70,17 +70,12 @@ class PostAuthorRow extends StatelessWidget {
     return Row(
       spacing: 8,
       children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: const BoxDecoration(
-            color: Color(0xFFE5E7EB),
-            shape: BoxShape.circle,
-          ),
-          clipBehavior: Clip.antiAlias,
-          child:
+        CircleAvatar(
+          radius: 20,
+          backgroundColor: AppColors.gray200,
+          backgroundImage:
               (profileUrl != null && profileUrl!.isNotEmpty)
-                  ? Image.network(profileUrl!, fit: BoxFit.cover)
+                  ? NetworkImage(profileUrl!)
                   : null,
         ),
         Column(

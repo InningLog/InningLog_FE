@@ -38,15 +38,15 @@ class _KakaoLoginWebViewPageState extends State<KakaoLoginWebViewPage> {
           ..setNavigationDelegate(
             NavigationDelegate(
               onPageStarted: (url) {
-                _log('[WEBVIEW] onPageStarted: $url');
+                // _log('[WEBVIEW] onPageStarted: $url');
                 if (mounted) setState(() => _loading = true);
               },
               onWebResourceError: (err) {
-                _log('[WEBVIEW ERROR] $err');
+                // _log('[WEBVIEW ERROR] $err');
                 _showSnack('웹뷰 오류: ${err.description}');
               },
               onPageFinished: (url) async {
-                _log('[WEBVIEW] onPageFinished: $url');
+                // _log('[WEBVIEW] onPageFinished: $url');
                 if (mounted) setState(() => _loading = false);
 
                 // 1) /login/page → location 파싱 후 카카오 인증 URL로 이동
@@ -74,12 +74,12 @@ class _KakaoLoginWebViewPageState extends State<KakaoLoginWebViewPage> {
   Future<void> _handleLoginPage() async {
     try {
       final bodyText = await _readBodyInnerText();
-      _log('[LOGIN PAGE BODY] $bodyText');
+      // _log('[LOGIN PAGE BODY] $bodyText');
 
       final map = jsonDecode(bodyText) as Map<String, dynamic>;
       final location = (map['location'] as String?)?.trim();
 
-      _log('[LOGIN PAGE LOCATION] $location');
+      // _log('[LOGIN PAGE LOCATION] $location');
 
       if (location != null && location.isNotEmpty) {
         _kakaoAuthLaunched = true;
@@ -88,7 +88,7 @@ class _KakaoLoginWebViewPageState extends State<KakaoLoginWebViewPage> {
         _showSnack('location이 비어있습니다.');
       }
     } catch (e) {
-      _log('[LOGIN PAGE PARSE ERROR] $e');
+      // _log('[LOGIN PAGE PARSE ERROR] $e');
       _showSnack('로그인 URL 파싱 실패: $e');
     }
   }
@@ -96,7 +96,7 @@ class _KakaoLoginWebViewPageState extends State<KakaoLoginWebViewPage> {
   Future<void> _handleCallback() async {
     try {
       final bodyText = await _readBodyInnerText();
-      _log('[CALLBACK BODY] $bodyText');
+      // _log('[CALLBACK BODY] $bodyText');
 
       final map = jsonDecode(bodyText) as Map<String, dynamic>;
 
@@ -107,14 +107,14 @@ class _KakaoLoginWebViewPageState extends State<KakaoLoginWebViewPage> {
       final memberId = JwtUtils.extractMemberId(session.accessToken);
       session = session.copyWith(memberId: memberId);
 
-      if (kDebugMode) {
-        _log('[CALLBACK nickname] ${session.nickname}');
-        _log('[CALLBACK newMember] ${session.isNewMember}');
-        _log('[CALLBACK memberId] ${session.memberId}');
-        _log(
-          '[CALLBACK TOKEN PAYLOAD] ${JwtUtils.decodePayload(session.accessToken)}',
-        );
-      }
+      // if (kDebugMode) {
+      //   _log('[CALLBACK nickname] ${session.nickname}');
+      //   _log('[CALLBACK newMember] ${session.isNewMember}');
+      //   _log('[CALLBACK memberId] ${session.memberId}');
+      //   _log(
+      //     '[CALLBACK TOKEN PAYLOAD] ${JwtUtils.decodePayload(session.accessToken)}',
+      //   );
+      // }
 
       // 3) 저장 (SharedPreferences 직접 접근 제거)
       await _scope.tokenStorage.saveSession(session);
@@ -127,7 +127,7 @@ class _KakaoLoginWebViewPageState extends State<KakaoLoginWebViewPage> {
       if (!mounted) return;
       context.go(session.isNewMember ? '/onboarding6' : '/home');
     } catch (e) {
-      _log('[CALLBACK PARSE ERROR] $e');
+      // _log('[CALLBACK PARSE ERROR] $e');
       _showSnack('콜백 처리 실패: $e');
     }
   }
@@ -150,14 +150,14 @@ class _KakaoLoginWebViewPageState extends State<KakaoLoginWebViewPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
-  void _log(String msg) {
-    const chunk = 1024;
-    for (var i = 0; i < msg.length; i += chunk) {
-      debugPrint(
-        msg.substring(i, (i + chunk > msg.length) ? msg.length : i + chunk),
-      );
-    }
-  }
+  // void _log(String msg) {
+  //   const chunk = 1024;
+  //   for (var i = 0; i < msg.length; i += chunk) {
+  //     debugPrint(
+  //       msg.substring(i, (i + chunk > msg.length) ? msg.length : i + chunk),
+  //     );
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {

@@ -29,21 +29,13 @@ class PostItemCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Container(
-                          width: 26,
-                          height: 26,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFE5E7EB),
-                            shape: BoxShape.circle,
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child:
+                        CircleAvatar(
+                          radius: 13,
+                          backgroundColor: AppColors.gray200,
+                          backgroundImage:
                               (item.profileUrl != null &&
                                       item.profileUrl!.isNotEmpty)
-                                  ? Image.network(
-                                    item.profileUrl!,
-                                    fit: BoxFit.cover,
-                                  )
+                                  ? NetworkImage(item.profileUrl!)
                                   : null,
                         ),
                         const SizedBox(width: 8),
