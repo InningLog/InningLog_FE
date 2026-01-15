@@ -28,12 +28,7 @@ class CommentVBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 1,
-      height: 10,
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      color: AppColors.gray400,
-    );
+    return Container(width: 1, height: 10, color: AppColors.gray400);
   }
 }
 
