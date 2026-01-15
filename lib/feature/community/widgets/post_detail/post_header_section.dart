@@ -32,28 +32,20 @@ class PostSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final trimmedTitle = title.trim();
-    final trimmedBody = content.trim();
-
     return Container(
       color: AppColors.primary50,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 16,
         children: [
           PostAuthorRow(
             createAt: createAt,
             nickName: nickName,
             profileUrl: profileUrl,
           ),
-          const SizedBox(height: 16),
-
-          if (trimmedTitle.isNotEmpty) ...[
-            PostTitle(text: trimmedTitle),
-            const SizedBox(height: 16),
-          ],
-
-          if (trimmedBody.isNotEmpty) PostBody(text: trimmedBody),
+          PostTitle(text: title),
+          PostBody(text: content),
           if (imageUrls.isNotEmpty) PostImageGallery(imageUrls: imageUrls),
         ],
       ),

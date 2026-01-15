@@ -50,6 +50,8 @@ class _WritingPostView extends StatelessWidget {
   Widget build(BuildContext context) {
     final vm = context.watch<WritingPostViewModel>();
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final teamLabel =
+        teamCode == 'ALL' ? 'KBO 전체게시판' : kboTeamLabelOf(teamCode);
 
     return Stack(
       children: [
@@ -64,7 +66,7 @@ class _WritingPostView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   WritingPostAppBar(
-                    teamLabel: kboTeamLabelOf(teamCode),
+                    teamLabel: teamLabel,
                     onClose: () => Navigator.of(context).pop(),
                     onSubmit: () => _submit(context, vm),
                     isSubmitEnabled: vm.canSubmit,
@@ -124,7 +126,9 @@ class _WritingPostView extends StatelessWidget {
                         onTapOutside:
                             (_) =>
                                 FocusManager.instance.primaryFocus?.unfocus(),
-                        inputFormatters: [LengthLimitingTextInputFormatter(1500)],
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(1500),
+                        ],
                         expands: true,
                         maxLines: null,
                         textAlignVertical: TextAlignVertical.top,
@@ -168,8 +172,7 @@ class _WritingPostView extends StatelessWidget {
                         icon: const Icon(Icons.keyboard_hide),
                         tooltip: '키보드 내리기',
                         onPressed:
-                            () =>
-                                FocusManager.instance.primaryFocus?.unfocus(),
+                            () => FocusManager.instance.primaryFocus?.unfocus(),
                       ),
                     ),
                   const SizedBox(height: 24),

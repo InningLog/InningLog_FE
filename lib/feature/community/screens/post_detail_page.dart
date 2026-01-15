@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:inninglog/app_scope.dart';
+import 'package:inninglog/feature/community/data/team_catalog.dart';
 import 'package:inninglog/feature/community/viewmodel/post_detail_view_model.dart';
 import 'package:inninglog/feature/community/widgets/post_detail/post_action_bar.dart';
 import 'package:inninglog/feature/community/widgets/post_detail/post_detail_app_bar.dart';
 import 'package:inninglog/feature/community/widgets/post_detail/post_header_section.dart';
-import 'package:inninglog/shared/constant/team_codes.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:provider/provider.dart';
 
@@ -76,7 +76,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
           final post = vm.post;
           final teamCode = post?.teamCode ?? widget.teamCode;
           final teamLabel =
-              teamCode == 'ALL' ? 'KBO 전체게시판' : teamLabelFromCode(teamCode);
+              teamCode == 'ALL' ? 'KBO 전체게시판' : kboTeamLabelOf(teamCode);
           final commentCount =
               vm.commentCount > 0 ? vm.commentCount : comments.length;
 
