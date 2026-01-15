@@ -32,16 +32,6 @@ class _PostDetailPageState extends State<PostDetailPage>
   late final CommunityPostRepository _repo;
   final ScrollController _scrollController = ScrollController();
   double _lastKeyboardInset = 0;
-  double _keyboardInset = 0;
-
-  @override
-  void didChangeMetrics() {
-    final view = WidgetsBinding.instance.platformDispatcher.views.first;
-    final nextInset = view.viewInsets.bottom / view.devicePixelRatio;
-    if (nextInset == _keyboardInset) return;
-    debugPrint('[PostDetail] didChangeMetrics inset=$nextInset');
-    setState(() => _keyboardInset = nextInset);
-  }
 
   @override
   void initState() {
@@ -57,6 +47,22 @@ class _PostDetailPageState extends State<PostDetailPage>
     _scrollController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    final nextInset = view.viewInsets.bottom / view.devicePixelRatio;
+    if (nextInset == _lastKeyboardInset) return;
+    final delta = nextInset - _lastKeyboardInset;
+    _lastKeyboardInset = nextInset;
+    if (!_scrollController.hasClients) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      final max = _scrollController.position.maxScrollExtent;
+      final nextOffset = (_scrollController.offset + delta).clamp(0.0, max);
+      _scrollController.jumpTo(nextOffset);
+    });
   }
 
   @override
@@ -89,20 +95,6 @@ class _PostDetailPageState extends State<PostDetailPage>
               onTapMore: () {
                 // TODO: 신고/삭제/공유 bottom sheet 등
               },
-            ),
-            bottomNavigationBar: CommentInputBar(
-              controller:
-                  commentVm.isReplyMode
-                      ? commentVm.replyController
-                      : commentVm.commentController,
-              focusNode:
-                  commentVm.isReplyMode ? commentVm.replyFocusNode : null,
-              isReplyMode: commentVm.isReplyMode,
-              replyNickname: commentVm.activeReplyNickname,
-              onPressed:
-                  commentVm.isReplyMode
-                      ? commentVm.submitReply
-                      : commentVm.submitComment,
             ),
             body: SafeArea(
               bottom: false,
@@ -149,6 +141,25 @@ class _PostDetailPageState extends State<PostDetailPage>
                         ),
                         const SizedBox(height: 6),
                       ],
+                    ),
+                  ),
+                  SafeArea(
+                    top: false,
+                    child: CommentInputBar(
+                      controller:
+                          commentVm.isReplyMode
+                              ? commentVm.replyController
+                              : commentVm.commentController,
+                      focusNode:
+                          commentVm.isReplyMode
+                              ? commentVm.replyFocusNode
+                              : commentVm.commentFocusNode,
+                      isReplyMode: commentVm.isReplyMode,
+                      replyNickname: commentVm.activeReplyNickname,
+                      onPressed:
+                          commentVm.isReplyMode
+                              ? commentVm.submitReply
+                              : commentVm.submitComment,
                     ),
                   ),
                 ],

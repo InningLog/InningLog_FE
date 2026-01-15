@@ -9,6 +9,7 @@ class PostCommentViewModel extends ChangeNotifier {
   final TextEditingController commentController = TextEditingController();
   final TextEditingController replyController = TextEditingController();
   final FocusNode replyFocusNode = FocusNode();
+  final FocusNode commentFocusNode = FocusNode();
 
   final List<Comment> _comments = [];
   final Map<int, List<Comment>> _replies = {};
@@ -159,6 +160,7 @@ class PostCommentViewModel extends ChangeNotifier {
     commentController.dispose();
     replyController.dispose();
     replyFocusNode.dispose();
+    commentFocusNode.dispose();
     super.dispose();
   }
 }

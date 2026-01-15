@@ -7,6 +7,7 @@ class CommentInputBar extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode? focusNode;
   final VoidCallback onPressed;
+  final ValueChanged<bool>? onFocusChange;
   final bool isReplyMode;
   final String? replyNickname;
 
@@ -17,6 +18,7 @@ class CommentInputBar extends StatelessWidget {
     required this.controller,
     this.focusNode,
     required this.onPressed,
+    this.onFocusChange,
     this.isReplyMode = false,
     this.replyNickname,
     this.maxLines = 4,
@@ -58,25 +60,28 @@ class CommentInputBar extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
-                      child: TextField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        cursorColor: AppColors.primary700,
-                        minLines: 1,
-                        maxLines: maxLines, // ✅ 4줄까지는 높이 증가, 이후는 내부 스크롤
-                        keyboardType: TextInputType.multiline,
-                        textAlignVertical: TextAlignVertical.top,
-                        style: AppTextStyles.bodyBody2Rg.copyWith(
-                          color: AppColors.gray800,
-                        ),
-                        decoration: InputDecoration(
-                          isDense: true,
-                          border: InputBorder.none,
-                          hintText: '댓글로 의견을 남겨보세요.',
-                          hintStyle: AppTextStyles.bodyBody2Rg.copyWith(
-                            color: AppColors.gray600,
+                      child: Focus(
+                        onFocusChange: onFocusChange,
+                        child: TextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          cursorColor: AppColors.primary700,
+                          minLines: 1,
+                          maxLines: maxLines, // ✅ 4줄까지는 높이 증가, 이후는 내부 스크롤
+                          keyboardType: TextInputType.multiline,
+                          textAlignVertical: TextAlignVertical.top,
+                          style: AppTextStyles.bodyBody2Rg.copyWith(
+                            color: AppColors.gray800,
                           ),
-                          contentPadding: EdgeInsets.zero,
+                          decoration: InputDecoration(
+                            isDense: true,
+                            border: InputBorder.none,
+                            hintText: '댓글로 의견을 남겨보세요.',
+                            hintStyle: AppTextStyles.bodyBody2Rg.copyWith(
+                              color: AppColors.gray600,
+                            ),
+                            contentPadding: EdgeInsets.zero,
+                          ),
                         ),
                       ),
                     ),
