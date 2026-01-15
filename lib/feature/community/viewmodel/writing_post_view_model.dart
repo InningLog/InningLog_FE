@@ -113,7 +113,7 @@ class WritingPostViewModel extends ChangeNotifier {
           for (final item in presignedList) item.sequence: item,
         };
 
-        for (final image in uploadImages) {
+        final uploadFutures = uploadImages.map((image) async {
           final presigned = presignedMap[image.sequence];
           if (presigned == null) {
             throw StateError(
@@ -129,11 +129,13 @@ class WritingPostViewModel extends ChangeNotifier {
             contentType: image.contentType,
             bytes: _images[image.sequence - 1].bytes,
           );
-          imageKeys.add(
-            ImageCreateReqDto(sequence: presigned.sequence, key: presigned.key),
+          return ImageCreateReqDto(
+            sequence: presigned.sequence,
+            key: presigned.key,
           );
-        }
+        }).toList();
 
+        imageKeys = await Future.wait(uploadFutures);
         imageKeys.sort((a, b) => a.sequence.compareTo(b.sequence));
       }
 
