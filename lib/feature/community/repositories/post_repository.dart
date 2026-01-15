@@ -70,13 +70,14 @@ class CommunityPostRepository {
   /// Presigned URL로 S3 업로드
   Future<void> uploadToS3({
     required ImageUploadResDto target,
-
     required String contentType,
+    required List<int> bytes,
   }) async {
     try {
       final res = await http.put(
         Uri.parse(target.presignedUrl),
         headers: {'Content-Type': contentType},
+        body: bytes,
       );
 
       if (res.statusCode >= 400) {

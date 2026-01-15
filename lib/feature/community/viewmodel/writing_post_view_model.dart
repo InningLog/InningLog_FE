@@ -127,6 +127,7 @@ class WritingPostViewModel extends ChangeNotifier {
           await repo.uploadToS3(
             target: presigned,
             contentType: image.contentType,
+            bytes: _images[image.sequence - 1].bytes,
           );
           imageKeys.add(
             ImageCreateReqDto(sequence: presigned.sequence, key: presigned.key),
