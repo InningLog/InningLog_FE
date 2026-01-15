@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:inninglog/app_scope.dart';
 import 'package:inninglog/feature/community/data/team_catalog.dart';
-import 'package:inninglog/feature/community/model/comment.dart';
 import 'package:inninglog/feature/community/viewmodel/post_comment_view_model.dart';
 import 'package:inninglog/feature/community/viewmodel/post_detail_view_model.dart';
 import 'package:inninglog/feature/community/repositories/post_repository.dart';
 import 'package:inninglog/feature/community/widgets/comment/comment_input_bar.dart';
-import 'package:inninglog/feature/community/widgets/comment/comment_item.dart';
-import 'package:inninglog/feature/community/widgets/comment/empty_comment.dart';
+import 'package:inninglog/feature/community/widgets/comment/comment_list.dart';
 import 'package:inninglog/feature/community/widgets/post_detail/post_action_bar.dart';
 import 'package:inninglog/feature/community/widgets/post_detail/post_detail_app_bar.dart';
 import 'package:inninglog/feature/community/widgets/post_detail/post_header_section.dart';
@@ -28,13 +26,27 @@ class PostDetailPage extends StatefulWidget {
   State<PostDetailPage> createState() => _PostDetailPageState();
 }
 
-class _PostDetailPageState extends State<PostDetailPage> {
+class _PostDetailPageState extends State<PostDetailPage>
+    with WidgetsBindingObserver {
   late final PostDetailViewModel _vm;
   late final CommunityPostRepository _repo;
+  final ScrollController _scrollController = ScrollController();
+  double _lastKeyboardInset = 0;
+  double _keyboardInset = 0;
+
+  @override
+  void didChangeMetrics() {
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    final nextInset = view.viewInsets.bottom / view.devicePixelRatio;
+    if (nextInset == _keyboardInset) return;
+    debugPrint('[PostDetail] didChangeMetrics inset=$nextInset');
+    setState(() => _keyboardInset = nextInset);
+  }
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _repo = context.read<AppScope>().communityPostRepository;
     _vm = PostDetailViewModel(repo: _repo, postId: widget.postId)..fetch();
   }
@@ -42,6 +54,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
   @override
   void dispose() {
     _vm.dispose();
+    _scrollController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -68,6 +82,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
           return Scaffold(
             backgroundColor: AppColors.primary50,
+            resizeToAvoidBottomInset: true,
             appBar: PostDetailAppBar(
               teamLabel: teamLabel,
               onBack: () => Navigator.pop(context),
@@ -80,6 +95,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
                   commentVm.isReplyMode
                       ? commentVm.replyController
                       : commentVm.commentController,
+              focusNode:
+                  commentVm.isReplyMode ? commentVm.replyFocusNode : null,
               isReplyMode: commentVm.isReplyMode,
               replyNickname: commentVm.activeReplyNickname,
               onPressed:
@@ -87,57 +104,59 @@ class _PostDetailPageState extends State<PostDetailPage> {
                       ? commentVm.submitReply
                       : commentVm.submitComment,
             ),
-            body: ListView(
-              children: [
-                PostSection(
-                  content: post?.content ?? '',
-                  createAt: post?.createdAt ?? '',
-                  nickName: post?.nickName ?? '',
-                  title: post?.title ?? '',
-                  imageUrls:
-                      post?.images.map((e) => e.url).toList() ?? const [],
-                  profileUrl: post?.profileUrl,
-                ),
-                PostActionBar(
-                  likeActive: vm.likedByMe,
-                  likeCount: vm.likeCount,
-                  onTapLike: vm.toggleLike,
-                  scrapActive: vm.scrapedByMe,
-                  scrapCount: vm.scrapCount,
-                  onTapScrap: vm.toggleScrap,
-                  commentCount: commentCount,
-                ),
-                const Divider(height: 8, color: AppColors.gray200),
-                if (commentVm.comments.isEmpty)
-                  const EmptyComment()
-                else
-                  ...commentVm.comments.map(
-                    (comment) => _commentItem(comment, commentVm),
+            body: SafeArea(
+              bottom: false,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView(
+                      controller: _scrollController,
+                      padding: EdgeInsets.zero,
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      children: [
+                        PostSection(
+                          content: post?.content ?? '',
+                          createAt: post?.createdAt ?? '',
+                          nickName: post?.nickName ?? '',
+                          title: post?.title ?? '',
+                          imageUrls:
+                              post?.images.map((e) => e.url).toList() ??
+                              const [],
+                          profileUrl: post?.profileUrl,
+                        ),
+                        PostActionBar(
+                          likeActive: vm.likedByMe,
+                          likeCount: vm.likeCount,
+                          onTapLike: vm.toggleLike,
+                          scrapActive: vm.scrapedByMe,
+                          scrapCount: vm.scrapCount,
+                          onTapScrap: vm.toggleScrap,
+                          commentCount: commentCount,
+                        ),
+                        Container(height: 8, color: AppColors.gray200),
+                        CommentList(
+                          comments: commentVm.comments,
+                          activeReplyIndex: commentVm.activeReplyIndex,
+                          repliesFor: commentVm.repliesFor,
+                          onTapReply: commentVm.startReply,
+                          onToggleLike: commentVm.toggleCommentLike,
+                          onToggleReplyLike:
+                              (reply, index) =>
+                                  commentVm.toggleReplyLike(index, reply),
+                          onTapMore: (_) {},
+                          onTapReplyMore: (_) {},
+                        ),
+                        const SizedBox(height: 6),
+                      ],
+                    ),
                   ),
-                const SizedBox(height: 6),
-              ],
+                ],
+              ),
             ),
           );
         },
       ),
-    );
-  }
-
-  Widget _commentItem(Comment comment, PostCommentViewModel vm) {
-    final idx = vm.comments.indexOf(comment);
-    final bool isReplyingThis = vm.activeReplyIndex == idx;
-    final List<Comment> replies = vm.repliesFor(idx);
-    return CommentItem(
-      comment: comment,
-      isReplying: isReplyingThis,
-      onTapReply: () {
-        vm.startReply(idx);
-      },
-      onToggleLike: () => vm.toggleCommentLike(idx),
-      onTapMore: () {},
-      replies: replies,
-      onToggleReplyLike: (reply) => vm.toggleReplyLike(idx, reply),
-      onTapReplyMore: (_) {},
     );
   }
 }

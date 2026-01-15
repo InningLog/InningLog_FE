@@ -8,6 +8,7 @@ class PostCommentViewModel extends ChangeNotifier {
   final CommunityPostRepository repo;
   final TextEditingController commentController = TextEditingController();
   final TextEditingController replyController = TextEditingController();
+  final FocusNode replyFocusNode = FocusNode();
 
   final List<Comment> _comments = [];
   final Map<int, List<Comment>> _replies = {};
@@ -60,6 +61,7 @@ class PostCommentViewModel extends ChangeNotifier {
     if (index < 0 || index >= _comments.length) return;
     _activeReplyIndex = index;
     replyController.clear();
+    replyFocusNode.requestFocus();
     notifyListeners();
   }
 
@@ -156,6 +158,7 @@ class PostCommentViewModel extends ChangeNotifier {
   void dispose() {
     commentController.dispose();
     replyController.dispose();
+    replyFocusNode.dispose();
     super.dispose();
   }
 }

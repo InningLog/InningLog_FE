@@ -32,7 +32,7 @@ class ReplyItem extends StatelessWidget {
             width: 11,
             height: 15,
             colorFilter: const ColorFilter.mode(
-              AppColors.gray300,
+              AppColors.gray600,
               BlendMode.srcIn,
             ),
           ),
