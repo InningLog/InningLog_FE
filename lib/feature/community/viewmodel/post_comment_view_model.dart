@@ -66,6 +66,13 @@ class PostCommentViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void cancelReply() {
+    if (_activeReplyIndex == null) return;
+    _activeReplyIndex = null;
+    replyController.clear();
+    notifyListeners();
+  }
+
   Future<void> submitComment() async {
     final text = commentController.text.trim();
     if (text.isEmpty) return;
