@@ -101,46 +101,53 @@ class _PostDetailPageState extends State<PostDetailPage>
               child: Column(
                 children: [
                   Expanded(
-                    child: ListView(
-                      controller: _scrollController,
-                      padding: EdgeInsets.zero,
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      children: [
-                        PostSection(
-                          content: post?.content ?? '',
-                          createAt: post?.createdAt ?? '',
-                          nickName: post?.nickName ?? '',
-                          title: post?.title ?? '',
-                          imageUrls:
-                              post?.images.map((e) => e.url).toList() ??
-                              const [],
-                          profileUrl: post?.profileUrl,
-                        ),
-                        PostActionBar(
-                          likeActive: vm.likedByMe,
-                          likeCount: vm.likeCount,
-                          onTapLike: vm.toggleLike,
-                          scrapActive: vm.scrapedByMe,
-                          scrapCount: vm.scrapCount,
-                          onTapScrap: vm.toggleScrap,
-                          commentCount: commentCount,
-                        ),
-                        Container(height: 8, color: AppColors.gray200),
-                        CommentList(
-                          comments: commentVm.comments,
-                          activeReplyIndex: commentVm.activeReplyIndex,
-                          repliesFor: commentVm.repliesFor,
-                          onTapReply: commentVm.startReply,
-                          onToggleLike: commentVm.toggleCommentLike,
-                          onToggleReplyLike:
-                              (reply, index) =>
-                                  commentVm.toggleReplyLike(index, reply),
-                          onTapMore: (_) {},
-                          onTapReplyMore: (_) {},
-                        ),
-                        const SizedBox(height: 6),
-                      ],
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onTap: () {
+                        FocusScope.of(context).unfocus();
+                        commentVm.cancelReply();
+                      },
+                      child: ListView(
+                        controller: _scrollController,
+                        padding: EdgeInsets.zero,
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        children: [
+                          PostSection(
+                            content: post?.content ?? '',
+                            createAt: post?.createdAt ?? '',
+                            nickName: post?.nickName ?? '',
+                            title: post?.title ?? '',
+                            imageUrls:
+                                post?.images.map((e) => e.url).toList() ??
+                                const [],
+                            profileUrl: post?.profileUrl,
+                          ),
+                          PostActionBar(
+                            likeActive: vm.likedByMe,
+                            likeCount: vm.likeCount,
+                            onTapLike: vm.toggleLike,
+                            scrapActive: vm.scrapedByMe,
+                            scrapCount: vm.scrapCount,
+                            onTapScrap: vm.toggleScrap,
+                            commentCount: commentCount,
+                          ),
+                          Container(height: 8, color: AppColors.gray200),
+                          CommentList(
+                            comments: commentVm.comments,
+                            activeReplyIndex: commentVm.activeReplyIndex,
+                            repliesFor: commentVm.repliesFor,
+                            onTapReply: commentVm.startReply,
+                            onToggleLike: commentVm.toggleCommentLike,
+                            onToggleReplyLike:
+                                (reply, index) =>
+                                    commentVm.toggleReplyLike(index, reply),
+                            onTapMore: (_) {},
+                            onTapReplyMore: (_) {},
+                          ),
+                          const SizedBox(height: 6),
+                        ],
+                      ),
                     ),
                   ),
                   SafeArea(
