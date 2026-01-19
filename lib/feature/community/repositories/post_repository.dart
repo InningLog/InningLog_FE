@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:inninglog/feature/community/model/community_post.dart';
-import 'package:inninglog/feature/community/model/dto/comment_dtos.dart';
 import 'package:inninglog/feature/community/model/dto/post_dtos.dart';
 import '../../../shared/network/api_envelope.dart';
 import '../model/dto/create_post_dtos.dart';
@@ -125,40 +124,6 @@ class CommunityPostRepository {
     }
 
     return CommunityPostItem.fromJson(json);
-  }
-
-  /// 게시글 댓글 조회
-  Future<List<CommentResDto>> getPostComments({required int postId}) async {
-    final res = await _dio.get('/community/posts/$postId/comments');
-    final json = res.data;
-    if (json is! Map<String, dynamic>) {
-      throw const FormatException('Unexpected comment list response');
-    }
-    final envelope = ApiEnvelope.fromJson(json);
-    final data = envelope.data;
-    final body = data is Map<String, dynamic> ? data : json;
-    final comments =
-        (body['comments'] as List<dynamic>? ?? const [])
-            .whereType<Map<String, dynamic>>()
-            .map(CommentResDto.fromJson)
-            .toList();
-    return comments;
-  }
-
-  /// 게시글 댓글 생성
-  Future<ApiEnvelope> createPostComment({
-    required int postId,
-    required CreateCommentRequest request,
-  }) async {
-    final res = await _dio.post(
-      '/community/posts/$postId/comments',
-      data: request.toJson(),
-    );
-    final json = res.data;
-    if (json is! Map<String, dynamic>) {
-      throw const FormatException('Unexpected create comment response');
-    }
-    return ApiEnvelope.fromJson(json);
   }
 
   /// 게시글 좋아요

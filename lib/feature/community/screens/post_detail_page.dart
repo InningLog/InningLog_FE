@@ -3,6 +3,7 @@ import 'package:inninglog/app_scope.dart';
 import 'package:inninglog/feature/community/data/team_catalog.dart';
 import 'package:inninglog/feature/community/viewmodel/post_comment_view_model.dart';
 import 'package:inninglog/feature/community/viewmodel/post_detail_view_model.dart';
+import 'package:inninglog/feature/community/repositories/comment_repository.dart';
 import 'package:inninglog/feature/community/repositories/post_repository.dart';
 import 'package:inninglog/feature/community/widgets/comment/comment_input_bar.dart';
 import 'package:inninglog/feature/community/widgets/comment/comment_list.dart';
@@ -30,6 +31,7 @@ class _PostDetailPageState extends State<PostDetailPage>
     with WidgetsBindingObserver {
   late final PostDetailViewModel _vm;
   late final CommunityPostRepository _repo;
+  late final CommentRepository _commentRepo;
   final ScrollController _scrollController = ScrollController();
   double _lastKeyboardInset = 0;
 
@@ -37,7 +39,9 @@ class _PostDetailPageState extends State<PostDetailPage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _repo = context.read<AppScope>().communityPostRepository;
+    final scope = context.read<AppScope>();
+    _repo = scope.communityPostRepository;
+    _commentRepo = scope.commentRepository;
     _vm = PostDetailViewModel(repo: _repo, postId: widget.postId)..fetch();
   }
 
@@ -73,7 +77,10 @@ class _PostDetailPageState extends State<PostDetailPage>
         ChangeNotifierProvider<PostCommentViewModel>(
           create:
               (_) =>
-                  PostCommentViewModel(postId: widget.postId, repo: _repo)
+                  PostCommentViewModel(
+                    postId: widget.postId,
+                    repo: _commentRepo,
+                  )
                     ..fetchComments(),
         ),
       ],
