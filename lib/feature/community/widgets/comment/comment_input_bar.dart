@@ -44,7 +44,7 @@ class CommentInputBar extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.gray100,
                   borderRadius:
-                      isReplyMode
+                      !isReplyMode
                           ? BorderRadius.circular(8)
                           : const BorderRadius.only(
                             bottomLeft: Radius.circular(8),
