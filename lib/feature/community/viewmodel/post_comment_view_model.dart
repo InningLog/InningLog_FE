@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:inninglog/feature/community/model/comment.dart';
 import 'package:inninglog/feature/community/model/comment_like_state.dart';
 import 'package:inninglog/feature/community/model/dto/comment_dtos.dart';
-import 'package:inninglog/feature/community/repositories/comment_like_repository.dart';
-import 'package:inninglog/feature/community/repositories/post_repository.dart';
+import 'package:inninglog/feature/community/repositories/comment_repository.dart';
 
 class PostCommentViewModel extends ChangeNotifier {
   final int postId;
-  final CommunityPostRepository repo;
-  final CommentLikeRepository likeRepo;
+  final CommentRepository repo;
   final TextEditingController commentController = TextEditingController();
   final TextEditingController replyController = TextEditingController();
   final FocusNode replyFocusNode = FocusNode();
@@ -22,7 +20,6 @@ class PostCommentViewModel extends ChangeNotifier {
   PostCommentViewModel({
     required this.postId,
     required this.repo,
-    required this.likeRepo,
     List<Comment>? initialComments,
   }) {
     if (initialComments != null) {
@@ -125,9 +122,9 @@ class PostCommentViewModel extends ChangeNotifier {
 
     try {
       if (nextState.likedByMe) {
-        await likeRepo.likeComment(commentId: current.id);
+        await repo.likeComment(commentId: current.id);
       } else {
-        await likeRepo.unlikeComment(commentId: current.id);
+        await repo.unlikeComment(commentId: current.id);
       }
     } catch (e) {
       _comments[index] = _applyLikeState(current, prevState);
@@ -149,9 +146,9 @@ class PostCommentViewModel extends ChangeNotifier {
 
     try {
       if (nextState.likedByMe) {
-        await likeRepo.likeComment(commentId: current.id);
+        await repo.likeComment(commentId: current.id);
       } else {
-        await likeRepo.unlikeComment(commentId: current.id);
+        await repo.unlikeComment(commentId: current.id);
       }
     } catch (e) {
       replies[replyIndex] = _applyLikeState(current, prevState);
