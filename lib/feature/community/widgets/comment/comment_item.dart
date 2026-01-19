@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:inninglog/feature/community/model/comment.dart';
+import 'package:inninglog/feature/community/widgets/post/post_action_counts.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:inninglog/shared/theme/app_text_styles.dart';
 
@@ -95,12 +96,20 @@ class CommentItem extends StatelessWidget {
                   color: AppColors.gray800,
                 ),
               ),
-              //작성 시간
-              Text(
-                comment.createdAt ?? '',
-                style: AppTextStyles.bodyBody4M.copyWith(
-                  color: AppColors.gray600,
-                ),
+              Row(
+                spacing: 8,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  //작성 시간
+                  Text(
+                    comment.createdAt ?? '',
+                    style: AppTextStyles.bodyBody4M.copyWith(
+                      color: AppColors.gray600,
+                    ),
+                  ),
+                  if (comment.likeCount > 0)
+                    LikeCount(count: comment.likeCount),
+                ],
               ),
             ],
           ),
