@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:inninglog/feature/community/model/comment.dart';
+import 'package:inninglog/feature/community/model/comment_like_state.dart';
 import 'package:inninglog/feature/community/model/dto/comment_dtos.dart';
+import 'package:inninglog/feature/community/repositories/comment_like_repository.dart';
 import 'package:inninglog/feature/community/repositories/post_repository.dart';
 
 class PostCommentViewModel extends ChangeNotifier {
   final int postId;
   final CommunityPostRepository repo;
+  final CommentLikeRepository likeRepo;
   final TextEditingController commentController = TextEditingController();
   final TextEditingController replyController = TextEditingController();
   final FocusNode replyFocusNode = FocusNode();
@@ -19,6 +22,7 @@ class PostCommentViewModel extends ChangeNotifier {
   PostCommentViewModel({
     required this.postId,
     required this.repo,
+    required this.likeRepo,
     List<Comment>? initialComments,
   }) {
     if (initialComments != null) {
@@ -111,42 +115,63 @@ class PostCommentViewModel extends ChangeNotifier {
     }
   }
 
-  void toggleCommentLike(int index) {
+  Future<void> toggleCommentLike(int index) async {
     if (index < 0 || index >= _comments.length) return;
     final current = _comments[index];
-    final liked = !current.likedByMe;
-    final likeCount = liked ? current.likeCount + 1 : current.likeCount - 1;
-    _comments[index] = Comment(
-      id: current.id,
-      nickName: current.nickName,
-      content: current.content,
-      createdAt: current.createdAt,
-      profileUrl: current.profileUrl,
-      likeCount: likeCount,
-      likedByMe: liked,
-    );
+    final prevState = CommentLikeState.fromComment(current);
+    final nextState = prevState.toggled();
+    _comments[index] = _applyLikeState(current, nextState);
     notifyListeners();
+
+    try {
+      if (nextState.likedByMe) {
+        await likeRepo.likeComment(commentId: current.id);
+      } else {
+        await likeRepo.unlikeComment(commentId: current.id);
+      }
+    } catch (e) {
+      _comments[index] = _applyLikeState(current, prevState);
+      notifyListeners();
+    }
   }
 
-  void toggleReplyLike(int index, Comment reply) {
+  Future<void> toggleReplyLike(int index, Comment reply) async {
     final replies = List<Comment>.from(_replies[index] ?? const []);
     final replyIndex = replies.indexOf(reply);
     if (replyIndex == -1) return;
 
     final current = replies[replyIndex];
-    final liked = !current.likedByMe;
-    final likeCount = liked ? current.likeCount + 1 : current.likeCount - 1;
-    replies[replyIndex] = Comment(
+    final prevState = CommentLikeState.fromComment(current);
+    final nextState = prevState.toggled();
+    replies[replyIndex] = _applyLikeState(current, nextState);
+    _replies[index] = replies;
+    notifyListeners();
+
+    try {
+      if (nextState.likedByMe) {
+        await likeRepo.likeComment(commentId: current.id);
+      } else {
+        await likeRepo.unlikeComment(commentId: current.id);
+      }
+    } catch (e) {
+      replies[replyIndex] = _applyLikeState(current, prevState);
+      _replies[index] = replies;
+      notifyListeners();
+    }
+  }
+
+  Comment _applyLikeState(Comment current, CommentLikeState state) {
+    return Comment(
       id: current.id,
       nickName: current.nickName,
       content: current.content,
       createdAt: current.createdAt,
       profileUrl: current.profileUrl,
-      likeCount: likeCount,
-      likedByMe: liked,
+      likeCount: state.likeCount,
+      likedByMe: state.likedByMe,
+      writeByMe: current.writeByMe,
+      replies: current.replies,
     );
-    _replies[index] = replies;
-    notifyListeners();
   }
 
   void _applyCommentDtos(List<CommentResDto> dtos) {
