@@ -199,10 +199,19 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                               minScale: 1,
                               maxScale: 5,
                               boundaryMargin: EdgeInsets.zero,
-                              child: JamsilMap(),
+                              child: JamsilMap(
+                                onSectionSelected: (section) {
+                                  setState(() {
+                                    selectedZone = null;              // ✅ 존은 앞으로 안 쓰면 비워두기
+                                    sectionController.text = section; // ✅ 여기!
+                                    // rowController.clear();         // 필요하면 열도 초기화
+                                  });
+                                },
+                              ),
                             ),
                           ),
                         ),
+
 
                         const SizedBox(height: 25),
 

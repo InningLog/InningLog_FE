@@ -5,11 +5,19 @@ import 'package:path_drawing/path_drawing.dart';
 import 'package:xml/xml.dart';
 
 class JamsilMap extends StatefulWidget {
-  const JamsilMap({Key? key}) : super(key: key);
+  const JamsilMap({Key? key,
+    required this.onSectionSelected
+  }) : super(key: key);
+
+  final ValueChanged<String> onSectionSelected;
+
 
   @override
   State<JamsilMap> createState() => _JamsilMapState();
 }
+
+
+
 
 class _JamsilMapState extends State<JamsilMap> {
   final String assetPath = 'assets/jamsil.svg';
@@ -18,7 +26,7 @@ class _JamsilMapState extends State<JamsilMap> {
   final Map<String, Path> _areas = {};
   bool _loading = true;
 
-  // SVG viewBox 사이즈 (파일에서 가져온 값: 0 0 1279 1279)
+  // SVG viewBox 사이즈
   final double svgWidth = 1279;
   final double svgHeight = 1279;
 
@@ -95,13 +103,15 @@ class _JamsilMapState extends State<JamsilMap> {
   }
 
   void _onAreaTap(String id) {
-    // TODO: 여기서 원하는 동작
-    // 예시:
-    debugPrint('Tapped: $id');
+    // id 예: "JS=113"
+    if (!id.startsWith('JS=')) return;
+    final section = id.substring(3); // "113"
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$id 클릭됨')),
-    );
+    // 숫자만 쓰겠다고 했으니 안전하게 숫자 체크도 가능
+    final n = int.tryParse(section);
+    if (n == null) return;
+
+    widget.onSectionSelected(section); // "113"
   }
 
   @override
