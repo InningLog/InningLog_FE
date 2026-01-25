@@ -7,6 +7,7 @@ import '../../../main.dart';
 import '../../../shared/service/home_view.dart';
 import '../../../shared/service/api_service.dart';
 import '../../../shared/widgets/common_header.dart';
+import '../widget/jamsil_map.dart';
 import 'FieldSearchPage.dart';
 
 class FieldHashtagSearchResultPage extends StatefulWidget {
@@ -248,131 +249,87 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                 bottom: MediaQuery.of(context).viewInsets.bottom,
                 left: 20,
                 right: 20,
-                top: 24,
+                top: 0,
               ),
               child: SingleChildScrollView(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Text(
-                      '좌석 검색',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+
                     const SizedBox(height: 16),
 
-                    // ✅ 존 선택
-                    DropdownButtonFormField<String>(
-                      dropdownColor: Colors.white,
-                      decoration: InputDecoration(
-                        hintText: '존을 선택하세요.',
-                        hintStyle: const TextStyle(
-                          color: AppColors.gray700,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          fontFamily: 'Pretendard',
-                        ),
-                        filled: true,
-                        fillColor: AppColors.gray100,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: AppColors.gray300),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: AppColors.gray300),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Color(0xFFF94C32C)),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                    Container(
+                      width: 36,
+                      height: 2,
+                      margin: const EdgeInsets.only(bottom: 0),
+                      decoration: BoxDecoration(
+                        color: AppColors.gray700,
+                        borderRadius: BorderRadius.circular(999),
                       ),
-                      value: selectedZone,
-                      items: buildZoneItems(selectedStadiumCode),
-                      onChanged: (value) {
-                        setState(() {
-                          selectedZone = value;
-                        });
-                        setModalState(() {}); // ✅ 상태 즉시 반영
-                      },
                     ),
+
 
                     const SizedBox(height: 12),
 
-                    // ✅ 구역 & 열 입력
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: sectionController,
-                            textAlign: TextAlign.center,
-                            onChanged: (_) => setModalState(() {}),
-                            decoration: _seatInputDecoration('ex) 314'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text('구역',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: rowController,
-                            textAlign: TextAlign.center,
-                            onChanged: (_) => setModalState(() {}),
-                            decoration: _seatInputDecoration('ex) 3'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text('열',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                      ],
-                    ),
-
-                    const SizedBox(height: 46),
-
-                    // ✅ 작성 완료 버튼
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54,
-                      child: ElevatedButton(
-                        onPressed: isDirectSearchValid()
-                            ? () {
-                          Navigator.pop(context);
-                          context.pushNamed(
-                            'field_result',
-                            extra: {
-                              'index': 0,
-                              'stadiumName': widget.stadiumName,
-                              'zone': selectedZone,
-                              'section': sectionController.text,
-                              'row': rowController.text,
-                            },
-                          );
-                        }
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isDirectSearchValid() ? AppColors.primary700 : AppColors.gray200,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(36),
-                            side: BorderSide(
-                              color: isDirectSearchValid() ? AppColors.primary700 : Colors.transparent,
-                              width: 1,
-                            ),
-                          ),
-                        ),
+                    if (widget.stadiumName.replaceAll(' ', '') == '잠실야구장') ...[
+                      Center(
                         child: Text(
-                          '작성 완료',
+                          '원하는 구역을 선택해서\n 좌석 시야를 확인하세요.',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontWeight: FontWeight.bold,
                             fontSize: 16,
-                            color: isDirectSearchValid() ? Colors.white : AppColors.gray700,
+                            fontWeight: FontWeight.w600,
+                            height: 1.25,
+                            letterSpacing: -0.16,
+                            fontFamily: 'Pretendard',
                           ),
                         ),
                       ),
-                    ),
+
+                      const SizedBox(height: 12),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 360,
+                        child: ClipRect(
+                          child: InteractiveViewer(
+                            panEnabled: true,
+                            scaleEnabled: true,
+                            minScale: 1,
+                            maxScale: 5,
+                            boundaryMargin: EdgeInsets.zero,
+                            child: JamsilMap(
+                              onSectionSelected: (section) {
+
+
+                                // ✅ 바텀시트 입력값 반영
+                                sectionController.text = section;
+                                setModalState(() {}); // ✅ 바텀시트 UI 갱신
+
+                                // ✅ (원하면) 누르면 바로 결과로 이동
+                                Navigator.pop(context);
+
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  if (!context.mounted) return;
+                                  context.pushNamed(
+                                    'field_result',
+                                    extra: {
+                                      'index': 0,
+                                      'stadiumName': widget.stadiumName,
+                                      'section': section,
+                                    },
+                                  );
+                                });
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+                    ],
+
+
 
                     const SizedBox(height: 20),
                   ],
@@ -673,22 +630,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                       mainAxisSize: MainAxisSize.max,
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        _buildDropdownPill(
-                          label: (widget.zone != null && widget.zone!.isNotEmpty)
-                              ? getZoneNameFromCode(widget.stadiumName, widget.zone) ?? '존'
-                              : '존',
-                          isSelected: widget.zone?.isNotEmpty == true,
-                          onTap: () {
-                            AmplitudeFlutter.getInstance().logEvent('change_stadium_direct_search_tab', eventProperties: {
-                              'event_type': 'Custom',
-                              'component': 'btn_click',
-                              'field_changed': 'zone_name',
-                              'importance': 'High',
-                            });
-                            _showDirectSearchBottomSheet();
-                          },
-                        ),
-                        const SizedBox(width: 8),
+
                         _buildDropdownPill(
                           label: widget.section?.isNotEmpty == true ? widget.section! : '구역',
                           isSelected: widget.section?.isNotEmpty == true,

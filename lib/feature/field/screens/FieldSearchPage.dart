@@ -39,15 +39,11 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
     '좌석 공간': ['#아주_넓음', '#넓음', '#보통', '#좁음'],
   };
 
-  bool get isJamsil => widget.stadiumName == '잠실야구장';
+  bool get isJamsil => widget.stadiumName.replaceAll(' ', '') == '잠실야구장';
 
-  bool get isDirectSearchValid {
-    final hasZone = selectedZone?.isNotEmpty ?? false;
-    final hasSection = sectionController.text.trim().isNotEmpty;
 
-    // 존 또는 구역 중 하나라도 입력했으면 활성화
-    return hasZone || hasSection;
-  }
+  bool get isDirectSearchValid => sectionController.text.trim().isNotEmpty;
+
 
   bool get isHashtagSearchValid {
     return selectedTags.length >= 1;
@@ -201,13 +197,32 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                               boundaryMargin: EdgeInsets.zero,
                               child: JamsilMap(
                                 onSectionSelected: (section) {
+
                                   setState(() {
-                                    selectedZone = null;              // ✅ 존은 앞으로 안 쓰면 비워두기
-                                    sectionController.text = section; // ✅ 여기!
-                                    // rowController.clear();         // 필요하면 열도 초기화
+                                    _selectedIndex = 0;
+                                    sectionController.text = section;
+                                  });
+
+                                  final stadiumName = widget.stadiumName;
+                                  final sectionTrim = sectionController.text.trim();
+
+
+                                  // ✅ 탭 이벤트/프레임 충돌 방지: 다음 프레임에 이동
+                                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                                    if (!context.mounted) return;
+                                    context.pushNamed(
+                                      'field_result',
+                                      extra: {
+                                        'index': 0,
+                                        'stadiumName': stadiumName,
+                                        'section': sectionTrim,
+                                      },
+                                    );
                                   });
                                 },
                               ),
+
+
                             ),
                           ),
                         ),
@@ -355,25 +370,24 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                               width: double.infinity,
                               height: 54,
                               child: ElevatedButton(
-                                onPressed: () {
+                                onPressed: (_selectedIndex == 0 && isDirectSearchValid)
+                                    ? () {
 
-                                  final List<String> selectedHashtagList = selectedTags.entries
-                                      .map((entry) => "${entry.key}:${entry.value}")
-                                      .toList();
+                                  debugPrint(
+                                    '[FieldSearchPage] press search stadium="${widget.stadiumName}" section="${sectionController.text.trim()}"',
+                                  );
 
-                                  AmplitudeFlutter.getInstance().logEvent('select_stadium_hashtag', eventProperties: {
-                                    'event_type': 'Custom',
-                                    'component': 'btn_click',
-                                    'hashtags': selectedHashtagList,
-                                    'hashtag_count': selectedHashtagList.length,
-                                    'importance': 'High',
-                                  });
-                                  AmplitudeFlutter.getInstance().logEvent('execute_stadium_search', eventProperties: {
-                                    'event_type': 'Custom',
-                                    'component': 'btn_click',
-                                    'search_type': 'hashtag',
-                                  });
-
+                                  context.pushNamed(
+                                    'field_result',
+                                    extra: {
+                                      'index': 0,
+                                      'stadiumName': widget.stadiumName,
+                                      'section': sectionController.text.trim(),
+                                    },
+                                  );
+                                }
+                                    : (_selectedIndex == 1 && isHashtagSearchValid)
+                                    ? () {
                                   context.pushNamed(
                                     'field_result',
                                     extra: {
@@ -383,22 +397,17 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                                       'tagCategories': tagCategories,
                                     },
                                   );
+                                }
+                                    : null,
 
-                                },
+
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: (_selectedIndex == 0 && isDirectSearchValid) ||
-                                      (_selectedIndex == 1 && isHashtagSearchValid)
+                                  backgroundColor: ((_selectedIndex == 0 && isDirectSearchValid) ||
+                                      (_selectedIndex == 1 && isHashtagSearchValid))
                                       ? AppColors.primary700
                                       : AppColors.gray200,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(36),
-                                    side: BorderSide(
-                                      color: (_selectedIndex == 0 && isDirectSearchValid) ||
-                                          (_selectedIndex == 1 && isHashtagSearchValid)
-                                          ? AppColors.primary700
-                                          : Colors.transparent,
-                                      width: 1,
-                                    ),
                                   ),
                                 ),
                                 child: Text(
@@ -406,15 +415,15 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
-                                    color: (_selectedIndex == 0 && isDirectSearchValid) ||
-                                        (_selectedIndex == 1 && isHashtagSearchValid)
+                                    color: ((_selectedIndex == 0 && isDirectSearchValid) ||
+                                        (_selectedIndex == 1 && isHashtagSearchValid))
                                         ? Colors.white
                                         : AppColors.gray700,
                                   ),
                                 ),
                               ),
-
                             ),
+
                           ],
 
                         ),

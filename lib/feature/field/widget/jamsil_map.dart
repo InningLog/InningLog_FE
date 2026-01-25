@@ -5,18 +5,17 @@ import 'package:path_drawing/path_drawing.dart';
 import 'package:xml/xml.dart';
 
 class JamsilMap extends StatefulWidget {
-  const JamsilMap({Key? key,
-    required this.onSectionSelected
+  const JamsilMap({
+    Key? key,
+    required this.onSectionSelected,
   }) : super(key: key);
 
+  // 🔥 FieldSearchPage에서 넘겨준 콜백
   final ValueChanged<String> onSectionSelected;
-
 
   @override
   State<JamsilMap> createState() => _JamsilMapState();
 }
-
-
 
 
 class _JamsilMapState extends State<JamsilMap> {
@@ -26,7 +25,7 @@ class _JamsilMapState extends State<JamsilMap> {
   final Map<String, Path> _areas = {};
   bool _loading = true;
 
-  // SVG viewBox 사이즈
+  // SVG viewBox 사이즈 (파일에서 가져온 값: 0 0 1279 1279)
   final double svgWidth = 1279;
   final double svgHeight = 1279;
 
@@ -103,16 +102,17 @@ class _JamsilMapState extends State<JamsilMap> {
   }
 
   void _onAreaTap(String id) {
-    // id 예: "JS=113"
+    debugPrint('Tapped: $id');
+
     if (!id.startsWith('JS=')) return;
     final section = id.substring(3); // "113"
 
-    // 숫자만 쓰겠다고 했으니 안전하게 숫자 체크도 가능
-    final n = int.tryParse(section);
-    if (n == null) return;
+    // 숫자만 쓰고 싶다면 안전 체크(선택)
+    if (int.tryParse(section) == null) return;
 
-    widget.onSectionSelected(section); // "113"
+    widget.onSectionSelected(section); // ✅ FieldSearchPage로 전달!
   }
+
 
   @override
   Widget build(BuildContext context) {

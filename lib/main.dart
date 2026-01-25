@@ -145,6 +145,30 @@ final GoRouter _router = GoRouter(
       },
     ),
 
+    GoRoute(
+      name: 'field_result',
+      path: '/field_result',
+      builder: (context, state) {
+        debugPrint('[GoRouter] field_result state.extra=${state.extra}');
+        final extra = state.extra as Map<String, dynamic>;
+
+        final index = extra['index'] as int? ?? 0;
+        final stadiumName = extra['stadiumName'] as String;
+        final section = extra['section'] as String?;
+
+        debugPrint('[GoRouter] parsed index=$index stadiumName=$stadiumName section=$section');
+
+        return FieldHashtagSearchResultPage(
+          index: index,
+          stadiumName: stadiumName,
+          section: section,
+        );
+      },
+    ),
+
+
+
+
     /// GNB 있는 ShellRoute
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
@@ -158,28 +182,28 @@ final GoRouter _router = GoRouter(
           path: '/seat',
           builder: (_, __) => const SeatPage(),
           routes: [
-            /// ✅ 여기 안으로 옮긴다
-            GoRoute(
-              path: 'result', // => 실제 경로는 /seat/result
-              name: 'field_result',
-              builder: (context, state) {
-                final extra = state.extra as Map<String, dynamic>;
-                final index = extra['index'] as int;
-                final stadiumName = extra['stadiumName'] as String;
 
-                return FieldHashtagSearchResultPage(
-                  index: index,
-                  stadiumName: stadiumName,
-                  zone: extra['zone'],
-                  section: extra['section'],
-                  row: extra['row'],
-                  selectedTags: Map<String, String>.from(
-                    extra['selectedTags'] ?? {},
-                  ),
-                  tagCategories: tagCategories,
-                );
-              },
-            ),
+            // GoRoute(
+            //   path: 'result', // => 실제 경로는 /seat/result
+            //   name: 'field_result',
+            //   builder: (context, state) {
+            //     final extra = state.extra as Map<String, dynamic>;
+            //     final index = extra['index'] as int;
+            //     final stadiumName = extra['stadiumName'] as String;
+            //
+            //     return FieldHashtagSearchResultPage(
+            //       index: index,
+            //       stadiumName: stadiumName,
+            //       zone: extra['zone'],
+            //       section: extra['section'],
+            //       row: extra['row'],
+            //       selectedTags: Map<String, String>.from(
+            //         extra['selectedTags'] ?? {},
+            //       ),
+            //       tagCategories: tagCategories,
+            //     );
+            //   },
+            // ),
           ],
         ),
         GoRoute(
@@ -233,7 +257,6 @@ final GoRouter _router = GoRouter(
                 final teamLabel =
                     (state.extra as Map?)?['teamLabel'] as String? ?? '';
                 return PostDetailPage(
-                  // 네 상세 위젯으로 바꾸세요
                   args: PostDetailArgs(
                     teamCode: teamCode,
                     teamLabel: teamLabel,
