@@ -159,7 +159,6 @@ final GoRouter _router = GoRouter(
         debugPrint('[GoRouter] parsed index=$index stadiumName=$stadiumName section=$section');
 
         return FieldHashtagSearchResultPage(
-          index: index,
           stadiumName: stadiumName,
           section: section,
         );

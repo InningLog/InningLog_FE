@@ -213,7 +213,6 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                                     context.pushNamed(
                                       'field_result',
                                       extra: {
-                                        'index': 0,
                                         'stadiumName': stadiumName,
                                         'section': sectionTrim,
                                       },

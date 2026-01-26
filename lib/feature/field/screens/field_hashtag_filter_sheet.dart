@@ -12,7 +12,6 @@ import '../widget/jamsil_map.dart';
 import 'FieldSearchPage.dart';
 
 class FieldHashtagSearchResultPage extends StatefulWidget {
-  final int index; // 0이면 직접검색, 1이면 해시태그검색
   final String stadiumName;
   final String? zone, section, row;
   final Map<String, String>? selectedTags;
@@ -22,7 +21,6 @@ class FieldHashtagSearchResultPage extends StatefulWidget {
 
   const FieldHashtagSearchResultPage({
     super.key,
-    required this.index,
     required this.stadiumName,
     this.zone,
     this.section,
@@ -48,12 +46,20 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
   String? _openPill; // 'section' or 'row'
   bool _isSheetOpen = false;
 
+  OverlayEntry? _rowDropdownEntry;
+  final LayerLink _rowLayerLink = LayerLink();
+  final GlobalKey _rowPillKey = GlobalKey();
+
+
+
 
 
   String? selectedTag;
   String? selectedZone;
   final TextEditingController sectionController = TextEditingController();
   final TextEditingController rowController = TextEditingController();
+
+  bool get rowSelected => rowController.text.trim().isNotEmpty;
 
   String? get selectedStadiumCode => stadiumNameToCode[widget.stadiumName];
 
@@ -86,6 +92,127 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
     }
   }
 
+  void _toggleRowDropdown() {
+    if (_rowDropdownEntry != null) {
+      _closeRowDropdown();
+    } else {
+      _openRowDropdown();
+    }
+  }
+
+  void _closeRowDropdown() {
+    _rowDropdownEntry?.remove();
+    _rowDropdownEntry = null;
+
+    if (!mounted) return;
+    setState(() {
+      _openPill = null;
+      _isDirectSheetOpen = false; // 너는 이걸 “오버레이 열림”에도 쓰고 있으니 유지
+    });
+  }
+
+  void _openRowDropdown() {
+    setState(() {
+      _openPill = 'row';
+      _isDirectSheetOpen = true;
+    });
+
+    final rows = List.generate(53, (i) => '${i + 1}열');
+    final scrollController = ScrollController();
+
+    _rowDropdownEntry = OverlayEntry(
+      builder: (context) {
+        return Stack(
+          children: [
+            // 바깥 클릭하면 닫힘
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: _closeRowDropdown,
+                child: const SizedBox.expand(),
+              ),
+            ),
+
+            // pill 아래에 붙는 드랍다운
+            CompositedTransformFollower(
+              link: _rowLayerLink,
+              showWhenUnlinked: false,
+              offset: const Offset(0, 44), // pill 높이(대충) + 아래 여백
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  width: 235,
+                  height: 266,
+                  padding: const EdgeInsets.symmetric(vertical: 0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 20,
+                        spreadRadius: 0,
+                        offset: const Offset(0, 8),
+                        color: Colors.black.withOpacity(0.5),
+                      ),
+                    ],
+                  ),
+                  child: ClipRect(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 8), // ✅ 스크롤바를 왼쪽으로 8px "인셋"
+                      child: RawScrollbar(
+                        controller: scrollController,
+                        thumbVisibility: true,
+                        thickness: 6,
+                        radius: const Radius.circular(999),
+                        thumbColor: AppColors.primary300,
+                        minThumbLength: 102,
+                        child: Transform.translate(
+                          offset: const Offset(8, 0), // ✅ 내용만 다시 오른쪽으로 8px 복구
+                          child: ListView.builder(
+                            controller: scrollController,
+                            itemCount: rows.length,
+                            itemBuilder: (context, index) {
+                              final item = rows[index];
+                              return InkWell(
+                                onTap: () {
+                                  setState(() => rowController.text = item);
+                                  _closeRowDropdown();
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  child: Text(
+                                    item,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.gray850,
+                                      fontFamily: 'Pretendard',
+                                      letterSpacing: -0.14,
+                                    ),
+                                  ),
+                                ),
+
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    Overlay.of(context).insert(_rowDropdownEntry!);
+  }
+
+
 
 
   List<String> seatImages = [];
@@ -97,19 +224,17 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
   void initState() {
     super.initState();
     selectedTags = Map<String, String>.from(widget.selectedTags ?? {});
-    _selectedIndex = widget.index; // ✅ index 반영!
     selectedZone = widget.zone;
 
     selectedZone = widget.zone;
     sectionController.text = widget.section ?? '';
     rowController.text = widget.row ?? '';
 
-    if (_selectedIndex == 0) {
       fetchDirectSearchResults(); // ✅ 직접 검색
-    } else {
-      fetchHashtagSearchResults(); // ✅ 해시태그 검색도 반영
-    }
+
   }
+
+
 
 
   Future<void> fetchHashtagSearchResults() async {
@@ -180,50 +305,6 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
     }
   }
 
-  Widget _buildTabButton({required int index, required String label}) {
-    final isSelected = _selectedIndex == index;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedIndex = index;
-        });
-
-        if (index == 0) {
-          fetchDirectSearchResults();
-        } else {
-          fetchHashtagSearchResults();
-        }
-      },
-
-      child: Container(
-        width: 195,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(vertical: 0),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary200 : const Color(0xFFFAFAFA), // ✅ 선택 안 됐을 때 배경색
-          border: Border(
-            bottom: BorderSide(
-              color: isSelected ? AppColors.primary700 : const Color(0xFFAFB1B6), // ✅ 선택 안 됐을 때 밑줄 색
-              width: isSelected ? 2.0 : 1.0,
-            ),
-          ),
-          borderRadius: BorderRadius.circular(0),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontSize: 12,
-            letterSpacing: -0.12,
-            height: 1.5,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            color: isSelected ? AppColors.primary800 : AppColors.gray700,
-          ),
-        ),
-      ),
-
-    );
-  }
 
   void _showDirectSearchBottomSheet() async {
 
@@ -322,7 +403,6 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                                   context.pushNamed(
                                     'field_result',
                                     extra: {
-                                      'index': 0,
                                       'stadiumName': widget.stadiumName,
                                       'section': section,
                                     },
@@ -383,184 +463,6 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
 
 
 
-  void _showCategoryBottomSheet(String category, List<String> tags) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: 0.68,
-          minChildSize:0.68,
-          maxChildSize: 0.68,
-          builder: (context, scrollController) {
-            return StatefulBuilder(
-              builder: (context, setModalState) {
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text(
-                                '좌석에 관한 해시태그로 검색해보세요!',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  fontFamily: 'Pretendard',
-                                ),
-                              ),
-                              SizedBox(height: 2),
-                              Text(
-                                '최대 5개까지 고를 수 있어요.',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                          IconButton(
-                            icon: SvgPicture.asset(
-                              'assets/icons/cancel_button.svg',
-                              width: 22,
-                              height: 22,
-                            ),
-                            onPressed: () {
-                              Navigator.pop(context);
-                              fetchHashtagSearchResults();
-                            },
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          controller: scrollController,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: (widget.tagCategories ?? {}).entries.map((entry) {
-                              final category = entry.key;
-                              final tags = entry.value;
-
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    category,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Wrap(
-                                    spacing: 12,
-                                    runSpacing: 12,
-                                    children: tags.map((tag) {
-                                      final selected = selectedTags[category] == tag;
-                                      return ChoiceChip(
-                                        showCheckmark: false,
-                                        label: Text(tag),
-                                        selected: selected,
-                                        onSelected: (_) {
-                                          setState(() {
-                                            if (selected) {
-                                              selectedTags.remove(category);
-                                              selectedTag = null;
-                                            } else {
-                                              selectedTags[category] = tag;
-                                              selectedTag = tag;
-                                            }
-                                          });
-                                          setModalState(() {});
-                                        },
-                                        selectedColor: AppColors.primary100,
-                                        backgroundColor: Colors.white,
-                                        labelStyle: TextStyle(
-                                          color: selected ? const Color(0xFF272727) : AppColors.gray700,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 12,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(16),
-                                          side: BorderSide(
-                                            color: selected ? AppColors.primary700 : AppColors.gray300,
-                                            width: 1,
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
-                                  ),
-                                  const SizedBox(height: 15),
-                                ],
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ),
-                      SafeArea(
-                        top: false,
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              fetchHashtagSearchResults();
-
-                              final List<String> selectedHashtagList = selectedTags.entries
-                                  .map((entry) => "${entry.key}:${entry.value}")
-                                  .toList();
-
-                              // ✅ Amplitude 이벤트 로깅
-                              AmplitudeFlutter.getInstance().logEvent('change_stadium_hashtag_dropdown',eventProperties: {
-                                'event_type': 'Custom',
-                                'component': 'btn_click',
-                                'changed_category': selectedHashtagList,
-                                'changed_value': selectedHashtagList.length,
-                                'importance': 'High',
-                              });
-                              Navigator.pop(context);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary700,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(36),
-                              ),
-                            ),
-                            child: const Text(
-                              '확인',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -617,27 +519,18 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                 ],
               ),
             ),
-            Container(
-              height: 42,
-              child: Row(
-                children: [
-                  Expanded(child: _buildTabButton(index: 0, label: '검색')),
-                  Expanded(child: _buildTabButton(index: 1, label: '추천')),
-                ],
-              ),
-            ),
+
 
 
             Expanded(
               child: IndexedStack(
                 index: _selectedIndex,
                 children: [
-                  // 탭 0: 직접 검색 (임시 화면)
-                  // 직접 검색 탭 (index == 0)
+
               Column(
               children: [
                   SingleChildScrollView(
-                    padding: const EdgeInsetsDirectional.only(start: 12, top: 18, bottom: 10),
+                    padding: const EdgeInsetsDirectional.only(start: 16, top: 0, bottom: 12),
                     child: Row(
                       mainAxisSize: MainAxisSize.max,
                       mainAxisAlignment: MainAxisAlignment.start,
@@ -648,7 +541,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                               ? '${widget.section}구역'
                               : '구역',
                           isSelected: widget.section?.isNotEmpty == true,
-                          isOpen: _isDirectSheetOpen,
+                          isOpen: _isDirectSheetOpen && _openPill == 'section',
                           onTap: () {
                             AmplitudeFlutter.getInstance().logEvent(
                               'change_stadium_direct_search_tab',
@@ -663,20 +556,31 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                           },
                         ),
 
-                        const SizedBox(width: 8),
-                        _buildDropdownPill(
-                          label: widget.row?.isNotEmpty == true ? widget.row! : '열',
-                          isSelected: widget.row?.isNotEmpty == true,
-                          onTap: () {
-                            AmplitudeFlutter.getInstance().logEvent('change_stadium_direct_search_tab', eventProperties: {
-                              'event_type': 'Custom',
-                              'component': 'btn_click',
-                              'field_changed': 'row',
-                              'importance': 'High',
-                            });
 
-                          },
+
+                        const SizedBox(width: 8),
+
+                        CompositedTransformTarget(
+                          link: _rowLayerLink,
+                          child: _buildDropdownPill(
+                            label: rowSelected ? rowController.text.trim() : '열',
+                            isSelected: rowSelected,
+                            isOpen: _openPill == 'row',
+                            onTap: () {
+                              AmplitudeFlutter.getInstance().logEvent(
+                                'change_stadium_direct_search_tab',
+                                eventProperties: {
+                                  'event_type': 'Custom',
+                                  'component': 'btn_click',
+                                  'field_changed': 'row',
+                                  'importance': 'High',
+                                },
+                              );
+                              _toggleRowDropdown();
+                            },
+                          ),
                         ),
+
                       ],
                     ),
                   ),
@@ -709,7 +613,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                           // ✅ 바텀시트 떠 있을 때만 아래 영역을 어둡게
                           if (_isDirectSheetOpen)
                             Positioned.fill(
-                              child: Container(color: Colors.black.withOpacity(0.35)),
+                              child: Container(color: Colors.black.withOpacity(0.5)),
                             ),
                     ],
                     ),
@@ -719,116 +623,6 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
               ),
 
 
-
-
-                  // 탭 1: 해시태그 검색
-                  Column(
-                    children: [
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
-                        child: Row(
-                          children: (widget.tagCategories ?? {}).keys.map((category) {
-                            final isSelected = selectedTags.containsKey(category);
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 4.8),
-                              child: InkWell(
-                                onTap: () {
-                                  // Amplitude 이벤트 추가
-                                  AmplitudeFlutter.getInstance().logEvent(
-                                      'change_stadium_hashtag_tab',
-                                      eventProperties: {
-                                        'event_type': 'Custom',
-                                        'component': 'btn_click',
-                                        'selected_category': category,
-                                        'importance': 'High',
-                                      });
-                                  _showCategoryBottomSheet(category,
-                                      (widget.tagCategories ?? {})[category]!);
-                                },
-                                borderRadius: BorderRadius.circular(50),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(50),
-                                    border: Border.all(
-                                      color: isSelected ? const Color(0xFF272727) : const Color(0xFFD3D3D3),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        category,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 12,
-                                          color: isSelected ? const Color(0xFF272727) : const Color(0xFFD3D3D3),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      SvgPicture.asset(
-                                        'assets/icons/filter_down_blackk.svg',
-                                        width: 5,
-                                        height: 10,
-                                        color: isSelected ? const Color(0xFF272727) : const Color(0xFFD3D3D3),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),Expanded(
-                        child: (_selectedIndex == 0 ? isLoading : isLoadingHashtag)
-                            ? const Center(child: CircularProgressIndicator())
-                            : GridView.builder(
-                          padding: const EdgeInsets.all(12),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            mainAxisSpacing: 22,
-                            crossAxisSpacing: 24,
-                            childAspectRatio: 0.75,
-                          ),
-                          itemCount: _selectedIndex == 0 ? seatImages.length : hashtagSeatViews.length,
-                          itemBuilder: (context, index) {
-                            final imageUrl = _selectedIndex == 0
-                                ? seatImages[index]
-                                : hashtagSeatViews[index].viewMediaUrl;
-
-                            return GestureDetector(
-                              onTap: () {
-                                if (_selectedIndex == 1) {
-                                  final seatViewId = hashtagSeatViews[index].seatViewId;
-                                  context.pushNamed(
-                                    'seat_detail',
-                                    extra: {
-                                      'seatViewId': hashtagSeatViews[index].seatViewId,
-                                      'imageUrl': hashtagSeatViews[index].viewMediaUrl,
-                                    },
-                                  );
-                                }
-                              },
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  imageUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
-                                ),
-                              ),
-                            );
-                          },
-
-                        ),
-                      ),
-
-
-
-                    ],
-                  ),
                 ],
               ),
             ),
@@ -846,21 +640,24 @@ Widget _buildDropdownPill({
   required VoidCallback onTap,
   bool isOpen = false,
 }) {
-  // ✅ 열려있을 때만 연두색
-  final color = isOpen ? AppColors.primary700 : const Color(0xFF272727);
-  final iconColor = isOpen ? AppColors.primary700 : const Color(0xFF272727);
+  // 우선순위: 열림(연두) > 선택됨(검정) > 미선택(회색)
+  final Color baseColor = isOpen
+      ? AppColors.primary600
+      : (isSelected ? const Color(0xFF272727) : AppColors.gray400);
 
   return IntrinsicWidth(
     child: InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(50),
       child: Container(
-        height: 36,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12,vertical:8 ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.primary50,
           borderRadius: BorderRadius.circular(50),
-          border: Border.all(color: color),
+          border: Border.all(
+            color: baseColor,
+            width: 0.75,
+          ),
         ),
         child: Row(
           children: [
@@ -869,7 +666,9 @@ Widget _buildDropdownPill({
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: color,
+                color: baseColor,
+                letterSpacing: -0.12,
+                fontFamily: 'Pretendard',
               ),
             ),
             const SizedBox(width: 4),
@@ -879,7 +678,7 @@ Widget _buildDropdownPill({
                   : 'assets/icons/filter_down_blackk.svg',
               width: 10,
               height: 10,
-              color: iconColor,
+              color: baseColor,
             ),
           ],
         ),
@@ -887,6 +686,7 @@ Widget _buildDropdownPill({
     ),
   );
 }
+
 
 
 
