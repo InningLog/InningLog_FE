@@ -7,6 +7,7 @@ import '../../../main.dart';
 import '../../../shared/service/home_view.dart';
 import '../../../shared/service/api_service.dart';
 import '../../../shared/widgets/common_header.dart';
+import '../data/selected_hashtagcodes.dart';
 import '../widget/jamsil_map.dart';
 import 'FieldSearchPage.dart';
 
@@ -43,6 +44,11 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
   int _selectedIndex = 0; // 기본은 직접 검색
   bool isLoadingHashtag = false;
   List<SeatView> hashtagSeatViews = [];
+  bool _isDirectSheetOpen = false;
+  String? _openPill; // 'section' or 'row'
+  bool _isSheetOpen = false;
+
+
 
   String? selectedTag;
   String? selectedZone;
@@ -140,12 +146,10 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
 
 
   Future<void> fetchDirectSearchResults() async {
-    print('🚀 fetchDirectSearchResults 실행됨');
+
     final stadiumCode = stadiumNameToCode[widget.stadiumName];
     final zoneShortCode = selectedZone;
 
-    print('🧭 최종 selectedZone: $selectedZone');
-    print('🧭 최종 section: $sectionController');
     if (stadiumCode == null) return;
 
     if ((widget.zone == null || widget.zone!.isEmpty) &&
@@ -221,11 +225,15 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
     );
   }
 
-  void _showDirectSearchBottomSheet() {
-    showModalBottomSheet(
+  void _showDirectSearchBottomSheet() async {
+
+    setState(() => _isDirectSheetOpen = true);
+
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
+      barrierColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -331,7 +339,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
 
 
 
-                    const SizedBox(height: 20),
+
                   ],
                 ),
               ),
@@ -340,6 +348,10 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
         );
       },
     );
+
+    if (!mounted) return;
+    setState(() => _isDirectSheetOpen = false); // ✅ 닫히면 원복
+
   }
 
   InputDecoration _seatInputDecoration(String hint) {
@@ -632,18 +644,25 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                       children: [
 
                         _buildDropdownPill(
-                          label: widget.section?.isNotEmpty == true ? widget.section! : '구역',
+                          label: widget.section?.isNotEmpty == true
+                              ? '${widget.section}구역'
+                              : '구역',
                           isSelected: widget.section?.isNotEmpty == true,
+                          isOpen: _isDirectSheetOpen,
                           onTap: () {
-                            AmplitudeFlutter.getInstance().logEvent('change_stadium_direct_search_tab', eventProperties: {
-                              'event_type': 'Custom',
-                              'component': 'btn_click',
-                              'field_changed': 'section',
-                              'importance': 'High',
-                            });
+                            AmplitudeFlutter.getInstance().logEvent(
+                              'change_stadium_direct_search_tab',
+                              eventProperties: {
+                                'event_type': 'Custom',
+                                'component': 'btn_click',
+                                'field_changed': 'section',
+                                'importance': 'High',
+                              },
+                            );
                             _showDirectSearchBottomSheet();
                           },
                         ),
+
                         const SizedBox(width: 8),
                         _buildDropdownPill(
                           label: widget.row?.isNotEmpty == true ? widget.row! : '열',
@@ -655,14 +674,16 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                               'field_changed': 'row',
                               'importance': 'High',
                             });
-                            _showDirectSearchBottomSheet();
+
                           },
                         ),
                       ],
                     ),
                   ),
                   Expanded(
-                    child: (_selectedIndex == 0 ? isLoading : isLoadingHashtag)
+                    child: Stack(
+                        children: [
+                          (_selectedIndex == 0 ? isLoading : isLoadingHashtag)
                         ? const Center(child: CircularProgressIndicator())
                         : GridView.builder(
                       padding: const EdgeInsets.all(12),
@@ -685,6 +706,14 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                         );
                       },
                     ),
+                          // ✅ 바텀시트 떠 있을 때만 아래 영역을 어둡게
+                          if (_isDirectSheetOpen)
+                            Positioned.fill(
+                              child: Container(color: Colors.black.withOpacity(0.35)),
+                            ),
+                    ],
+                    ),
+
                   )
                 ],
               ),
@@ -815,8 +844,11 @@ Widget _buildDropdownPill({
   required String label,
   required bool isSelected,
   required VoidCallback onTap,
+  bool isOpen = false,
 }) {
-  final color = isSelected ? const Color(0xFF272727) : const Color(0xFFD3D3D3);
+  // ✅ 열려있을 때만 연두색
+  final color = isOpen ? AppColors.primary700 : const Color(0xFF272727);
+  final iconColor = isOpen ? AppColors.primary700 : const Color(0xFF272727);
 
   return IntrinsicWidth(
     child: InkWell(
@@ -831,7 +863,6 @@ Widget _buildDropdownPill({
           border: Border.all(color: color),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               label,
@@ -843,10 +874,12 @@ Widget _buildDropdownPill({
             ),
             const SizedBox(width: 4),
             SvgPicture.asset(
-              'assets/icons/filter_down_blackk.svg',
-              width: 5,
+              isOpen
+                  ? 'assets/icons/up_button.svg'
+                  : 'assets/icons/filter_down_blackk.svg',
+              width: 10,
               height: 10,
-              color: isSelected ? const Color(0xFF272727) : const Color(0xFFD3D3D3),
+              color: iconColor,
             ),
           ],
         ),
@@ -857,204 +890,19 @@ Widget _buildDropdownPill({
 
 
 
-final Map<String, String> tagCodeMap = {
-  '#일어남': 'CHEERING_STANDING',
-  '#일어날_사람은_일어남': 'CHEERING_MOSTLY_STANDING',
-  '#앉아서': 'CHEERING_SEATED',
-  '#강함': 'SUN_STRONG',
-  '#있다가_그늘짐': 'SUN_MOVES_TO_SHADE',
-  '#없음': 'SUN_NONE', // 햇빛 - 없음
-  '#있음': 'ROOF_EXISTS', // 지붕 - 있음
-  '#없음_지붕': 'ROOF_NONE', // 구분 위해 이름 바꿈
-  '#그물': 'VIEW_OBSTRUCT_NET',
-  '#아크릴_가림막': 'VIEW_OBSTRUCT_ACRYLIC',
-  '#없음_시야방해': 'VIEW_NO_OBSTRUCTION', // 구분 위해 이름 바꿈
-  '#아주_넓음': 'SEAT_SPACE_VERY_WIDE',
-  '#넓음': 'SEAT_SPACE_WIDE',
-  '#보통': 'SEAT_SPACE_NORMAL',
-  '#좁음': 'SEAT_SPACE_NARROW',
-};
-List<String> getSelectedHashtagCodes(Map<String, String> selectedTags) {
-  return selectedTags.values
-      .map((tag) => tagCodeMap[tag] ?? '')
-      .where((code) => code.isNotEmpty)
-      .toList();
+String displaySection(String raw) {
+  final t = raw.trim();
+  if (t.isEmpty) return t;
+  if (t.contains('구역')) return t;
+
+  // 숫자만이면 "구역" 붙이기
+  if (RegExp(r'^\d+$').hasMatch(t)) {
+    return '${t}구역';
+  }
+  return t;
 }
 
-
-final Map<String, String> stadiumNameToCode = {
-  '잠실 야구장': 'JAM',
-  '고척 스카이돔': 'GOC',
-  '랜더스 필드': 'ICN',
-  '위즈 파크': 'SUW',
-  '한화생명 볼파크': 'DJN',
-  '라이온즈 파크': 'DAE',
-  '사직 야구장': 'BUS',
-  'NC 파크장': 'CHW',
-  '챔피언스 필드': 'GWJ',
-};
-
-
-
-final Map<String, Map<String, String>> stadiumZones = {
-  'JAM': {
-    'JAM_PREMIUM': '중앙석 (프리미엄석)',
-    'JAM_TABLE': '테이블석',
-    'JAM_EXCITING': '익사이팅존',
-    'JAM_BLUE': '블루석',
-    'JAM_ORANGE': '오렌지석',
-    'JAM_RED': '레드석',
-    'JAM_NAVY': '네이비석',
-    'JAM_GREEN': '그린석 (좌석)',
-  },
-  'GOC': {
-    'GOC_SKYBOX': '스카이박스',
-    'GOC_RDDUB': 'R.d-dub',
-    'GOC_LEXUS1': 'LEXUS 1층 테이블석',
-    'GOC_LEXUS2': 'LEXUS 2층 테이블석',
-    'GOC_NAVER': 'NAVER 2층 테이블석',
-    'GOC_INFIELD_COUPLE': '내야커플석',
-    'GOC_OUTFIELD_COUPLE': '외야커플석',
-    'GOC_DARK_BURGUNDY': '다크버건디석',
-    'GOC_BURGUNDY': '버건디석',
-    'GOC_3F': '3층 지정석',
-    'GOC_4F': '4층 지정석',
-    'GOC_WHEELCHAIR': '휠체어석',
-    'GOC_OUTFIELD': '외야 지정석',
-    'GOC_OUTFIELD_FAMILY': '외야 패밀리석',
-    'GOC_OUTFIELD_BABY': '외야 유아동반석',
-  },
-  'ICN': {
-    'ICN_SKY_VIEW': '4층 SKY뷰석',
-    'ICN_INFIELD_FIELD': '내야 필드석',
-    'ICN_OUTFIELD_FIELD': '외야 필드석',
-    'ICN_SKY_TABLE': 'SKY탁자석',
-    'ICN_MINI_SKYBOX': '미니스카이박스',
-    'ICN_OUTFIELD_FAMILY': '외야패밀리존',
-    'ICN_EMART_FRIENDLY': '이마트 프렌들리존',
-    'ICN_LANDERS_LIVE': '랜더스 라이브존',
-    'ICN_PEACOCK_1F': '피코크 테이블석(1층)',
-    'ICN_NOBRAND_2F': '노브랜드 테이블석(2층)',
-    'ICN_DUGOUT_UPPER': '덕아웃 상단석',
-    'ICN_MOLLIS_GREEN': '몰리스 그린존',
-    'ICN_EUSSEUK': '으쓱이존',
-    'ICN_AWAY': '원정응원석',
-    'ICN_HOMERUN_COUPLE': '홈런커플존',
-    'ICN_SKYBOX': '스카이박스',
-    'ICN_OPEN_BBQ': '오픈 바비큐존',
-    'ICN_EMART_BBQ': '이마트바비큐존',
-    'ICN_YOGIYO_FAMILY': '요기요 내야패밀리존',
-    'ICN_CHOGA': '초가정자',
-    'ICN_ROCKET_PARTY': '로케트배터리 외야파티덱',
-  },
-  'SUW': {
-    'SUW_CATCHER_TABLE': '포수 뒤 테이블석',
-    'SUW_CENTER_TABLE': '중앙 테이블석',
-    'SUW_BASE_TABLE': '1루/3루 테이블석',
-    'SUW_HIGH_FIVE': '하이파이브존',
-    'SUW_EXCITING': '익사이팅석',
-    'SUW_CENTER': '중앙 지정석',
-    'SUW_CHEER': '응원 지정석',
-    'SUW_INFIELD': '내야 지정석',
-    'SUW_SKY': '스카이존',
-    'SUW_OUTFIELD_TABLE': '외야 테이블석',
-    'SUW_OUTFIELD_GRASS': '외야 잔디자유석',
-  },
-
-  'DJN': {
-    'DJN_CATCHER_BACK': '포수 후면석',
-    'DJN_CENTER': '중앙 지정석',
-    'DJN_CENTER_TABLE': '중앙 탁자석',
-    'DJN_INFIELD_A': '내야 지정석A',
-    'DJN_INFIELD_B': '내야 지정석B',
-    'DJN_INFIELD_BOX': '내야 박스석',
-    'DJN_INFIELD_COUPLE': '내야 커플석',
-    'DJN_INFIELD_TABLE_4F': '내야 탁자석(4층)',
-    'DJN_CASS_CHEER': '카스존(응원단석)',
-    'DJN_INNINGS_VIP': '이닝스 VIP바 & 룸/테라스',
-    'DJN_SKYBOX': '스카이박스',
-    'DJN_OUTFIELD': '외야지정석',
-    'DJN_BAMBKEL_GRASS': '밤켈존(잔디석)',
-    'DJN_OUTFIELD_TABLE': '외야탁자석',
-  },
-
-  'DAE': {
-    'DAE_SKY_YOGIBO': 'SKY 요기보 패밀리존',
-    'DAE_SKY_LOWER': 'SKY 하단 지정석',
-    'DAE_3B_SKY_UPPER': '3루 SKY 상단 지정석',
-    'DAE_CENTER_SKY_UPPER': '중앙 SKY 상단 지정석',
-    'DAE_1B_SKY_UPPER': '1루 SKY 상단 지정석',
-    'DAE_SWEET_BOX': '스윗박스',
-    'DAE_PARTY_LIVE': '파티플로어 라이브석',
-    'DAE_VIP': 'VIP석',
-    'DAE_EUTEUM_CENTER': '으뜸병원 중앙 테이블석',
-    'DAE_ISU_3B': '이수그룹 3루 테이블석',
-    'DAE_ISU_PETASYS_1B': '이수페타시스 1루 테이블석',
-    'DAE_3B_EXCITING': '3루 익사이팅석',
-    'DAE_1B_EXCITING': '1루 익사이팅석',
-    'DAE_BLUE': '블루존',
-    'DAE_AWAY': '원정 응원석',
-    'DAE_1B_INFIELD': '1루 내야지정석',
-    'DAE_WHEELCHAIR': '휠체어 장애인석',
-    'DAE_OUTFIELD_FAMILY': '외야 패밀리석',
-    'DAE_OUTFIELD_TABLE': '외야 테이블석',
-    'DAE_OUTFIELD': '외야 지정석',
-    'DAE_OUTFIELD_COUPLE': '외야 커플 테이블석',
-    'DAE_ROOFTOP': '루프탑 테이블석',
-  },
-  'BUS': {
-    'BUS_GROUND': '그라운드석',
-    'BUS_CENTER_TABLE': '중앙탁자석',
-    'BUS_WIDE_TABLE': '와이드탁자석',
-    'BUS_CHEER_TABLE': '응원탁자석',
-    'BUS_INFIELD_TABLE': '내야탁자석',
-    'BUS_3B_GROUP': '3루 단체석',
-    'BUS_INFIELD_FIELD': '내야필드석',
-    'BUS_INFIELD_UPPER': '내야상단석',
-    'BUS_ROCKET_BATTERY': '로케트 배터리존',
-    'BUS_OUTFIELD': '외야석',
-    'BUS_CENTER_UPPER': '중앙상단석',
-    'BUS_WHEELCHAIR': '휠체어석',
-  },
-
-  'GWJ': {
-    'GWJ_CHAMPION': '챔피언석',
-    'GWJ_CENTER_TABLE': '중앙테이블석',
-    'GWJ_DISABLED': '장애인지정석',
-    'GWJ_K9': 'K9',
-    'GWJ_K8': 'K8',
-    'GWJ_K5': 'K5',
-    'GWJ_SURPRISE': '서프라이즈석',
-    'GWJ_TIGERS_FAMILY': '타이거즈가족석',
-    'GWJ_WHEELCHAIR': '휠체어석',
-    'GWJ_4F_PARTY': '4층파티석',
-    'GWJ_SKYBOX': '스카이박스',
-    'GWJ_SKY_PICNIC': '스카이피크닉석',
-    'GWJ_EV': 'EV',
-    'GWJ_5F_TABLE': '5층 테이블석',
-    'GWJ_OUTFIELD': '외야석',
-    'GWJ_OUTFIELD_TABLE': '외야테이블석',
-  },
-
-  'CHW': {
-    'CHW_INFIELD': '내야석',
-    'CHW_TABLE': '테이블석',
-    'CHW_ROUND_TABLE': '라운드 테이블석',
-    'CHW_OUTFIELD_GRASS': '외야잔디석',
-    'CHW_OUTFIELD': '외야석',
-    'CHW_3_4F_INFIELD': '3·4층 내야석',
-    'CHW_WHEELCHAIR': '휠체어석',
-    'CHW_MINI_TABLE': '미니테이블석',
-    'CHW_FAMILY': '가족석',
-    'CHW_SKYBOX': '스카이박스',
-    'CHW_BULLPEN_FAMILY': '불펜 가족석',
-    'CHW_BULLPEN': '불펜석',
-    'CHW_COUNTER': '카운터석',
-    'CHW_ABL_PREMIUM': 'ABL생명 프리미엄석',
-    'CHW_ABL_PREMIUM_TABLE': 'ABL생명 프리미엄 테이블석',
-    'CHW_BBQ': '바베큐석',
-    'CHW_PICNIC_TABLE': '피크닉테이블석',
-    'CHW_NORTH_PEAK_CAMPING': '노스피크캠핑석',
-  },
-
-};
+String apiSection(String input) {
+  // "418구역" -> "418"
+  return input.replaceAll('구역', '').trim();
+}
