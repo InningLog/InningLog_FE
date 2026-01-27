@@ -1,19 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:inninglog/app_scope.dart';
 import 'package:inninglog/feature/community/data/team_catalog.dart';
 import 'package:inninglog/feature/community/widgets/root/sections/banner_section.dart';
 import 'package:inninglog/feature/community/widgets/root/sections/my_section.dart';
 import 'package:inninglog/feature/community/widgets/root/sections/popular_posts_section.dart';
 import 'package:inninglog/feature/community/widgets/root/sections/team_boards_section.dart';
+import 'package:inninglog/feature/community/viewmodel/root_view_model.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
-import 'package:inninglog/feature/community/screens/teamboard_page.dart';
+import 'package:inninglog/router/app_routes.dart';
 import '../../../shared/widgets/common_header.dart';
-import 'community_search_page.dart';
+import 'package:provider/provider.dart';
 
 class CommunityRootPage extends StatelessWidget {
   const CommunityRootPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final userRepo = context.read<AppScope>().userRepository;
+
+    return ChangeNotifierProvider(
+      create:
+          (_) =>
+              CommunityRootViewModel(userRepository: userRepo)..fetchMyTeam(),
+      child: const _CommunityRootView(),
+    );
+  }
+}
+
+class _CommunityRootView extends StatelessWidget {
+  const _CommunityRootView();
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.watch<CommunityRootViewModel>();
+
     return Scaffold(
       backgroundColor: AppColors.primary50,
       appBar: PreferredSize(
@@ -21,12 +42,7 @@ class CommunityRootPage extends StatelessWidget {
         child: SafeArea(
           child: CommonHeader(
             title: '커뮤니티',
-            onSearchPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CommunitySearchPage()),
-              );
-            },
+            onSearchPressed: () => context.push(AppRoutePaths.search),
           ),
         ),
       ),
@@ -40,14 +56,9 @@ class CommunityRootPage extends StatelessWidget {
             // MY TEAM
             BannerSection(
               title: 'MY TEAM',
-              imagePath: 'assets/images/mydoo_banner.png',
+              imagePath: kboTeamBannerCatalog[vm.myTeamCode] ?? '',
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const TeamBoardPage(teamCode: 'OB'),
-                  ),
-                );
+                context.push(AppRoutePaths.boardLocation(vm.myTeamCode ?? ''));
               },
             ),
             //전체 게시판
@@ -55,25 +66,15 @@ class CommunityRootPage extends StatelessWidget {
               title: 'KBO 전체 게시판',
               imagePath: 'assets/images/card_kbo.png',
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const TeamBoardPage(teamCode: 'KBO'),
-                  ),
-                );
+                context.push(AppRoutePaths.boardLocation('ALL'));
               },
             ),
 
             // 팀 게시판
             TeamBoardsSection(
-              items: kboTeams,
+              items: vm.teamGridItems,
               onTap: (team) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => TeamBoardPage(teamCode: team.code),
-                  ),
-                );
+                context.push(AppRoutePaths.boardLocation(team.code));
               },
             ),
             PopularPostsSection(onTap: () {}),

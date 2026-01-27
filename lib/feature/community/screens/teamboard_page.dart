@@ -1,26 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:inninglog/feature/community/data/tabs_config.dart';
+import 'package:inninglog/feature/community/data/team_catalog.dart';
+import 'package:inninglog/feature/community/widgets/shared/segmented_tabs.dart';
 import 'package:inninglog/router/app_routes.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:inninglog/feature/community/screens/post_detail_market.dart';
-import '../../../shared/constant/team_codes.dart';
-import '../../../shared/widgets/common_header.dart';
-import 'alarm_page.dart';
-import 'community_search_market.dart';
-import 'community_search_page.dart';
+import 'package:inninglog/shared/widgets/common_header.dart';
+import 'tabs/free_board_tab.dart';
 
 enum BoardMode { normal, myPosts, myComments, scraps }
 
 class TeamBoardPage extends StatefulWidget {
   final String teamCode; // e.g. 'HT', 'LG', ...
-  final int initialTabIndex;
+  final BoardTab? activeTab;
   final BoardMode mode;
 
   const TeamBoardPage({
     super.key,
     required this.teamCode,
-    this.initialTabIndex = 0,
+    this.activeTab,
     this.mode = BoardMode.normal,
   });
 
@@ -31,32 +31,24 @@ class TeamBoardPage extends StatefulWidget {
 class _TeamBoardPageState extends State<TeamBoardPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
-  int _sortIndex = 0;
-  int _sectionIndex = 0;
-
-  bool get _hasNewsTab => widget.mode == BoardMode.normal;
+  late final List<CommunityTabItem> _tabs;
+  bool _isSyncingRoute = false;
 
   @override
   void initState() {
     super.initState();
 
-    final maxIndex = _hasNewsTab ? 3 : 2; // 0~3 or 0~2
-    final safeIndex = widget.initialTabIndex.clamp(0, maxIndex);
+    _tabs = communityTabsByMode(widget.mode);
+
+    final safeIndex = _resolveTabIndex(widget.activeTab);
 
     _tabController = TabController(
-      length: _hasNewsTab ? 4 : 3,
+      length: _tabs.length,
       vsync: this,
       initialIndex: safeIndex,
     );
 
-    _sectionIndex = safeIndex;
-
-    _tabController.addListener(() {
-      if (_tabController.indexIsChanging) return;
-      setState(() {
-        _sectionIndex = _tabController.index;
-      });
-    });
+    _tabController.addListener(_handleTabChange);
   }
 
   @override
@@ -66,23 +58,35 @@ class _TeamBoardPageState extends State<TeamBoardPage>
   }
 
   @override
-  Widget build(BuildContext context) {
-    final title = () {
-      switch (widget.mode) {
-        case BoardMode.myPosts:
-          return '내가 쓴 글';
-        case BoardMode.myComments:
-          return '댓글 단 글';
-        case BoardMode.scraps:
-          return '스크랩';
-        case BoardMode.normal:
-        default:
-          return teamNameFromCode(widget.teamCode);
+  void didUpdateWidget(covariant TeamBoardPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.activeTab != widget.activeTab) {
+      final nextIndex = _resolveTabIndex(widget.activeTab);
+      if (_tabController.index != nextIndex) {
+        _isSyncingRoute = true;
+        _tabController.index = nextIndex;
+        _isSyncingRoute = false;
       }
-    }();
-    final teamLabel = teamLabelFromCode(widget.teamCode);
-    debugPrint('[Team Board Page] teamCode: ${widget.teamCode}');
+    }
+  }
 
+  int _resolveTabIndex(BoardTab? tab) {
+    final resolvedTab = tab ?? BoardTab.onlywan;
+    final index = _tabs.indexWhere((item) => item.type == resolvedTab);
+    if (index >= 0) return index;
+    return 0;
+  }
+
+  void _handleTabChange() {
+    if (_tabController.indexIsChanging || _isSyncingRoute) return;
+    if (widget.mode != BoardMode.normal) return;
+    final tabType = _tabs[_tabController.index].type;
+    final tabPath = boardTabPath(tabType);
+    context.go(AppRoutePaths.boardLocation(widget.teamCode, tab: tabPath));
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.primary50,
       floatingActionButton: SizedBox(
@@ -105,78 +109,36 @@ class _TeamBoardPageState extends State<TeamBoardPage>
         child: Column(
           children: [
             // 상단 헤더 (뒤로가기 포함)
-            communityHeader(
-              context,
-              title,
-              sectionIndex: _sectionIndex, // ✅ 현재 탭 넘김
+            CommonHeader(
+              title:
+                  widget.teamCode == 'ALL'
+                      ? 'KBO 전체게시판'
+                      : kboTeamLabelOf(widget.teamCode),
+              onSearchPressed: () => context.push(AppRoutePaths.search),
             ),
 
-            // 카테고리 세그먼트 (오직완 / 자유 게시판 / 이닝 장터 / 오늘의 뉴스)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-              child: _SegmentedTabs(
-                controller: _tabController,
-                hasNewsTab: _hasNewsTab,
-              ),
-            ),
-
-            // 정렬 탭 (최신 | 인기)
-            // Padding(
-            //   padding: const EdgeInsets.symmetric(horizontal: 0),
-            //   child: SortSwitch(
-            //     index: _sortIndex,
-            //     onChanged: (i) => setState(() => _sortIndex = i),
-            //   ),
-            // ),
+            SegmentedTabs(controller: _tabController, items: _tabs),
 
             // 구분선
             const Divider(height: 1, thickness: 0.8, color: AppColors.gray400),
-
-            // 탭별 컨텐츠
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                children:
-                    _hasNewsTab
-                        ? [
-                          _PostList(
-                            isOnlywan: true,
-                            sortIndex: _sortIndex,
-                            teamCode: widget.teamCode,
-                            teamLabel: teamLabel,
-                          ),
-                          _PostList(
-                            sortIndex: _sortIndex,
-                            teamCode: widget.teamCode,
-                            teamLabel: teamLabel,
-                          ),
-                          _InningMarketTab(
-                            teamCode: widget.teamCode,
-                            teamLabel: teamLabel,
-                          ),
-                          _PostList(
-                            sortIndex: _sortIndex,
-                            teamCode: widget.teamCode,
-                            teamLabel: teamLabel, // 오늘의 뉴스용
-                          ),
-                        ]
-                        : [
-                          _PostList(
-                            isOnlywan: true,
-                            sortIndex: _sortIndex,
-                            teamCode: widget.teamCode,
-                            teamLabel: teamLabel,
-                          ),
-                          _PostList(
-                            sortIndex: _sortIndex,
-                            teamCode: widget.teamCode,
-                            teamLabel: teamLabel,
-                          ),
-                          _InningMarketTab(
-                            teamCode: widget.teamCode,
-                            teamLabel: teamLabel,
-                          ),
-                        ],
+                children: List.generate(_tabs.length, (index) {
+                  final tab = _tabs[index];
+                  final isActive = index == _tabController.index;
+                  switch (tab.type) {
+                    case BoardTab.onlywan:
+                      return const Center(child: Text('오직완 페이지'));
+                    case BoardTab.free:
+                      return FreeBoardTab(
+                        teamCode: widget.teamCode,
+                        isActive: isActive,
+                      );
+                    case BoardTab.news:
+                      return const Center(child: Text('오늘의 뉴스'));
+                  }
+                }),
               ),
             ),
           ],
@@ -184,859 +146,6 @@ class _TeamBoardPageState extends State<TeamBoardPage>
       ),
     );
   }
-}
-
-/// 연한 톤 배경의 세그먼트 탭 (피그마 느낌)
-class _SegmentedTabs extends StatelessWidget {
-  final TabController controller;
-  final bool hasNewsTab;
-
-  const _SegmentedTabs({required this.controller, required this.hasNewsTab});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 40,
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: AppColors.gray400, width: 0.5),
-        ),
-      ),
-      child: TabBar(
-        controller: controller,
-        dividerColor: Colors.transparent,
-        indicator: const UnderlineTabIndicator(
-          borderSide: BorderSide(color: AppColors.primary700, width: 1.5),
-        ),
-        indicatorSize: TabBarIndicatorSize.tab,
-        labelColor: const Color(0xFF000000),
-        unselectedLabelColor: AppColors.gray700,
-        labelStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          fontFamily: 'Pretendard',
-          letterSpacing: -0.14,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          fontFamily: 'Pretendard',
-          letterSpacing: -0.14,
-        ),
-        overlayColor: WidgetStateProperty.all(Colors.transparent),
-        labelPadding: const EdgeInsets.symmetric(horizontal: 8),
-        tabs:
-            hasNewsTab
-                ? const [
-                  Tab(text: '오직완'),
-                  Tab(text: '자유 게시판'),
-                  Tab(text: '이닝 장터'),
-                  Tab(text: '오늘의 뉴스'),
-                ]
-                : const [
-                  Tab(text: '오직완'),
-                  Tab(text: '자유 게시판'),
-                  Tab(text: '이닝 장터'),
-                ],
-      ),
-    );
-  }
-}
-
-// /// “최신 | 인기” 언더라인 스위치
-// class SortSwitch extends StatelessWidget {
-//   final int index; // 0: 최신, 1: 인기
-//   final ValueChanged<int> onChanged;
-//
-//   const SortSwitch({
-//     super.key,
-//     required this.index,
-//     required this.onChanged,
-//   });
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container(
-//       height: 40,
-//       color: AppColors.primary50,
-//       child: Row(
-//         children: [
-//           // ▶ 최신 탭
-//           Expanded(
-//             child: InkWell(
-//               onTap: () => onChanged(0),
-//               splashColor: Colors.transparent,
-//               highlightColor: Colors.transparent,
-//               child: Container(
-//                 alignment: Alignment.center,
-//                 decoration: BoxDecoration(
-//                   border: Border(
-//                     bottom: BorderSide(
-//                       color: index == 0
-//                           ? AppColors.gray800
-//                           : AppColors.gray200,
-//                       width: index == 0 ? 1.5 : 1,
-//                     ),
-//                   ),
-//                 ),
-//                 child: Text(
-//                   '최신',
-//                   style: TextStyle(
-//                     fontSize: 14,
-//                     fontWeight: FontWeight.w600,
-//                     color: index == 0
-//                         ? const Color(0xFF000000) // 선택됨: 검정
-//                         : AppColors.gray700,      // 비선택: 회색
-//                   ),
-//                 ),
-//               ),
-//             ),
-//           ),
-//
-//           // ▶ 인기 탭
-//           Expanded(
-//             child: InkWell(
-//               onTap: () => onChanged(1),
-//               splashColor: Colors.transparent,
-//               highlightColor: Colors.transparent,
-//               child: Container(
-//                 alignment: Alignment.center,
-//                 decoration: BoxDecoration(
-//                   border: Border(
-//                     bottom: BorderSide(
-//                       color: index == 1
-//                           ? AppColors.gray800
-//                           : AppColors.gray200,
-//                       width: index == 1 ? 1.5 : 1,
-//                     ),
-//                   ),
-//                 ),
-//                 child: Text(
-//                   '인기',
-//                   style: TextStyle(
-//                     fontSize: 14,
-//                     fontWeight: FontWeight.w600,
-//                     color: index == 1
-//                         ? const Color(0xFF000000) // 선택됨: 검정
-//                         : AppColors.gray700,      // 비선택: 회색
-//                   ),
-//                 ),
-//               ),
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
-class _SortTab extends StatelessWidget {
-  final String text;
-  final bool selected;
-  final VoidCallback onTap;
-  const _SortTab({
-    required this.text,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-              color:
-                  selected ? const Color(0xFF111827) : const Color(0xFF6B7280),
-              fontFamily: 'Pretendard',
-            ),
-          ),
-          const SizedBox(height: 6),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOut,
-            height: 2,
-            width: selected ? 28 : 0,
-            decoration: BoxDecoration(
-              color: const Color(0xFF111827),
-              borderRadius: BorderRadius.circular(1),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 리스트 (피그마 카드)
-///오직완 부분
-class _PostList extends StatelessWidget {
-  final bool isOnlywan;
-  final int sortIndex;
-  final String teamCode;
-  final String teamLabel;
-  const _PostList({
-    required this.sortIndex,
-    required this.teamCode,
-    required this.teamLabel,
-    this.isOnlywan = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // 정렬에 따라 더미 데이터 순서만 살짝 바꿔보기
-    final data = List<_Post>.from(_posts);
-    if (sortIndex == 1) {
-      data.sort(
-        (a, b) => (b.likes + b.comments).compareTo(a.likes + a.comments),
-      );
-    }
-
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      itemBuilder: (_, i) {
-        final p = data[i];
-        return _PostTile(
-          isOnlywan: isOnlywan,
-          nickname: p.nickname,
-          time: p.time,
-          title: p.title,
-          snippet: p.snippet,
-          likes: p.likes,
-          comments: p.comments,
-          mediaWidth: p.mediaWidth, // ✅
-          mediaHeight: p.mediaHeight, // ✅ (추가)
-          badge: i == 1 ? 5 : null,
-          onTap: () {
-            context.push(
-              '/boards/$teamCode/post/${p.id}',
-              extra: {'teamLabel': teamLabel},
-            );
-          },
-        );
-      },
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemCount: data.length,
-    );
-  }
-}
-
-class _PostTile extends StatefulWidget {
-  final String nickname, time, title, snippet;
-  final int likes, comments;
-  final int? badge;
-  final VoidCallback? onTap;
-  final bool isOnlywan;
-  final double mediaWidth;
-  final double mediaHeight;
-
-  const _PostTile({
-    super.key,
-    required this.isOnlywan,
-    required this.nickname,
-    required this.time,
-    required this.title,
-    required this.snippet,
-    required this.likes,
-    required this.comments,
-    required this.mediaWidth,
-    required this.mediaHeight,
-    this.badge,
-    this.onTap,
-  });
-
-  @override
-  State<_PostTile> createState() => _PostTileState();
-}
-
-class _PostTileState extends State<_PostTile> {
-  bool _liked = false;
-  late int _likeCount;
-
-  @override
-  void initState() {
-    super.initState();
-    _likeCount = widget.likes;
-  }
-
-  void _toggleLike() {
-    setState(() {
-      _liked = !_liked;
-      _likeCount += _liked ? 1 : -1;
-    });
-    // TODO: 서버 좋아요/취소 API
-  }
-
-  void _openCommentsSheet({required bool hasComments}) {
-    showModalBottomSheet(
-      context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder:
-          (_) => _CommentsBottomSheet(
-            postId: 0, // TODO: 실제 postId 넘겨도 됨
-            hasComments: hasComments,
-            initialCount: widget.comments,
-          ),
-    );
-  }
-
-  // ✅ 비율 → 타겟 프레임(AspectRatio) 변환
-  double _targetAspectRatio(double w, double h) {
-    final ratio = w / h;
-    if (ratio >= 1.25) {
-      return 358 / 266; // 거의 4:3
-    } else if (ratio <= 0.85) {
-      return 3 / 4; // 0.75
-    } else {
-      return 1.0; // 1:1
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // ✅ 오직완(0번 탭) 전용 카드
-    if (widget.isOnlywan) {
-      final ar = _targetAspectRatio(widget.mediaWidth, widget.mediaHeight);
-
-      return Material(
-        color: AppColors.primary50,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: widget.onTap,
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 상단: 아바타/닉네임/시간/더보기
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 30,
-                      height: 30,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFE5E7EB),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.nickname,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: AppColors.gray800,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'Pretendard',
-                              letterSpacing: -0.14,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            widget.time, // ex) '3분전'
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.gray700,
-                              fontWeight: FontWeight.w500,
-                              fontFamily: 'Pretendard',
-                              letterSpacing: -0.12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    SvgPicture.asset(
-                      'assets/icons/board_dots.svg',
-                      width: 26,
-                      height: 17.3,
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 12),
-
-                // ✅ 큰 이미지 영역 (비율 프레임: 4:3 / 3:4 / 1:1)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: AspectRatio(
-                    aspectRatio: ar,
-                    child: Container(
-                      color: const Color(0xFFE5E7EB),
-                      // TODO: 실제 이미지가 있으면 Image.network(..., fit: BoxFit.cover)
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // 본문 1줄 (피그마: 이미지 아래 본문만 1줄)
-                Text(
-                  widget.snippet,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.gray900,
-                    fontFamily: 'Pretendard',
-                    letterSpacing: -0.14,
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // 하단 메트릭: 좋아요 / 댓글 / 북마크
-                Row(
-                  children: [
-                    InkWell(
-                      onTap: _toggleLike,
-                      borderRadius: BorderRadius.circular(4),
-                      child: SvgPicture.asset(
-                        _liked
-                            ? 'assets/icons/Heart_fill.svg'
-                            : 'assets/icons/Heart.svg',
-                        width: 20.571,
-                        height: 18,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '$_likeCount',
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.gray800,
-                        fontFamily: 'Pretendard',
-                        letterSpacing: -0.15,
-                      ),
-                    ),
-
-                    const SizedBox(width: 20),
-                    // ✅ 댓글 아이콘 + 숫자 탭 → 바텀시트
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap:
-                          () => _openCommentsSheet(
-                            hasComments: widget.comments > 0,
-                          ),
-                      child: Row(
-                        children: [
-                          SvgPicture.asset(
-                            'assets/icons/comment.svg',
-                            width: 19,
-                            height: 19,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${widget.comments}',
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.gray800,
-                              fontFamily: 'Pretendard',
-                              letterSpacing: -0.15,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(width: 20),
-                    SvgPicture.asset(
-                      'assets/icons/bookmark.svg',
-                      width: 16,
-                      height: 16,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      '2',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.gray800,
-                        fontFamily: 'Pretendard',
-                        letterSpacing: -0.15,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      elevation: 0,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: widget.onTap,
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
-          ),
-          child: Row(
-            children: [
-              // 왼쪽 텍스트
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // 프로필 이미지 (기본 회색 원)
-                        Container(
-                          width: 26,
-                          height: 26,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFE5E7EB),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-
-                        // 닉네임 + 시간 (세로 정렬)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              widget.nickname,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.gray800,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'Pretendard',
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              widget.time,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: AppColors.gray700,
-                                fontWeight: FontWeight.w500,
-                                fontFamily: 'Pretendard',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 10),
-                    Text(
-                      widget.title, // ← widget.
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.gray900,
-                        fontFamily: 'Pretendard',
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.snippet, // ← widget.
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.gray900,
-                        fontFamily: 'Pretendard',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // 좋아요/댓글
-                    Row(
-                      children: [
-                        InkWell(
-                          onTap: _toggleLike,
-                          borderRadius: BorderRadius.circular(4),
-                          child: SvgPicture.asset(
-                            _liked
-                                ? 'assets/icons/Heart_fill.svg' // 채워진 하트
-                                : 'assets/icons/Heart.svg', // 비워진 하트
-                            width: 16,
-                            height: 16,
-                            colorFilter: ColorFilter.mode(
-                              _liked
-                                  ? const Color(0xFF94C32C)
-                                  : const Color(0xFF4E4E4E),
-                              BlendMode.srcIn, // 필요 시 srcATop으로 교체
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(width: 4),
-                        Text(
-                          '$_likeCount',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF4E4E4E),
-                            fontFamily: 'Pretendard',
-                          ),
-                        ),
-                        const SizedBox(width: 11),
-                        SvgPicture.asset(
-                          'assets/icons/comment.svg',
-                          width: 16,
-                          height: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${widget.comments}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF4E4E4E),
-                            fontFamily: 'Pretendard',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(width: 10),
-
-              // 썸네일 + 배지
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: 85,
-                    height: 85,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE5E7EB),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  if (widget.badge != null)
-                    Positioned(
-                      right: 5,
-                      bottom: 4,
-                      child: Container(
-                        width: 20,
-                        height: 20,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF9E9E9E),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '${widget.badge}',
-                          style: const TextStyle(
-                            color: AppColors.gray300,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            fontFamily: 'Pretendard',
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/* 더미 데이터 */
-class _Post {
-  final int id;
-  final String nickname, time, title, snippet;
-  final int likes, comments;
-  final double mediaWidth;
-  final double mediaHeight;
-
-  _Post(
-    this.id,
-    this.nickname,
-    this.time,
-    this.title,
-    this.snippet,
-    this.likes,
-    this.comments, {
-    required this.mediaWidth,
-    required this.mediaHeight,
-  });
-} // ← 클래스 닫기 꼭!
-
-final _posts = <_Post>[
-  // 가로형 (ratio >= 1.25) → 4:3 프레임
-  _Post(
-    1,
-    '닉네임 및 자까진 되더라',
-    '3분전',
-    '제목_공백 포함 최대 20자까지 가능',
-    '본문은 보여지는 건 최대 24자까지 가능',
-    23,
-    22,
-    mediaWidth: 1600,
-    mediaHeight: 900,
-  ),
-  // 정사각형 (사이값) → 1:1 프레임
-  _Post(
-    22,
-    '닉네임 및 자까진 되더라',
-    '3분전',
-    '제목_공백 포함 최대 20자까지 가능',
-    '본문은 보여지는 건 최대 24자까지 가능',
-    7,
-    3,
-    mediaWidth: 1000,
-    mediaHeight: 1000,
-  ),
-  // 세로형 (ratio <= 0.85) → 3:4 프레임
-  _Post(
-    33333,
-    '닉네임 및 자까진 되더라',
-    '3분전',
-    '제목_공백 포함 최대 20자까지 가능',
-    '본문은 보여지는 건 최대 24자까지 가능',
-    4,
-    1,
-    mediaWidth: 800,
-    mediaHeight: 1400,
-  ),
-];
-
-Widget communityHeader(
-  BuildContext context,
-  String title, {
-  required int sectionIndex, // ✅ 추가
-}) {
-  return Container(
-    height: 56,
-    color: Colors.white,
-    padding: const EdgeInsets.symmetric(horizontal: 17),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // 🔙 뒤로가기 버튼
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => Navigator.of(context).pop(),
-          child: SvgPicture.asset(
-            'assets/icons/back_but.svg',
-            width: 24,
-            height: 24,
-            colorFilter: const ColorFilter.mode(
-              Color(0xFF9A9A9A), // 회색 화살표
-              BlendMode.srcIn,
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-
-        // 🏷 팀 이름 (왼쪽 정렬)
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.w400,
-            fontFamily: 'MBC1961GulimOTF',
-            letterSpacing: -0.26,
-            color: AppColors.gray900,
-          ),
-        ),
-
-        const Spacer(),
-
-        // 🔍 검색 + 🔔 알림 아이콘
-        Row(
-          children: [
-            // 🔍 검색 아이콘
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                if (sectionIndex == 2) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const CommunitySearchMarket(),
-                    ),
-                  );
-                } else {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const CommunitySearchPage(),
-                    ),
-                  );
-                }
-              },
-              child: SvgPicture.asset(
-                'assets/icons/search.svg',
-                width: 33,
-                colorFilter: const ColorFilter.mode(
-                  Colors.black,
-                  BlendMode.srcIn,
-                ),
-              ),
-            ),
-
-            const SizedBox(width: 16),
-
-            // 🔔 알림 아이콘 (터치 가능)
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const AlarmPage(),
-                  ), // ✅ 이동 경로
-                );
-              },
-              child: SvgPicture.asset(
-                'assets/icons/Alarm.svg',
-                width: 19,
-                colorFilter: const ColorFilter.mode(
-                  Colors.black,
-                  BlendMode.srcIn,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
 }
 
 // ==========================================

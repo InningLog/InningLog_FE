@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:inninglog/feature/community/widgets/post_detail/post_action_button.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
 
 class PostDetailMarketArgs {
@@ -641,7 +642,7 @@ class _ActionBar extends StatelessWidget {
               // 댓글
               Expanded(
                 child: Center(
-                  child: _InlineAction(
+                  child: PostActionButton(
                     asset: 'assets/icons/board_comment.svg',
                     color: AppColors.gray500,
                     label: _labelWithCount('댓글', commentCount),
@@ -654,7 +655,7 @@ class _ActionBar extends StatelessWidget {
               // 스크랩
               Expanded(
                 child: Center(
-                  child: _InlineAction(
+                  child: PostActionButton(
                     asset: 'assets/icons/board_scrap.svg',
                     color:
                     scrapActive ? AppColors.primary700 : AppColors.gray500,
@@ -679,52 +680,6 @@ class _ActionBar extends StatelessWidget {
 }
 
 
-class _InlineAction extends StatelessWidget {
-  final String asset;
-  final String label;
-  final Color color;
-  final VoidCallback? onTap;
-  final double iconSize;
-
-  const _InlineAction({
-    required this.asset,
-    required this.label,
-    required this.color,
-    required this.onTap,
-    this.iconSize = 18,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final content = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SvgPicture.asset(
-          asset,
-          width: 16,
-          height: 16,
-          colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color),
-        ),
-      ],
-    );
-
-    if (onTap == null) return content;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        child: content,
-      ),
-    );
-  }
-}
 
 /// 댓글 없을 때
 class _EmptyComment extends StatelessWidget {
@@ -1090,4 +1045,3 @@ class _TagChip extends StatelessWidget {
     );
   }
 }
-
