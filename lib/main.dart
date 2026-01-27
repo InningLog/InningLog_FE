@@ -145,25 +145,6 @@ final GoRouter _router = GoRouter(
       },
     ),
 
-    GoRoute(
-      name: 'field_result',
-      path: '/field_result',
-      builder: (context, state) {
-        debugPrint('[GoRouter] field_result state.extra=${state.extra}');
-        final extra = state.extra as Map<String, dynamic>;
-
-        final index = extra['index'] as int? ?? 0;
-        final stadiumName = extra['stadiumName'] as String;
-        final section = extra['section'] as String?;
-
-        debugPrint('[GoRouter] parsed index=$index stadiumName=$stadiumName section=$section');
-
-        return FieldHashtagSearchResultPage(
-          stadiumName: stadiumName,
-          section: section,
-        );
-      },
-    ),
 
 
 
@@ -182,27 +163,7 @@ final GoRouter _router = GoRouter(
           builder: (_, __) => const SeatPage(),
           routes: [
 
-            // GoRoute(
-            //   path: 'result', // => 실제 경로는 /seat/result
-            //   name: 'field_result',
-            //   builder: (context, state) {
-            //     final extra = state.extra as Map<String, dynamic>;
-            //     final index = extra['index'] as int;
-            //     final stadiumName = extra['stadiumName'] as String;
-            //
-            //     return FieldHashtagSearchResultPage(
-            //       index: index,
-            //       stadiumName: stadiumName,
-            //       zone: extra['zone'],
-            //       section: extra['section'],
-            //       row: extra['row'],
-            //       selectedTags: Map<String, String>.from(
-            //         extra['selectedTags'] ?? {},
-            //       ),
-            //       tagCategories: tagCategories,
-            //     );
-            //   },
-            // ),
+
           ],
         ),
         GoRoute(
@@ -266,6 +227,26 @@ final GoRouter _router = GoRouter(
             ),
           ],
         ),
+        GoRoute(
+          name: 'field_result',
+          path: '/field_result',
+          builder: (context, state) {
+            debugPrint('[GoRouter] field_result state.extra=${state.extra}');
+            final extra = state.extra as Map<String, dynamic>;
+
+            final index = extra['index'] as int? ?? 0;
+            final stadiumName = extra['stadiumName'] as String;
+            final section = extra['section'] as String?;
+
+            debugPrint('[GoRouter] parsed index=$index stadiumName=$stadiumName section=$section');
+
+            return FieldHashtagSearchResultPage(
+              stadiumName: stadiumName,
+              section: section,
+            );
+          },
+        ),
+
       ],
     ),
   ],

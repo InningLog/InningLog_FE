@@ -563,7 +563,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                         CompositedTransformTarget(
                           link: _rowLayerLink,
                           child: _buildDropdownPill(
-                            label: rowSelected ? rowController.text.trim() : '열',
+                            label: rowSelected ? rowController.text.trim() : '열 선택하기',
                             isSelected: rowSelected,
                             isOpen: _openPill == 'row',
                             onTap: () {
@@ -584,42 +584,65 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                       ],
                     ),
                   ),
-                  Expanded(
-                    child: Stack(
-                        children: [
-                          (_selectedIndex == 0 ? isLoading : isLoadingHashtag)
-                        ? const Center(child: CircularProgressIndicator())
-                        : GridView.builder(
-                      padding: const EdgeInsets.all(12),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 22,
-                        crossAxisSpacing: 24,
-                        childAspectRatio: 0.75,
-                      ),
-                      itemCount: _selectedIndex == 0 ? seatImages.length : seatImages.length,
-                      itemBuilder: (context, index) {
-                        final imageUrl = _selectedIndex == 0 ? seatImages[index] :  seatImages[index];
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            imageUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
-                          ),
-                        );
-                      },
-                    ),
-                          // ✅ 바텀시트 떠 있을 때만 아래 영역을 어둡게
-                          if (_isDirectSheetOpen)
-                            Positioned.fill(
-                              child: Container(color: Colors.black.withOpacity(0.5)),
-                            ),
-                    ],
-                    ),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      // ✅ 로딩/빈상태/그리드
+                      Builder(
+                        builder: (context) {
+                          final bool loading =
+                          _selectedIndex == 0 ? isLoading : isLoadingHashtag;
 
-                  )
-                ],
+                          final bool isEmpty =
+                          _selectedIndex == 0 ? seatImages.isEmpty : hashtagSeatViews.isEmpty;
+
+                          if (loading) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+
+                          if (isEmpty) {
+                            return _buildEmptyState();
+                          }
+
+                          return GridView.builder(
+                            padding: const EdgeInsets.all(12),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 22,
+                              crossAxisSpacing: 24,
+                              childAspectRatio: 0.75,
+                            ),
+                            itemCount:
+                            _selectedIndex == 0 ? seatImages.length : hashtagSeatViews.length,
+                            itemBuilder: (context, index) {
+                              final imageUrl = _selectedIndex == 0
+                                  ? seatImages[index]
+                                  : hashtagSeatViews[index].viewMediaUrl; // ⚠️ 여기 필드명만 확인
+
+                              return ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.broken_image),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+
+                      // ✅ 드랍다운 열렸을 때만 dim (한 번만!)
+                      if (_isDirectSheetOpen)
+                        Positioned.fill(
+                          child: Container(color: Colors.black.withOpacity(0.5)),
+                        ),
+                    ],
+                  ),
+                ),
+
+              ],
               ),
 
 
@@ -686,6 +709,70 @@ Widget _buildDropdownPill({
     ),
   );
 }
+
+
+Widget _buildEmptyState() {
+  return Center(
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Image.asset(
+            'assets/images/bori_sleepy.jpg',
+            width: 72.7,
+            height: 60.5,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            '아직 등록된 좌석 후기가 없어요.\n첫번째로 좌석 후기를 작성해주세요!',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              height: 1.375,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF000000),
+              fontFamily: 'omyu pretty',
+              letterSpacing: -0.16,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 48,
+            width: 152,
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.primary600, width: 1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              onPressed: () {
+                // TODO: 후기 작성 페이지 라우트로 연결
+                // context.pushNamed('seat_review_create', extra: {...});
+              },
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 0,vertical: 8),
+                child: Text(
+                  '좌석 후기 작성하기',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary700,
+                    fontFamily: 'Pretendard',
+                    letterSpacing: -0.14,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 
 
 
