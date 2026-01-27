@@ -200,21 +200,11 @@ final GoRouter _router = GoRouter(
               builder: (context, state) {
                 final teamCode = state.pathParameters['code']!;
                 final postId = int.parse(state.pathParameters['postId']!);
-
-                final teamLabel =
-                    (state.extra as Map?)?['teamLabel'] as String? ?? '';
-                return PostDetailPage(
-                  args: PostDetailArgs(
-                    teamCode: teamCode,
-                    teamLabel: teamLabel,
-                    postId: postId,
-                  ),
-                );
                 return PostDetailPage(teamCode: teamCode, postId: postId);
-
               },
             ),
           ],
+
         ),
         GoRoute(
           name: 'field_result',
