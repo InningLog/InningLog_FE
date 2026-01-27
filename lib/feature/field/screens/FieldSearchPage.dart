@@ -7,7 +7,7 @@ import '../../../main.dart';
 import '../../../shared/widgets/common_header.dart';
 import 'package:go_router/go_router.dart';
 
-import '../widget/jamsil_map.dart';
+import '../widgets/jamsil_map.dart';
 
 
 class FieldSearchPage extends StatefulWidget {

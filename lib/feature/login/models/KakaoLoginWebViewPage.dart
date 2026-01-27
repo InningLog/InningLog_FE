@@ -120,7 +120,7 @@ class _KakaoLoginWebViewPageState extends State<KakaoLoginWebViewPage> {
       await _scope.tokenStorage.saveSession(session);
 
       // 4) (옵션) 토큰 검증이 필요하면 repository 호출로 대체
-      // await widget.homeRepository?.fetchHomeData();
+      // await widgets.homeRepository?.fetchHomeData();
 
       // 5) 라우팅
       _callbackHandled = true;

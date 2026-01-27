@@ -8,7 +8,12 @@ import '../../../shared/service/home_view.dart';
 import '../../../shared/service/api_service.dart';
 import '../../../shared/widgets/common_header.dart';
 import '../data/selected_hashtagcodes.dart';
-import '../widget/jamsil_map.dart';
+import '../widgets/jamsil_map.dart';
+import '../widgets/dropdown_pill.dart';
+import '../widgets/empty_seat_state.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+
 import 'FieldSearchPage.dart';
 
 class FieldHashtagSearchResultPage extends StatefulWidget {
@@ -61,7 +66,11 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
 
   bool get rowSelected => rowController.text.trim().isNotEmpty;
 
-  String? get selectedStadiumCode => stadiumNameToCode[widget.stadiumName];
+  String _normalizeStadiumName(String s) => s.replaceAll(' ', '').trim();
+  String? get selectedStadiumCode =>
+      stadiumNameToCode[widget.stadiumName.replaceAll(' ', '').trim()];
+
+
 
   bool get isDirectSearchValid {
     final hasZone = selectedZone?.isNotEmpty ?? false;
@@ -272,16 +281,46 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
 
   Future<void> fetchDirectSearchResults() async {
 
-    final stadiumCode = stadiumNameToCode[widget.stadiumName];
-    final zoneShortCode = selectedZone;
+    debugPrint('stadiumNameToCode type=${stadiumNameToCode.runtimeType} size=${stadiumNameToCode.length}');
+    debugPrint('contains raw? ${stadiumNameToCode.containsKey(widget.stadiumName)}');
+    debugPrint('contains normalized? ${stadiumNameToCode.containsKey(widget.stadiumName.replaceAll(" ", ""))}');
 
-    if (stadiumCode == null) return;
 
-    if ((widget.zone == null || widget.zone!.isEmpty) &&
-        (widget.section == null || widget.section!.isEmpty)) {
+    debugPrint('✅ fetchDirectSearchResults called');
+    debugPrint('widget.zone=${widget.zone}, widget.section=${widget.section}, widget.row=${widget.row}');
+    debugPrint('selectedZone=$selectedZone, sectionText="${sectionController.text}", rowText="${rowController.text}"');
+
+
+
+    final stadiumCode =
+    stadiumNameToCode[widget.stadiumName.replaceAll(' ', '').trim()];
+
+    debugPrint('stadiumName="${widget.stadiumName}" -> stadiumCode=$stadiumCode');
+
+    if (stadiumCode == null) {
+      debugPrint('❌ stadiumCode is null. stadiumNameToCode 매핑 확인 필요');
       return;
     }
 
+
+
+    if (stadiumCode == null) return;
+
+    final zoneShortCode = selectedZone;
+
+    final hasZone = (selectedZone?.trim().isNotEmpty ?? false);
+    final hasSection = sectionController.text.trim().isNotEmpty;
+
+    // ✅ 존/구역 둘 다 없으면 검색 안 함
+    if (!hasZone && !hasSection) return;
+
+    // ✅ section / row 값 정리 (서버는 숫자만 기대)
+    final String? section =
+    sectionController.text.trim().isEmpty ? null : apiSection(sectionController.text);
+
+    final String? row = rowController.text.trim().isEmpty
+        ? null
+        : rowController.text.trim().replaceAll('열', '').trim();
 
     setState(() => isLoading = true);
 
@@ -289,21 +328,30 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
       final results = await ApiService.fetchSeatViews(
         stadiumShortCode: stadiumCode,
         zoneShortCode: zoneShortCode,
-        section: widget.section?.isEmpty == true ? null : widget.section,
-        seatRow: widget.row?.isEmpty == true ? null : widget.row,
+        section: section,
+        seatRow: row,
       );
-      print('📮 직접 검색 파라미터 → stadium: $stadiumCode, zone: ${widget.zone}, section: ${widget.section}, row: ${widget.row}');
 
-      setState(() {
-        seatImages = results;
-      });
+      debugPrint(
+        '📮 직접 검색 파라미터 → stadium: $stadiumCode, zone: $zoneShortCode, section: $section, row: $row',
+      );
+
+      if (!mounted) return;
+
+      if (!hasZone && !hasSection) {
+        debugPrint('⛔️ return: hasZone=false & hasSection=false');
+        return;
+      }
+
+      setState(() => seatImages = results);
     } catch (e) {
-      print('❌ 직접 검색 결과 에러: $e');
-      print('📮 직접 검색 파라미터 → stadium: $stadiumCode, zone: ${widget.zone}, section: ${widget.section}, row: ${widget.row}');
+      debugPrint('❌ 직접 검색 결과 에러: $e');
     } finally {
+      if (!mounted) return;
       setState(() => isLoading = false);
     }
   }
+
 
 
   void _showDirectSearchBottomSheet() async {
@@ -536,25 +584,15 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
 
-                        _buildDropdownPill(
-                          label: widget.section?.isNotEmpty == true
-                              ? '${widget.section}구역'
-                              : '구역',
+                        DropdownPill(
+                          label: widget.section?.isNotEmpty == true ? '${widget.section}구역' : '구역',
                           isSelected: widget.section?.isNotEmpty == true,
                           isOpen: _isDirectSheetOpen && _openPill == 'section',
                           onTap: () {
-                            AmplitudeFlutter.getInstance().logEvent(
-                              'change_stadium_direct_search_tab',
-                              eventProperties: {
-                                'event_type': 'Custom',
-                                'component': 'btn_click',
-                                'field_changed': 'section',
-                                'importance': 'High',
-                              },
-                            );
                             _showDirectSearchBottomSheet();
                           },
                         ),
+
 
 
 
@@ -562,23 +600,15 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
 
                         CompositedTransformTarget(
                           link: _rowLayerLink,
-                          child: _buildDropdownPill(
+                          child: DropdownPill(
                             label: rowSelected ? rowController.text.trim() : '열 선택하기',
                             isSelected: rowSelected,
                             isOpen: _openPill == 'row',
                             onTap: () {
-                              AmplitudeFlutter.getInstance().logEvent(
-                                'change_stadium_direct_search_tab',
-                                eventProperties: {
-                                  'event_type': 'Custom',
-                                  'component': 'btn_click',
-                                  'field_changed': 'row',
-                                  'importance': 'High',
-                                },
-                              );
                               _toggleRowDropdown();
                             },
                           ),
+
                         ),
 
                       ],
@@ -601,7 +631,13 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                           }
 
                           if (isEmpty) {
-                            return _buildEmptyState();
+                            return EmptySeatState(
+                              onCreateReview: () {
+                                // TODO: 후기 작성 페이지 라우트로 연결
+                                // context.pushNamed('seat_review_create', extra: {...});
+                              },
+                            );
+
                           }
 
                           return GridView.builder(
@@ -656,126 +692,6 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
   }
 
 }
-
-Widget _buildDropdownPill({
-  required String label,
-  required bool isSelected,
-  required VoidCallback onTap,
-  bool isOpen = false,
-}) {
-  // 우선순위: 열림(연두) > 선택됨(검정) > 미선택(회색)
-  final Color baseColor = isOpen
-      ? AppColors.primary600
-      : (isSelected ? const Color(0xFF272727) : AppColors.gray400);
-
-  return IntrinsicWidth(
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(50),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12,vertical:8 ),
-        decoration: BoxDecoration(
-          color: AppColors.primary50,
-          borderRadius: BorderRadius.circular(50),
-          border: Border.all(
-            color: baseColor,
-            width: 0.75,
-          ),
-        ),
-        child: Row(
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: baseColor,
-                letterSpacing: -0.12,
-                fontFamily: 'Pretendard',
-              ),
-            ),
-            const SizedBox(width: 4),
-            SvgPicture.asset(
-              isOpen
-                  ? 'assets/icons/up_button.svg'
-                  : 'assets/icons/filter_down_blackk.svg',
-              width: 10,
-              height: 10,
-              color: baseColor,
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
-
-Widget _buildEmptyState() {
-  return Center(
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Image.asset(
-            'assets/images/bori_sleepy.jpg',
-            width: 72.7,
-            height: 60.5,
-            fit: BoxFit.contain,
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            '아직 등록된 좌석 후기가 없어요.\n첫번째로 좌석 후기를 작성해주세요!',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              height: 1.375,
-              fontWeight: FontWeight.w400,
-              color: Color(0xFF000000),
-              fontFamily: 'omyu pretty',
-              letterSpacing: -0.16,
-            ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 48,
-            width: 152,
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppColors.primary600, width: 1),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-              onPressed: () {
-                // TODO: 후기 작성 페이지 라우트로 연결
-                // context.pushNamed('seat_review_create', extra: {...});
-              },
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 0,vertical: 8),
-                child: Text(
-                  '좌석 후기 작성하기',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary700,
-                    fontFamily: 'Pretendard',
-                    letterSpacing: -0.14,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-
-
-
 
 String displaySection(String raw) {
   final t = raw.trim();
