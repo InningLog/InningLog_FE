@@ -133,6 +133,10 @@ final GoRouter _router = GoRouter(
       },
     ),
 
+
+
+
+
     /// GNB 있는 ShellRoute
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
@@ -147,28 +151,8 @@ final GoRouter _router = GoRouter(
           path: '/seat',
           builder: (_, __) => const SeatPage(),
           routes: [
-            /// ✅ 여기 안으로 옮긴다
-            GoRoute(
-              path: 'result', // => 실제 경로는 /seat/result
-              name: 'field_result',
-              builder: (context, state) {
-                final extra = state.extra as Map<String, dynamic>;
-                final index = extra['index'] as int;
-                final stadiumName = extra['stadiumName'] as String;
 
-                return FieldHashtagSearchResultPage(
-                  index: index,
-                  stadiumName: stadiumName,
-                  zone: extra['zone'],
-                  section: extra['section'],
-                  row: extra['row'],
-                  selectedTags: Map<String, String>.from(
-                    extra['selectedTags'] ?? {},
-                  ),
-                  tagCategories: tagCategories,
-                );
-              },
-            ),
+
           ],
         ),
 
@@ -216,11 +200,42 @@ final GoRouter _router = GoRouter(
               builder: (context, state) {
                 final teamCode = state.pathParameters['code']!;
                 final postId = int.parse(state.pathParameters['postId']!);
+
+                final teamLabel =
+                    (state.extra as Map?)?['teamLabel'] as String? ?? '';
+                return PostDetailPage(
+                  args: PostDetailArgs(
+                    teamCode: teamCode,
+                    teamLabel: teamLabel,
+                    postId: postId,
+                  ),
+                );
                 return PostDetailPage(teamCode: teamCode, postId: postId);
+
               },
             ),
           ],
         ),
+        GoRoute(
+          name: 'field_result',
+          path: '/field_result',
+          builder: (context, state) {
+            debugPrint('[GoRouter] field_result state.extra=${state.extra}');
+            final extra = state.extra as Map<String, dynamic>;
+
+            final index = extra['index'] as int? ?? 0;
+            final stadiumName = extra['stadiumName'] as String;
+            final section = extra['section'] as String?;
+
+            debugPrint('[GoRouter] parsed index=$index stadiumName=$stadiumName section=$section');
+
+            return FieldHashtagSearchResultPage(
+              stadiumName: stadiumName,
+              section: section,
+            );
+          },
+        ),
+
       ],
     ),
   ],

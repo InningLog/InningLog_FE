@@ -5,11 +5,18 @@ import 'package:path_drawing/path_drawing.dart';
 import 'package:xml/xml.dart';
 
 class JamsilMap extends StatefulWidget {
-  const JamsilMap({Key? key}) : super(key: key);
+  const JamsilMap({
+    Key? key,
+    required this.onSectionSelected,
+  }) : super(key: key);
+
+  // 🔥 FieldSearchPage에서 넘겨준 콜백
+  final ValueChanged<String> onSectionSelected;
 
   @override
   State<JamsilMap> createState() => _JamsilMapState();
 }
+
 
 class _JamsilMapState extends State<JamsilMap> {
   final String assetPath = 'assets/jamsil.svg';
@@ -95,14 +102,17 @@ class _JamsilMapState extends State<JamsilMap> {
   }
 
   void _onAreaTap(String id) {
-    // TODO: 여기서 원하는 동작
-    // 예시:
     debugPrint('Tapped: $id');
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$id 클릭됨')),
-    );
+    if (!id.startsWith('JS=')) return;
+    final section = id.substring(3); // "113"
+
+    // 숫자만 쓰고 싶다면 안전 체크(선택)
+    if (int.tryParse(section) == null) return;
+
+    widget.onSectionSelected(section); // ✅ FieldSearchPage로 전달!
   }
+
 
   @override
   Widget build(BuildContext context) {
