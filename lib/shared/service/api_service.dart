@@ -934,20 +934,16 @@ class ApiService {
 
     // 파라미터 정리
     final cleanedStadium = stadiumShortCode.trim();
-    final cleanedZone = (zoneShortCode
-        ?.trim()
-        .isNotEmpty ?? false) ? zoneShortCode!.trim() : null;
-    final cleanedSection = (section
-        ?.trim()
-        .isNotEmpty ?? false) ? section!.trim() : null;
-    final cleanedRow = (seatRow
-        ?.trim()
-        .isNotEmpty ?? false) ? seatRow!.trim() : null;
+    final cleanedZone =
+    (zoneShortCode?.trim().isNotEmpty ?? false) ? zoneShortCode!.trim() : null;
+    final cleanedSection =
+    (section?.trim().isNotEmpty ?? false) ? section!.trim() : null;
+    final cleanedRow =
+    (seatRow?.trim().isNotEmpty ?? false) ? seatRow!.trim() : null;
 
     if (cleanedStadium.isEmpty) {
       throw ArgumentError('stadiumShortCode는 필수입니다.');
     }
-    // 서버 400 나기 전에 클라에서 선제 방어
     if (cleanedRow != null && cleanedZone == null) {
       throw ArgumentError('seatRow는 단독 사용 불가입니다. 최소 zoneShortCode를 함께 전달하세요.');
     }
@@ -961,13 +957,23 @@ class ApiService {
       'size': '$size',
     };
 
-    final uri = Uri.https(
-        'api.inninglog.shop', '/seatViews/normal/gallery', query);
+    // ✅ uri 먼저 만들기
+    final uri = Uri.https('api.inninglog.shop', '/seatViews/normal/gallery', query);
     log('→ GET $uri');
+
+    // ✅ 토큰 붙이기
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('accessToken')?.trim();
 
     try {
       final res = await http
-          .get(uri, headers: {'Accept': 'application/json'})
+          .get(
+        uri,
+        headers: {
+          'Accept': 'application/json',
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
+      )
           .timeout(const Duration(seconds: 15));
 
       log('→ status: ${res.statusCode}');
@@ -977,7 +983,7 @@ class ApiService {
       Map<String, dynamic>? body;
       try {
         final decoded = jsonDecode(res.body);
-        body = (decoded is Map<String, dynamic>) ? decoded : null;
+        body = decoded is Map<String, dynamic> ? decoded : null;
       } catch (_) {
         body = null;
       }
@@ -987,7 +993,6 @@ class ApiService {
         if (data is Map<String, dynamic>) {
           final content = data['content'];
           if (content is List) {
-            // viewMediaUrl 리스트만 추출
             return content
                 .whereType<Map<String, dynamic>>()
                 .map((e) => e['viewMediaUrl'])
@@ -995,12 +1000,14 @@ class ApiService {
                 .toList();
           }
         }
-        // 스키마가 비정상이면 빈 리스트 반환
         log('⚠️ 200이지만 content 없음/형식 불일치 → 빈 리스트 반환');
         return <String>[];
       }
 
-      // 400 BAD_REQUEST (seatRow 단독 등)
+      if (res.statusCode == 401) {
+        throw Exception('인증이 필요합니다(401). accessToken 확인/로그인 필요');
+      }
+
       if (res.statusCode == 400) {
         final code = (body?['code'] ?? '').toString().toUpperCase();
         final msg = (body?['message'] ?? '').toString();
@@ -1014,13 +1021,12 @@ class ApiService {
         throw Exception('서버 오류(${res.statusCode})');
       }
 
-      // 그 외
-      throw Exception(
-          '요청 실패(${res.statusCode}): ${body?['message'] ?? '알 수 없는 오류'}');
+      throw Exception('요청 실패(${res.statusCode}): ${body?['message'] ?? '알 수 없는 오류'}');
     } on TimeoutException {
       throw Exception('요청 시간이 초과되었습니다. 네트워크 상태를 확인해주세요.');
     }
   }
+
 
 
   /// 해시태그 기반 좌석 시야 갤러리 조회 (최신순)
