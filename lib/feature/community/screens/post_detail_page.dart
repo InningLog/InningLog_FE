@@ -10,7 +10,9 @@ import 'package:inninglog/feature/community/widgets/comment/comment_list.dart';
 import 'package:inninglog/feature/community/widgets/post_detail/post_action_bar.dart';
 import 'package:inninglog/feature/community/widgets/post_detail/post_detail_app_bar.dart';
 import 'package:inninglog/feature/community/widgets/post_detail/post_header_section.dart';
+import 'package:inninglog/feature/community/screens/writing_post_page.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
+import 'package:inninglog/shared/widgets/bottom_action_sheet.dart';
 import 'package:provider/provider.dart';
 
 class PostDetailPage extends StatefulWidget {
@@ -69,6 +71,43 @@ class _PostDetailPageState extends State<PostDetailPage>
     });
   }
 
+  Future<void> _confirmDelete(PostDetailViewModel vm) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (dialogContext) => AlertDialog(
+            title: const Text('게시글 삭제'),
+            content: const Text('이 게시글을 삭제하시겠어요?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('취소'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: const Text(
+                  '삭제',
+                  style: TextStyle(color: AppColors.secondary700),
+                ),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final success = await vm.deletePost();
+    if (!mounted) return;
+
+    if (success) {
+      Navigator.of(context).pop(true);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('게시글 삭제에 실패했습니다. 다시 시도해주세요.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -100,7 +139,43 @@ class _PostDetailPageState extends State<PostDetailPage>
               teamLabel: teamLabel,
               onBack: () => Navigator.pop(context),
               onTapMore: () {
-                // TODO: 신고/삭제/공유 bottom sheet 등
+                final writeByMe = post?.writeByMe ?? false;
+                if (writeByMe) {
+                  showBottomActionSheet(
+                    context,
+                    actions: [
+                      BottomActionSheetAction(
+                        label: '수정',
+                        onTap: () {
+                          final target = post;
+                          if (target == null) return;
+                          Navigator.of(context).push<bool>(
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => WritingPostPage(
+                                    teamCode: teamCode,
+                                    initialPost: target,
+                                  ),
+                            ),
+                          ).then((updated) {
+                            if (updated == true) {
+                              vm.fetch();
+                            }
+                          });
+                        },
+                      ),
+                      BottomActionSheetAction(
+                        label: '삭제',
+                        isDestructive: true,
+                        onTap: () {
+                          _confirmDelete(vm);
+                        },
+                      ),
+                    ],
+                  );
+                  return;
+                }
+                // TODO: 신고/공유 bottom sheet 등
               },
             ),
             body: SafeArea(

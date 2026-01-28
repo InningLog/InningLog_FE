@@ -1,7 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:inninglog/feature/community/model/dto/create_post_dtos.dart';
+import 'package:inninglog/feature/community/model/community_post.dart';
+import 'package:inninglog/feature/community/model/dto/post_dtos.dart';
 import 'package:inninglog/feature/community/repositories/post_repository.dart';
 import 'package:inninglog/shared/service/image_pick_service.dart';
 
@@ -14,7 +15,7 @@ class WritingPostViewModel extends ChangeNotifier {
   final FocusNode titleFocusNode = FocusNode();
   final FocusNode bodyFocusNode = FocusNode();
 
-  final List<_PendingImage> _images = [];
+  final List<_EditableImage> _images = [];
   List<ImageProvider> get images =>
       List.unmodifiable(_images.map((e) => e.provider));
 
@@ -40,10 +41,14 @@ class WritingPostViewModel extends ChangeNotifier {
     required this.imagePickService,
     this.maxImages = 5,
     required this.repo,
+    CommunityPostItem? initialPost,
   }) {
     titleController.addListener(_handleTextChanged);
     bodyController.addListener(_handleTextChanged);
     titleFocusNode.addListener(_handleTitleFocusChanged);
+    if (initialPost != null) {
+      _applyInitialPost(initialPost);
+    }
   }
 
   Future<void> pickFromGallery() async {
@@ -63,7 +68,7 @@ class WritingPostViewModel extends ChangeNotifier {
         final fileName = 'community_${now}_${_images.length + i}.$ext';
 
         _images.add(
-          _PendingImage(
+          _EditableImage.fromBytes(
             bytes: bytes,
             fileName: fileName,
             contentType: contentType,
@@ -90,18 +95,21 @@ class WritingPostViewModel extends ChangeNotifier {
       debugPrint(
         '[WritingPost] submit team=$teamCode titleLen=${title.length} images=${_images.length}',
       );
-      final uploadImages =
-          _images
-              .asMap()
-              .entries
-              .map(
-                (entry) => ImageUploadReqDto(
-                  sequence: entry.key + 1,
-                  fileName: entry.value.fileName,
-                  contentType: entry.value.contentType,
-                ),
-              )
-              .toList();
+      final pendingBySequence = <int, _EditableImage>{};
+      final uploadImages = <ImageUploadReqDto>[];
+      for (var i = 0; i < _images.length; i++) {
+        final image = _images[i];
+        if (!image.isNew) continue;
+        final sequence = i + 1;
+        pendingBySequence[sequence] = image;
+        uploadImages.add(
+          ImageUploadReqDto(
+            sequence: sequence,
+            fileName: image.fileName!,
+            contentType: image.contentType!,
+          ),
+        );
+      }
 
       List<ImageCreateReqDto> imageKeys = [];
 
@@ -120,6 +128,12 @@ class WritingPostViewModel extends ChangeNotifier {
               'Presigned URL missing for sequence ${image.sequence}',
             );
           }
+          final pending = pendingBySequence[image.sequence];
+          if (pending == null || pending.bytes == null) {
+            throw StateError(
+              'Pending image missing for sequence ${image.sequence}',
+            );
+          }
 
           debugPrint(
             '[WritingPost] upload seq=${image.sequence} url=${presigned.presignedUrl}',
@@ -127,7 +141,7 @@ class WritingPostViewModel extends ChangeNotifier {
           await repo.uploadToS3(
             target: presigned,
             contentType: image.contentType,
-            bytes: _images[image.sequence - 1].bytes,
+            bytes: pending.bytes!,
           );
           return ImageCreateReqDto(
             sequence: presigned.sequence,
@@ -160,6 +174,108 @@ class WritingPostViewModel extends ChangeNotifier {
     return success;
   }
 
+  Future<bool> update({required int postId}) async {
+    if (_isDisposed || _isSubmitting) return false;
+
+    _isSubmitting = true;
+    _safeNotify();
+    final title = titleController.text.trim();
+    final content = bodyController.text.trim();
+    var success = false;
+
+    try {
+      debugPrint(
+        '[WritingPost] update postId=$postId titleLen=${title.length} images=${_images.length}',
+      );
+
+      final remainImages = <RemainImageReqDto>[];
+      final pendingBySequence = <int, _EditableImage>{};
+      final uploadImages = <ImageUploadReqDto>[];
+
+      for (var i = 0; i < _images.length; i++) {
+        final image = _images[i];
+        final sequence = i + 1;
+        if (image.isExisting) {
+          remainImages.add(
+            RemainImageReqDto(
+              remainImageId: image.remainImageId!,
+              sequence: sequence,
+            ),
+          );
+        } else {
+          pendingBySequence[sequence] = image;
+          uploadImages.add(
+            ImageUploadReqDto(
+              sequence: sequence,
+              fileName: image.fileName!,
+              contentType: image.contentType!,
+            ),
+          );
+        }
+      }
+
+      List<NewImageReqDto> newImages = [];
+      if (uploadImages.isNotEmpty) {
+        final presignedList = await repo.requestImagePresignedUrls(
+          images: uploadImages,
+        );
+        final presignedMap = {
+          for (final item in presignedList) item.sequence: item,
+        };
+
+        final uploadFutures = uploadImages.map((image) async {
+          final presigned = presignedMap[image.sequence];
+          if (presigned == null) {
+            throw StateError(
+              'Presigned URL missing for sequence ${image.sequence}',
+            );
+          }
+          final pending = pendingBySequence[image.sequence];
+          if (pending == null || pending.bytes == null) {
+            throw StateError(
+              'Pending image missing for sequence ${image.sequence}',
+            );
+          }
+
+          debugPrint(
+            '[WritingPost] upload seq=${image.sequence} url=${presigned.presignedUrl}',
+          );
+          await repo.uploadToS3(
+            target: presigned,
+            contentType: image.contentType,
+            bytes: pending.bytes!,
+          );
+          return NewImageReqDto(
+            sequence: presigned.sequence,
+            key: presigned.key,
+          );
+        }).toList();
+
+        newImages = await Future.wait(uploadFutures);
+        newImages.sort((a, b) => a.sequence.compareTo(b.sequence));
+      }
+
+      await repo.updatePost(
+        postId: postId,
+        request: UpdatePostRequest(
+          title: title,
+          content: content,
+          remainImages: remainImages,
+          newImages: newImages,
+          imageCount: _images.length,
+        ),
+      );
+      success = true;
+    } catch (e) {
+      debugPrint(e.toString());
+    } finally {
+      _isSubmitting = false;
+      _safeNotify();
+    }
+
+    return success;
+  }
+
   void removeImageAt(int index) {
     if (index < 0 || index >= _images.length) return;
     _images.removeAt(index);
@@ -180,6 +296,24 @@ class WritingPostViewModel extends ChangeNotifier {
     if (_isFormFilled == filled) return;
     _isFormFilled = filled;
     notifyListeners();
+  }
+
+  void _applyInitialPost(CommunityPostItem post) {
+    titleController.text = post.title;
+    bodyController.text = post.content;
+
+    final sortedImages = [...post.images]
+      ..sort((a, b) => a.sequence.compareTo(b.sequence));
+    for (final image in sortedImages) {
+      if (image.url.isEmpty) continue;
+      _images.add(
+        _EditableImage.fromExisting(
+          remainImageId: image.imageId,
+          url: image.url,
+        ),
+      );
+    }
+    _safeNotify();
   }
 
   @override
@@ -204,18 +338,46 @@ class WritingPostViewModel extends ChangeNotifier {
   }
 }
 
-class _PendingImage {
-  final Uint8List bytes;
-  final String fileName;
-  final String contentType;
+class _EditableImage {
+  final ImageProvider provider;
+  final int? remainImageId;
+  final Uint8List? bytes;
+  final String? fileName;
+  final String? contentType;
 
-  const _PendingImage({
-    required this.bytes,
-    required this.fileName,
-    required this.contentType,
+  bool get isExisting => remainImageId != null;
+  bool get isNew => bytes != null;
+
+  _EditableImage._({
+    required this.provider,
+    this.remainImageId,
+    this.bytes,
+    this.fileName,
+    this.contentType,
   });
 
-  ImageProvider get provider => MemoryImage(bytes);
+  factory _EditableImage.fromExisting({
+    required int remainImageId,
+    required String url,
+  }) {
+    return _EditableImage._(
+      provider: NetworkImage(url),
+      remainImageId: remainImageId,
+    );
+  }
+
+  factory _EditableImage.fromBytes({
+    required Uint8List bytes,
+    required String fileName,
+    required String contentType,
+  }) {
+    return _EditableImage._(
+      provider: MemoryImage(bytes),
+      bytes: bytes,
+      fileName: fileName,
+      contentType: contentType,
+    );
+  }
 }
 
 String _detectContentType(Uint8List bytes) {

@@ -6,10 +6,7 @@ class PostDetailViewModel extends ChangeNotifier {
   final CommunityPostRepository repo;
   final int postId;
 
-  PostDetailViewModel({
-    required this.repo,
-    required this.postId,
-  });
+  PostDetailViewModel({required this.repo, required this.postId});
 
   CommunityPostItem? _post;
   CommunityPostItem? get post => _post;
@@ -97,6 +94,23 @@ class PostDetailViewModel extends ChangeNotifier {
       _scrapedByMe = prevScraped;
       _scrapCount = prevCount;
       _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<bool> deletePost() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await repo.deletePost(postId: postId);
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }

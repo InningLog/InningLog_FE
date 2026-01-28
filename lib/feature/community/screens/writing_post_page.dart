@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:inninglog/app_scope.dart';
 import 'package:inninglog/feature/community/data/team_catalog.dart';
+import 'package:inninglog/feature/community/model/community_post.dart';
 import 'package:inninglog/feature/community/viewmodel/writing_post_view_model.dart';
 import 'package:inninglog/feature/community/widgets/writing_post/image_attachment_bar.dart';
 import 'package:inninglog/feature/community/widgets/writing_post/writing_post_app_bar.dart';
@@ -12,7 +13,13 @@ import 'package:provider/provider.dart';
 
 class WritingPostPage extends StatelessWidget {
   final String teamCode;
-  const WritingPostPage({super.key, required this.teamCode});
+  final CommunityPostItem? initialPost;
+
+  const WritingPostPage({
+    super.key,
+    required this.teamCode,
+    this.initialPost,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,24 +31,37 @@ class WritingPostPage extends StatelessWidget {
             maxImages: 5,
             imagePickService: ImagePickService(),
             repo: repo,
+            initialPost: initialPost,
           ),
-      child: _WritingPostView(teamCode: teamCode),
+      child: _WritingPostView(teamCode: teamCode, initialPost: initialPost),
     );
   }
 }
 
 class _WritingPostView extends StatelessWidget {
   final String teamCode;
-  const _WritingPostView({required this.teamCode});
+  final CommunityPostItem? initialPost;
+
+  const _WritingPostView({required this.teamCode, this.initialPost});
 
   Future<void> _submit(BuildContext context, WritingPostViewModel vm) async {
-    final success = await vm.submit(teamCode: teamCode);
+    final isEditMode = initialPost != null;
+    final success =
+        isEditMode
+            ? await vm.update(postId: initialPost!.id)
+            : await vm.submit(teamCode: teamCode);
     if (!context.mounted) return;
     if (success) {
       Navigator.of(context).pop(true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('게시글 등록에 실패했습니다. 다시 시도해주세요.')),
+        SnackBar(
+          content: Text(
+            isEditMode
+                ? '게시글 수정에 실패했습니다. 다시 시도해주세요.'
+                : '게시글 등록에 실패했습니다. 다시 시도해주세요.',
+          ),
+        ),
       );
     }
   }

@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:inninglog/feature/community/model/community_post.dart';
 import 'package:inninglog/feature/community/model/dto/post_dtos.dart';
 import '../../../shared/network/api_envelope.dart';
-import '../model/dto/create_post_dtos.dart';
+import '../model/dto/post_dtos.dart';
 
 class CommunityPostRepository {
   final Dio _dio;
@@ -124,6 +124,28 @@ class CommunityPostRepository {
     }
 
     return CommunityPostItem.fromJson(json);
+  }
+
+  //게시글 삭제
+  Future<void> deletePost({required int postId}) async {
+    final res = await _dio.delete('/community/posts/$postId');
+    if (res.data is! Map<String, dynamic>) {
+      throw const FormatException('Unexpected delete response');
+    }
+  }
+
+  /// 게시글 수정
+  Future<void> updatePost({
+    required int postId,
+    required UpdatePostRequest request,
+  }) async {
+    final res = await _dio.patch(
+      '/community/posts/$postId',
+      data: request.toJson(),
+    );
+    if (res.data is! Map<String, dynamic>) {
+      throw const FormatException('Unexpected update response');
+    }
   }
 
   /// 게시글 좋아요
