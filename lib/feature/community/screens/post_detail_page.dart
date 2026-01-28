@@ -10,6 +10,7 @@ import 'package:inninglog/feature/community/widgets/comment/comment_list.dart';
 import 'package:inninglog/feature/community/widgets/post_detail/post_action_bar.dart';
 import 'package:inninglog/feature/community/widgets/post_detail/post_detail_app_bar.dart';
 import 'package:inninglog/feature/community/widgets/post_detail/post_header_section.dart';
+import 'package:inninglog/feature/community/screens/writing_post_page.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:inninglog/shared/widgets/bottom_action_sheet.dart';
 import 'package:provider/provider.dart';
@@ -146,7 +147,21 @@ class _PostDetailPageState extends State<PostDetailPage>
                       BottomActionSheetAction(
                         label: '수정',
                         onTap: () {
-                          // TODO: 수정 로직 연결
+                          final target = post;
+                          if (target == null) return;
+                          Navigator.of(context).push<bool>(
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => WritingPostPage(
+                                    teamCode: teamCode,
+                                    initialPost: target,
+                                  ),
+                            ),
+                          ).then((updated) {
+                            if (updated == true) {
+                              vm.fetch();
+                            }
+                          });
                         },
                       ),
                       BottomActionSheetAction(
