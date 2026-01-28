@@ -126,6 +126,14 @@ class CommunityPostRepository {
     return CommunityPostItem.fromJson(json);
   }
 
+  //게시글 삭제
+  Future<void> deletePost({required int postId}) async {
+    final res = await _dio.delete('/community/posts/$postId');
+    if (res.data is! Map<String, dynamic>) {
+      throw const FormatException('Unexpected delete response');
+    }
+  }
+
   /// 게시글 좋아요
   Future<void> likePost({required int postId}) async {
     final res = await _dio.post('/community/posts/$postId/likes');
