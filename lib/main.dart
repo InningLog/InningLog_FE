@@ -17,7 +17,7 @@ import 'package:inninglog/feature/community/screens/market_upload_step3.dart';
 import 'package:inninglog/feature/community/screens/writing_post_page.dart';
 import 'package:inninglog/feature/community/screens/post_detail_market.dart';
 import 'package:inninglog/feature/community/screens/post_detail_page.dart';
-import 'package:inninglog/feature/diary/screens/seat_detail_page.dart';
+import 'package:inninglog/feature/field/screens/seat_detail_page.dart';
 import 'package:inninglog/feature/onboarding/screens/onboarding_page6.dart';
 import 'package:inninglog/feature/onboarding/screens/splash_screen.dart';
 import 'package:inninglog/feature/onboarding/screens/onboarding_screen.dart';
@@ -166,7 +166,7 @@ final GoRouter _router = GoRouter(
             final int seatViewId = extra['seatViewId'];
             final String imageUrl = extra['imageUrl'];
 
-            return SeatDetailPage(seatViewId: seatViewId, imageUrl: imageUrl);
+            return SeatDetailPage(seatViewId: seatViewId, imageUrl: imageUrl, stadiumName: '',);
           },
         ),
         // 커뮤니티

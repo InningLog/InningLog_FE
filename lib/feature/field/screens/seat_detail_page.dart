@@ -7,11 +7,13 @@ import '../../../shared/service/api_service.dart';
 class SeatDetailPage extends StatefulWidget {
   final int seatViewId;
   final String imageUrl;
+  final String stadiumName;
 
   const SeatDetailPage({
     super.key,
     required this.seatViewId,
     required this.imageUrl,
+    required this.stadiumName,
   });
 
   @override
@@ -74,7 +76,7 @@ class _SeatDetailPageState extends State<SeatDetailPage> {
                 // ✅ 상단 헤더
                 Container(
                   height: 72,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 10),
                   alignment: Alignment.center,
                   child: Row(
                     children: [
@@ -89,14 +91,13 @@ class _SeatDetailPageState extends State<SeatDetailPage> {
                           Navigator.pop(context);
                         },
                       ),
-                      const SizedBox(width: 0),
-                      const Text(
-                        '해시태그 검색',
+                     Text(
+                        widget.stadiumName,
                         style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.w400,
                           letterSpacing: -0.26,
-                          color: Color(0xFF272727),
+                          color: AppColors.gray900,
                           fontFamily: 'MBC1961GulimOTF',
                         ),
                       ),
@@ -148,9 +149,10 @@ class _SeatDetailPageState extends State<SeatDetailPage> {
                                 ? '${info.zoneName ?? ""} ${info.section ?? ""}구역 ${info.seatRow ?? ""}열'
                                 : '좌석 정보 없음',
                             style: const TextStyle(
-                              fontSize: 19,
+                              fontSize: 20,
                               fontWeight: FontWeight.w700,
                               fontFamily: 'Pretendard',
+                              letterSpacing: -0.2,
                             ),
                           ),
                         ),
@@ -164,14 +166,58 @@ class _SeatDetailPageState extends State<SeatDetailPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildCategory("응원", ["#일어남", "#일어날_사람은_일어남", "#앉아서"], selectedTags: selectedTags["응원"]),
-                            _buildCategory("햇빛", ["#강함", "#있다가_그늘짐", "#없음"], selectedTags: selectedTags["햇빛"]),
+                            _buildCategory("햇빛", ["#강함", "#있다가_그늘짐", "#햇빛_없음"], selectedTags: selectedTags["햇빛"]),
                             _buildCategory("지붕", ["#있음", "#없음"], selectedTags: selectedTags["지붕"]),
-                            _buildCategory("시야 방해", ["#그물", "#아크릴_가림막", "#없음"], selectedTags: selectedTags["시야 방해"]),
+                            _buildCategory("시야 방해", ["#그물", "#아크릴_가림막", "#시야방해_없음"], selectedTags: selectedTags["시야 방해"]),
                             _buildCategory("좌석 공간", ["#아주_넓음", "#넓음", "#보통", "#좁음"], selectedTags: selectedTags["좌석 공간"]),
-                            const SizedBox(height: 32),
                           ],
                         ),
                       ),
+
+
+                      // ✅ 좌석 정보 텍스트
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20,vertical: 0),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                           '좌석 한줄평',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Pretendard',
+                              letterSpacing: -0.14,
+                              color: AppColors.gray900,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+
+                          child: Text(
+                            '어쩌구 저쩌구 좌석 한줄평. 공백 포함 최대 150자 까지 가능합니다. 어쩌구 저쩌구 좌석 한줄평. 공백 포함 최대 150자 까지 가능합니다. 어쩌구 저쩌구 좌석 한줄평. 공백 포함 최대 150자 까지 가능합니다. 어쩌구 저쩌구 좌석 한줄평. 공백 포함 최대 150자 까지 가능합니다.',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              fontFamily: 'Pretendard',
+                              letterSpacing: -0.14,
+                              height: 1.4,
+                              color: AppColors.gray850,
+                            ),
+                          ),
+                        ),
+                      ),
+
+
+
+
                     ],
                   ),
                 ),
@@ -195,10 +241,13 @@ class _SeatDetailPageState extends State<SeatDetailPage> {
             title,
             style: const TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
+              fontFamily: 'Pretendard',
+              letterSpacing: -0.14,
+              color: AppColors.gray900,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Wrap(
             spacing: 12,
             runSpacing: 12,
@@ -231,31 +280,6 @@ class _SeatDetailPageState extends State<SeatDetailPage> {
     );
   }
 
-
-  final Map<String, String> tagCodeMap = {
-    '#일어남': 'CHEERING_STANDING',
-    '#일어날_사람은_일어남': 'CHEERING_MOSTLY_STANDING',
-    '#앉아서': 'CHEERING_SEATED',
-    '#강함': 'SUN_STRONG',
-    '#있다가_그늘짐': 'SUN_MOVES_TO_SHADE',
-    '#없음': 'SUN_NONE', // 햇빛 - 없음
-    '#있음': 'ROOF_EXISTS', // 지붕 - 있음
-    '#없음_지붕': 'ROOF_NONE', // 구분 위해 이름 바꿈
-    '#그물': 'VIEW_OBSTRUCT_NET',
-    '#아크릴_가림막': 'VIEW_OBSTRUCT_ACRYLIC',
-    '#없음_시야방해': 'VIEW_NO_OBSTRUCTION', // 구분 위해 이름 바꿈
-    '#아주_넓음': 'SEAT_SPACE_VERY_WIDE',
-    '#넓음': 'SEAT_SPACE_WIDE',
-    '#보통': 'SEAT_SPACE_NORMAL',
-    '#좁음': 'SEAT_SPACE_NARROW',
-  };
 }
 
-String _getTagCategory(String tagLabel) {
-  if (['일어남', '일어날_사람은_일어남', '앉아서'].contains(tagLabel)) return '응원';
-  if (['강함', '있다가_그늘짐', '없음'].contains(tagLabel)) return '햇빛';
-  if (['있음', '없음'].contains(tagLabel)) return '지붕';
-  if (['그물', '아크릴_가림막', '없음'].contains(tagLabel)) return '시야 방해';
-  if (['아주_넓음', '넓음', '보통', '좁음'].contains(tagLabel)) return '좌석 공간';
-  return '기타';
-}
+

@@ -254,6 +254,7 @@ class SeatViewDetail {
           .toList(),
     );
   }
+
 }
 
 
