@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:inninglog/feature/field/screens/seat_detail_page.dart';
 import '../../../shared/amplitude/AmplitudeFlutter.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../main.dart';
@@ -176,17 +177,19 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                         thumbColor: AppColors.primary300,
                         minThumbLength: 102,
                         child: Transform.translate(
-                          offset: const Offset(8, 0), // ✅ 내용만 다시 오른쪽으로 8px 복구
+                          offset: const Offset(8, 0),
                           child: ListView.builder(
                             controller: scrollController,
                             itemCount: rows.length,
                             itemBuilder: (context, index) {
                               final item = rows[index];
                               return InkWell(
-                                onTap: () {
+                                onTap: () async {
                                   setState(() => rowController.text = item);
                                   _closeRowDropdown();
+                                  await fetchDirectSearchResults();
                                 },
+
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                   child: Text(
@@ -224,7 +227,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
 
 
 
-  List<String> seatImages = [];
+  List<SeatView> directSeatViews = [];
   bool isLoading = false;
 
 
@@ -246,50 +249,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
 
 
 
-  Future<void> fetchHashtagSearchResults() async {
-    print('🚀 fetchHashtagSearchResults 실행됨'); // ✅ 이게 안 찍히면 호출 안 된 것
-    final stadiumCode = stadiumNameToCode[widget.stadiumName];
-    if (stadiumCode == null) return;
-
-
-    final hashtagCodes = getSelectedHashtagCodes(selectedTags);
-    print('🎯 해시태그 코드 목록: $hashtagCodes');
-    if (hashtagCodes.isEmpty) return;
-
-
-
-    setState(() => isLoadingHashtag = true);
-
-    try {
-      final results = await ApiService.fetchSeatViewsByHashtag(
-        stadiumShortCode: stadiumCode,
-        hashtagCodes: hashtagCodes,
-      );
-      print('📸 가져온 이미지 수: ${results.length}');
-
-      setState(() {
-        hashtagSeatViews = results;
-      });
-
-    } catch (e) {
-      print('❌ 해시태그 검색 에러: $e');
-    } finally {
-      setState(() => isLoadingHashtag = false);
-    }
-  }
-
-
   Future<void> fetchDirectSearchResults() async {
-
-    debugPrint('stadiumNameToCode type=${stadiumNameToCode.runtimeType} size=${stadiumNameToCode.length}');
-    debugPrint('contains raw? ${stadiumNameToCode.containsKey(widget.stadiumName)}');
-    debugPrint('contains normalized? ${stadiumNameToCode.containsKey(widget.stadiumName.replaceAll(" ", ""))}');
-
-
-    debugPrint('✅ fetchDirectSearchResults called');
-    debugPrint('widget.zone=${widget.zone}, widget.section=${widget.section}, widget.row=${widget.row}');
-    debugPrint('selectedZone=$selectedZone, sectionText="${sectionController.text}", rowText="${rowController.text}"');
-
 
 
     final stadiumCode =
@@ -332,9 +292,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
         seatRow: row,
       );
 
-      debugPrint(
-        '📮 직접 검색 파라미터 → stadium: $stadiumCode, zone: $zoneShortCode, section: $section, row: $row',
-      );
+
 
       if (!mounted) return;
 
@@ -343,7 +301,10 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
         return;
       }
 
-      setState(() => seatImages = results);
+      if (!mounted) return;
+      setState(() => directSeatViews = results.cast<SeatView>());
+
+
     } catch (e) {
       debugPrint('❌ 직접 검색 결과 에러: $e');
     } finally {
@@ -356,7 +317,10 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
 
   void _showDirectSearchBottomSheet() async {
 
-    setState(() => _isDirectSheetOpen = true);
+    setState(() {
+      _isDirectSheetOpen = true;
+      _openPill = 'section'; // ✅ 추가
+    });
 
     await showModalBottomSheet(
       context: context,
@@ -478,36 +442,13 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
     );
 
     if (!mounted) return;
-    setState(() => _isDirectSheetOpen = false); // ✅ 닫히면 원복
+    setState(() {
+      _isDirectSheetOpen = false;
+      _openPill = null; // ✅ 닫히면 정리
+    });
 
   }
 
-  InputDecoration _seatInputDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(
-        color: AppColors.gray700,
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-        fontFamily: 'Pretendard',
-      ),
-      filled: true,
-      fillColor: AppColors.gray100,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: AppColors.gray300),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: AppColors.gray300),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Color(0xFFF94C32C)),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-    );
-  }
 
 
 
@@ -584,6 +525,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
 
+
                         DropdownPill(
                           label: widget.section?.isNotEmpty == true ? '${widget.section}구역' : '구역',
                           isSelected: widget.section?.isNotEmpty == true,
@@ -624,7 +566,8 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                           _selectedIndex == 0 ? isLoading : isLoadingHashtag;
 
                           final bool isEmpty =
-                          _selectedIndex == 0 ? seatImages.isEmpty : hashtagSeatViews.isEmpty;
+                          _selectedIndex == 0 ? directSeatViews.isEmpty : hashtagSeatViews.isEmpty;
+
 
                           if (loading) {
                             return const Center(child: CircularProgressIndicator());
@@ -649,21 +592,39 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                               childAspectRatio: 0.75,
                             ),
                             itemCount:
-                            _selectedIndex == 0 ? seatImages.length : hashtagSeatViews.length,
+                            _selectedIndex == 0 ? directSeatViews.length : hashtagSeatViews.length,
                             itemBuilder: (context, index) {
-                              final imageUrl = _selectedIndex == 0
-                                  ? seatImages[index]
-                                  : hashtagSeatViews[index].viewMediaUrl; // ⚠️ 여기 필드명만 확인
+                              final SeatView item = _selectedIndex == 0
+                                  ? directSeatViews[index]
+                                  : hashtagSeatViews[index];
 
-                              return ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  imageUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                  const Icon(Icons.broken_image),
+                              final imageUrl = item.viewMediaUrl;
+                              final seatViewId = item.seatViewId;
+
+                              return InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => SeatDetailPage(
+                                        seatViewId: seatViewId,
+                                        imageUrl: imageUrl,
+                                        stadiumName: widget.stadiumName,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    imageUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(Icons.broken_image),
+                                  ),
                                 ),
                               );
+
                             },
                           );
                         },

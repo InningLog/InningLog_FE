@@ -237,7 +237,11 @@ class ApiService {
   }) async {
     void log(Object? m) => print('[getPresignedUrlSeat] $m');
 
-    if (fileName.trim().isEmpty || contentType.trim().isEmpty) {
+    if (fileName
+        .trim()
+        .isEmpty || contentType
+        .trim()
+        .isEmpty) {
       log('❌ fileName 또는 contentType이 비어있음');
       return null;
     }
@@ -299,7 +303,6 @@ class ApiService {
   }
 
 
-
   Future<bool> uploadImageToS3(String presignedUrl, Uint8List bytes) async {
     final response = await http.put(
       Uri.parse(presignedUrl),
@@ -321,17 +324,32 @@ class ApiService {
     required DateTime gameDateTime, // yyyy-MM-dd HH:mm
     required int ourScore,
     required int theirScore,
-    required String emotion,   // 감동/짜릿함/답답함/아쉬움/분노/흡족
+    required String emotion, // 감동/짜릿함/답답함/아쉬움/분노/흡족
     required String reviewText,
   }) async {
     void log(Object? m) => print('[uploadJournal] $m');
 
     // ---- 필수값 & 유효성 ----
-    if (gameId.trim().isEmpty) { log('❌ gameId 없음'); return null; }
-    if (stadiumShortCode.trim().isEmpty) { log('❌ stadiumShortCode 없음'); return null; }
-    if (opponentTeamShortCode.trim().isEmpty) { log('❌ opponentTeamShortCode 없음'); return null; }
+    if (gameId
+        .trim()
+        .isEmpty) {
+      log('❌ gameId 없음');
+      return null;
+    }
+    if (stadiumShortCode
+        .trim()
+        .isEmpty) {
+      log('❌ stadiumShortCode 없음');
+      return null;
+    }
+    if (opponentTeamShortCode
+        .trim()
+        .isEmpty) {
+      log('❌ opponentTeamShortCode 없음');
+      return null;
+    }
 
-    const allowedEmotions = ['감동','짜릿함','답답함','아쉬움','분노','흡족'];
+    const allowedEmotions = ['감동', '짜릿함', '답답함', '아쉬움', '분노', '흡족'];
     if (!allowedEmotions.contains(emotion)) {
       log('❌ emotion 값이 허용 목록이 아님: $emotion');
       return null;
@@ -344,23 +362,27 @@ class ApiService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final memberId = prefs.getInt('memberId') ?? prefs.getInt('member_id');
-      if (memberId == null) { log('❌ memberId 없음'); return null; }
+      if (memberId == null) {
+        log('❌ memberId 없음');
+        return null;
+      }
 
       final token = prefs.getString('accessToken')?.trim();
 
       // 날짜 포맷
       String two(int n) => n.toString().padLeft(2, '0');
       final dt = gameDateTime;
-      final gameDateStr = '${dt.year}-${two(dt.month)}-${two(dt.day)} ${two(dt.hour)}:${two(dt.minute)}';
+      final gameDateStr = '${dt.year}-${two(dt.month)}-${two(dt.day)} ${two(
+          dt.hour)}:${two(dt.minute)}';
 
       // 🔐 키 혼재 방어: SC/ShortCode 둘 다 보냄
       final bodyData = <String, dynamic>{
         'gameId': gameId,
-        'gameDate': gameDateStr,              // 호환용
-        'gameDateTime': gameDateStr,          // 요구 스펙
-        'stadiumSC': stadiumShortCode,        // 예시 키
+        'gameDate': gameDateStr, // 호환용
+        'gameDateTime': gameDateStr, // 요구 스펙
+        'stadiumSC': stadiumShortCode, // 예시 키
         'stadiumShortCode': stadiumShortCode, // 문서 키
-        'opponentTeamSC': opponentTeamShortCode,        // 예시 키
+        'opponentTeamSC': opponentTeamShortCode, // 예시 키
         'opponentTeamShortCode': opponentTeamShortCode, // 문서 키
         'ourScore': ourScore,
         'theirScore': theirScore,
@@ -402,18 +424,22 @@ class ApiService {
       }
 
       Map<String, dynamic>? err;
-      try { err = jsonDecode(res.body) as Map<String, dynamic>; } catch (_) {}
+      try {
+        err = jsonDecode(res.body) as Map<String, dynamic>;
+      } catch (_) {}
 
       if (res.statusCode == 400) {
         throw Exception('잘못된 요청(400): ${err?['message'] ?? '요청값이 올바르지 않습니다.'}');
       }
       if (res.statusCode == 404) {
-        throw Exception('리소스를 찾을 수 없음(404): ${err?['message'] ?? '존재하지 않는 회원입니다.'}');
+        throw Exception(
+            '리소스를 찾을 수 없음(404): ${err?['message'] ?? '존재하지 않는 회원입니다.'}');
       }
       if (res.statusCode >= 500) {
         throw Exception('서버 오류(${res.statusCode}).');
       }
-      throw Exception('요청 실패(${res.statusCode}): ${err?['message'] ?? '알 수 없는 오류'}');
+      throw Exception(
+          '요청 실패(${res.statusCode}): ${err?['message'] ?? '알 수 없는 오류'}');
     } catch (e, st) {
       print('[uploadJournal] 🚨 $e\n$st');
       return null;
@@ -421,13 +447,12 @@ class ApiService {
   }
 
 
-
-
   /// 본인 직관 일지 캘린더 조회
   /// GET /journals/calendar
   /// - 인증: Authorization: Bearer <accessToken>
   /// - 필터: resultScore (허용: '승' | '패' | '무승부' | 'WIN' | 'LOSE' | 'DRAW')
-  static Future<List<Journal>> fetchJournalCalendar({String? resultScore}) async {
+  static Future<List<Journal>> fetchJournalCalendar(
+      {String? resultScore}) async {
     void log(Object? m) => print('[fetchJournalCalendar] $m');
 
     // resultScore 정규화: 한/영 입력 모두 허용 → 서버는 한글 값 사용
@@ -513,12 +538,12 @@ class ApiService {
         throw Exception('서버 오류(${res.statusCode}).');
       }
 
-      throw Exception('요청 실패(${res.statusCode}): ${body?['message'] ?? '알 수 없는 오류'}');
+      throw Exception(
+          '요청 실패(${res.statusCode}): ${body?['message'] ?? '알 수 없는 오류'}');
     } on TimeoutException {
       throw Exception('요청 시간이 초과되었습니다. 네트워크 상태를 확인해주세요.');
     }
   }
-
 
 
   /// 본인 직관 일지 목록 - 모아보기(무한 스크롤)
@@ -621,7 +646,8 @@ class ApiService {
         throw Exception('서버 오류(${res.statusCode}).');
       }
 
-      throw Exception('요청 실패(${res.statusCode}): ${body?['message'] ?? '알 수 없는 오류'}');
+      throw Exception(
+          '요청 실패(${res.statusCode}): ${body?['message'] ?? '알 수 없는 오류'}');
     } on TimeoutException {
       throw Exception('요청 시간이 초과되었습니다. 네트워크 상태를 확인해주세요.');
     }
@@ -713,7 +739,6 @@ class ApiService {
   }
 
 
-
   Future<bool> uploadToS3(String presignedUrl, File file) async {
     final bytes = await file.readAsBytes();
     final res = await http.put(
@@ -797,13 +822,15 @@ class ApiService {
         throw Exception('잘못된 요청(400): ${err?['message'] ?? '요청값이 올바르지 않습니다.'}');
       }
       if (res.statusCode == 404) {
-        throw Exception('리소스를 찾을 수 없음(404): ${err?['message'] ?? '존재하지 않는 회원입니다.'}');
+        throw Exception(
+            '리소스를 찾을 수 없음(404): ${err?['message'] ?? '존재하지 않는 회원입니다.'}');
       }
       if (res.statusCode >= 500) {
         throw Exception('서버 오류(${res.statusCode}).');
       }
 
-      throw Exception('요청 실패(${res.statusCode}): ${err?['message'] ?? '알 수 없는 오류'}');
+      throw Exception(
+          '요청 실패(${res.statusCode}): ${err?['message'] ?? '알 수 없는 오류'}');
     } on TimeoutException {
       throw Exception('요청 시간이 초과되었습니다.');
     } catch (e, st) {
@@ -813,12 +840,12 @@ class ApiService {
   }
 
 
-
   /// 특정 날짜의 내 응원팀 경기 일정 조회 (팝업)
   /// GET /journals/schedule?gameDate=YYYY-MM-DD
   /// - 인증: Authorization: Bearer <accessToken>
   /// - 반환: data(Map) 또는 경기 없으면 null
-  static Future<Map<String, dynamic>?> fetchScheduleForDate(DateTime date) async {
+  static Future<Map<String, dynamic>?> fetchScheduleForDate(
+      DateTime date) async {
     void log(Object? m) => print('[fetchScheduleForDate] $m');
 
     try {
@@ -878,16 +905,19 @@ class ApiService {
       }
 
       if (res.statusCode == 400) {
-        throw Exception('잘못된 요청(400): ${(body?['message'] ?? '요청값이 올바르지 않습니다.')}');
+        throw Exception(
+            '잘못된 요청(400): ${(body?['message'] ?? '요청값이 올바르지 않습니다.')}');
       }
       if (res.statusCode == 404) {
-        throw Exception('리소스를 찾을 수 없음(404): ${(body?['message'] ?? '존재하지 않는 회원입니다.')}');
+        throw Exception(
+            '리소스를 찾을 수 없음(404): ${(body?['message'] ?? '존재하지 않는 회원입니다.')}');
       }
       if (res.statusCode >= 500) {
         throw Exception('서버 오류(${res.statusCode})');
       }
 
-      throw Exception('요청 실패(${res.statusCode}): ${body?['message'] ?? '알 수 없는 오류'}');
+      throw Exception(
+          '요청 실패(${res.statusCode}): ${body?['message'] ?? '알 수 없는 오류'}');
     } on TimeoutException {
       throw Exception('요청 시간이 초과되었습니다. 네트워크 상태를 확인해주세요.');
     } catch (e, st) {
@@ -895,7 +925,6 @@ class ApiService {
       return null;
     }
   }
-
 
 
   Future<JournalDetail?> fetchJournalDetail(int journalId) async {
@@ -918,11 +947,7 @@ class ApiService {
 
 
   /// 좌석 시야 갤러리 조회 (최신순)
-  /// - 필수: stadiumShortCode
-  /// - 선택: zoneShortCode, section, seatRow (단, seatRow는 zoneShortCode와 함께만 허용)
-  /// - 페이징: page, size
-  /// - 반환: viewMediaUrl 리스트
-  static Future<List<String>> fetchSeatViews({
+  static Future<List<SeatView>> fetchSeatViews({
     required String stadiumShortCode,
     String? zoneShortCode,
     String? section,
@@ -935,18 +960,28 @@ class ApiService {
     // 파라미터 정리
     final cleanedStadium = stadiumShortCode.trim();
     final cleanedZone =
-    (zoneShortCode?.trim().isNotEmpty ?? false) ? zoneShortCode!.trim() : null;
+    (zoneShortCode
+        ?.trim()
+        .isNotEmpty ?? false) ? zoneShortCode!.trim() : null;
     final cleanedSection =
-    (section?.trim().isNotEmpty ?? false) ? section!.trim() : null;
+    (section
+        ?.trim()
+        .isNotEmpty ?? false) ? section!.trim() : null;
     final cleanedRow =
-    (seatRow?.trim().isNotEmpty ?? false) ? seatRow!.trim() : null;
+    (seatRow
+        ?.trim()
+        .isNotEmpty ?? false) ? seatRow!.trim() : null;
 
     if (cleanedStadium.isEmpty) {
       throw ArgumentError('stadiumShortCode는 필수입니다.');
     }
-    if (cleanedRow != null && cleanedZone == null) {
-      throw ArgumentError('seatRow는 단독 사용 불가입니다. 최소 zoneShortCode를 함께 전달하세요.');
+    final hasZone = cleanedZone != null;
+    final hasSection = cleanedSection != null;
+
+    if (cleanedRow != null && !hasZone && !hasSection) {
+      throw ArgumentError('seatRow는 단독 사용 불가입니다. 최소 zoneShortCode 또는 section을 함께 전달하세요.');
     }
+
 
     final query = <String, String>{
       'stadiumShortCode': cleanedStadium,
@@ -958,7 +993,8 @@ class ApiService {
     };
 
     // ✅ uri 먼저 만들기
-    final uri = Uri.https('api.inninglog.shop', '/seatViews/normal/gallery', query);
+    final uri = Uri.https(
+        'api.inninglog.shop', '/seatViews/normal/gallery', query);
     log('→ GET $uri');
 
     // ✅ 토큰 붙이기
@@ -971,7 +1007,8 @@ class ApiService {
         uri,
         headers: {
           'Accept': 'application/json',
-          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+          if (token != null &&
+              token.isNotEmpty) 'Authorization': 'Bearer $token',
         },
       )
           .timeout(const Duration(seconds: 15));
@@ -995,13 +1032,12 @@ class ApiService {
           if (content is List) {
             return content
                 .whereType<Map<String, dynamic>>()
-                .map((e) => e['viewMediaUrl'])
-                .whereType<String>()
+                .map((e) => SeatView.fromJson(e))
                 .toList();
           }
         }
         log('⚠️ 200이지만 content 없음/형식 불일치 → 빈 리스트 반환');
-        return <String>[];
+        return <SeatView>[];
       }
 
       if (res.statusCode == 401) {
@@ -1021,102 +1057,6 @@ class ApiService {
         throw Exception('서버 오류(${res.statusCode})');
       }
 
-      throw Exception('요청 실패(${res.statusCode}): ${body?['message'] ?? '알 수 없는 오류'}');
-    } on TimeoutException {
-      throw Exception('요청 시간이 초과되었습니다. 네트워크 상태를 확인해주세요.');
-    }
-  }
-
-
-
-  /// 해시태그 기반 좌석 시야 갤러리 조회 (최신순)
-  /// - 필수: stadiumShortCode, hashtagCodes(1~5개)
-  /// - 페이징: page, size
-  /// - 반환: List<SeatView>  (seatViewId, viewMediaUrl 등)
-  static Future<List<SeatView>> fetchSeatViewsByHashtag({
-    required String stadiumShortCode,
-    required List<String> hashtagCodes,
-    int page = 0,
-    int size = 10,
-  }) async {
-    void log(Object? m) => print('[fetchSeatViewsByHashtag] $m');
-
-    // 파라미터 정리/검증
-    final cleanedStadium = stadiumShortCode.trim();
-    final cleanedTags = hashtagCodes
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList(growable: false);
-
-    if (cleanedStadium.isEmpty) {
-      throw ArgumentError('stadiumShortCode는 필수입니다.');
-    }
-    if (cleanedTags.isEmpty || cleanedTags.length > 5) {
-      throw ArgumentError('해시태그는 최소 1개, 최대 5개까지 선택해야 합니다.');
-    }
-
-    // Dart의 Uri.https는 queryParameters에 List를 넣으면 같은 키로 반복 쿼리 생성됨
-    // 예: ...?hashtagCodes=TAG1&hashtagCodes=TAG2
-    final query = <String, dynamic>{
-      'stadiumShortCode': cleanedStadium,
-      'hashtagCodes': cleanedTags, // ← 반복 파라미터
-      'page': '$page',
-      'size': '$size',
-    };
-
-    final uri = Uri.https(
-        'api.inninglog.shop', '/seatViews/hashtag/gallery', query);
-
-    log('→ GET $uri');
-
-    try {
-      final res = await http
-          .get(uri, headers: {'Accept': 'application/json'})
-          .timeout(const Duration(seconds: 15));
-
-      log('→ status: ${res.statusCode}');
-      log('→ body: ${res.body}');
-
-      Map<String, dynamic>? body;
-      try {
-        final decoded = jsonDecode(res.body);
-        body = decoded is Map<String, dynamic> ? decoded : null;
-      } catch (_) {
-        body = null;
-      }
-
-      if (res.statusCode == 200) {
-        final data = body?['data'];
-        if (data is Map<String, dynamic>) {
-          final content = data['content'];
-          if (content is List) {
-            return content
-                .whereType<Map<String, dynamic>>()
-                .map((e) => SeatView.fromJson(e))
-                .toList();
-          }
-        }
-        log('⚠️ 200이지만 content 없음/형식 불일치 → 빈 리스트 반환');
-        return <SeatView>[];
-      }
-
-      if (res.statusCode == 400) {
-        final msg = (body?['message'] ?? '').toString();
-        final code = (body?['code'] ?? '').toString().toUpperCase();
-        if (code == 'BAD_REQUEST' && msg.contains('해시태그')) {
-          throw ArgumentError('해시태그 개수 제한 위반: $msg');
-        }
-        throw Exception('잘못된 요청(400): ${msg.isEmpty ? code : msg}');
-      }
-
-      if (res.statusCode == 404) {
-        throw Exception('리소스를 찾을 수 없습니다 (404).');
-      }
-
-      if (res.statusCode >= 500) {
-        throw Exception('서버 오류(${res.statusCode}).');
-      }
-
       throw Exception(
           '요청 실패(${res.statusCode}): ${body?['message'] ?? '알 수 없는 오류'}');
     } on TimeoutException {
@@ -1125,21 +1065,121 @@ class ApiService {
   }
 
 
+  // /// 해시태그 기반 좌석 시야 갤러리 조회 (최신순)
+  //
+  // static Future<List<SeatView>> fetchSeatViewsByHashtag({
+  //   required String stadiumShortCode,
+  //   required List<String> hashtagCodes,
+  //   int page = 0,
+  //   int size = 10,
+  // }) async {
+  //   void log(Object? m) => print('[fetchSeatViewsByHashtag] $m');
+  //
+  //   // 파라미터 정리/검증
+  //   final cleanedStadium = stadiumShortCode.trim();
+  //   final cleanedTags = hashtagCodes
+  //       .map((e) => e.trim())
+  //       .where((e) => e.isNotEmpty)
+  //       .toList(growable: false);
+  //
+  //   if (cleanedStadium.isEmpty) {
+  //     throw ArgumentError('stadiumShortCode는 필수입니다.');
+  //   }
+  //   if (cleanedTags.isEmpty || cleanedTags.length > 5) {
+  //     throw ArgumentError('해시태그는 최소 1개, 최대 5개까지 선택해야 합니다.');
+  //   }
+  //
+  //   // Dart의 Uri.https는 queryParameters에 List를 넣으면 같은 키로 반복 쿼리 생성됨
+  //   // 예: ...?hashtagCodes=TAG1&hashtagCodes=TAG2
+  //   final query = <String, dynamic>{
+  //     'stadiumShortCode': cleanedStadium,
+  //     'hashtagCodes': cleanedTags, // ← 반복 파라미터
+  //     'page': '$page',
+  //     'size': '$size',
+  //   };
+  //
+  //   final uri = Uri.https(
+  //       'api.inninglog.shop', '/seatViews/hashtag/gallery', query);
+  //
+  //   log('→ GET $uri');
+  //
+  //   try {
+  //     final res = await http
+  //         .get(uri, headers: {'Accept': 'application/json'})
+  //         .timeout(const Duration(seconds: 15));
+  //
+  //     log('→ status: ${res.statusCode}');
+  //     log('→ body: ${res.body}');
+  //
+  //     Map<String, dynamic>? body;
+  //     try {
+  //       final decoded = jsonDecode(res.body);
+  //       body = decoded is Map<String, dynamic> ? decoded : null;
+  //     } catch (_) {
+  //       body = null;
+  //     }
+  //
+  //     if (res.statusCode == 200) {
+  //       final data = body?['data'];
+  //       if (data is Map<String, dynamic>) {
+  //         final content = data['content'];
+  //         if (content is List) {
+  //           return content
+  //               .whereType<Map<String, dynamic>>()
+  //               .map((e) => SeatView.fromJson(e))
+  //               .toList();
+  //         }
+  //       }
+  //       log('⚠️ 200이지만 content 없음/형식 불일치 → 빈 리스트 반환');
+  //       return <SeatView>[];
+  //     }
+  //
+  //     if (res.statusCode == 400) {
+  //       final msg = (body?['message'] ?? '').toString();
+  //       final code = (body?['code'] ?? '').toString().toUpperCase();
+  //       if (code == 'BAD_REQUEST' && msg.contains('해시태그')) {
+  //         throw ArgumentError('해시태그 개수 제한 위반: $msg');
+  //       }
+  //       throw Exception('잘못된 요청(400): ${msg.isEmpty ? code : msg}');
+  //     }
+  //
+  //     if (res.statusCode == 404) {
+  //       throw Exception('리소스를 찾을 수 없습니다 (404).');
+  //     }
+  //
+  //     if (res.statusCode >= 500) {
+  //       throw Exception('서버 오류(${res.statusCode}).');
+  //     }
+  //
+  //     throw Exception(
+  //         '요청 실패(${res.statusCode}): ${body?['message'] ?? '알 수 없는 오류'}');
+  //   } on TimeoutException {
+  //     throw Exception('요청 시간이 초과되었습니다. 네트워크 상태를 확인해주세요.');
+  //   }
+  // }
+
+
   /// 특정 좌석 시야 상세 조회
-  /// GET /seatViews/{seatViewId}
   static Future<SeatViewDetail> fetchSeatViewDetail(int seatViewId) async {
     void log(Object? m) => print('[fetchSeatViewDetail] $m');
-
-    if (seatViewId <= 0) {
-      throw ArgumentError('seatViewId가 유효하지 않습니다: $seatViewId');
-    }
 
     final uri = Uri.https('api.inninglog.shop', '/seatViews/$seatViewId');
     log('→ GET $uri');
 
+    // ✅ 토큰 붙이기 (갤러리 조회랑 동일)
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('accessToken')?.trim();
+
     try {
       final res = await http
-          .get(uri, headers: {'Accept': 'application/json'})
+          .get(
+        uri,
+        headers: {
+          'Accept': 'application/json',
+          if (token != null && token.isNotEmpty)
+            'Authorization': 'Bearer $token',
+        },
+      )
           .timeout(const Duration(seconds: 15));
 
       log('→ status: ${res.statusCode}');
@@ -1153,12 +1193,18 @@ class ApiService {
         body = null;
       }
 
+      // ✅ 200 파싱 (스웨거: body.data 안에 payload)
       if (res.statusCode == 200) {
         final data = body?['data'];
         if (data is Map<String, dynamic>) {
           return SeatViewDetail.fromJson(data);
         }
-        throw Exception('형식 오류: data가 없습니다.');
+        throw Exception('조회 성공(200)이지만 data 형식이 올바르지 않습니다.');
+      }
+
+      // ✅ 스웨거에는 없지만 실제 서버에서 내려오는 케이스(너 로그)
+      if (res.statusCode == 401) {
+        throw Exception('인증이 필요합니다(401). accessToken 확인/로그인 필요');
       }
 
       if (res.statusCode == 400) {
@@ -1170,15 +1216,19 @@ class ApiService {
       if (res.statusCode == 404) {
         final msg = (body?['message'] ?? '').toString();
         throw Exception(
-            '리소스를 찾을 수 없음(404): ${msg.isEmpty ? '존재하지 않는 리소스입니다.' : msg}');
+            '리소스를 찾을 수 없습니다(404): ${msg.isEmpty ? '존재하지 않는 데이터' : msg}');
       }
 
       if (res.statusCode >= 500) {
-        throw Exception('서버 오류(${res.statusCode})');
+        final msg = (body?['message'] ?? '').toString();
+        throw Exception('서버 오류(${res.statusCode}): ${msg.isEmpty
+            ? '서버에 문제가 발생했습니다.'
+            : msg}');
       }
 
+      final msg = (body?['message'] ?? '').toString();
       throw Exception(
-          '요청 실패(${res.statusCode}): ${body?['message'] ?? '알 수 없는 오류'}');
+          '요청 실패(${res.statusCode}): ${msg.isEmpty ? '알 수 없는 오류' : msg}');
     } on TimeoutException {
       throw Exception('요청 시간이 초과되었습니다. 네트워크 상태를 확인해주세요.');
     }
