@@ -48,13 +48,6 @@ class _SeatDetailPageState extends State<SeatDetailPage> {
             final detail = snapshot.data!;
             final info = detail.seatInfo;
 
-            // 해시태그 이름이 겹치는 카테고리는 접미사 붙이기
-            String getFormattedTag(String category, String tagName) {
-              if (category == '지붕' && tagName == '없음') return '#없음_지붕';
-              if (category == '시야 방해' && tagName == '없음') return '#없음_시야방해';
-              return '#$tagName';
-            }
-
 
             final Map<String, List<String>> selectedTags = {};
 
@@ -63,10 +56,14 @@ class _SeatDetailPageState extends State<SeatDetailPage> {
               if (parts.length != 2) continue;
               final category = parts[0];
               final rawTagName = parts[1];
-              final tagName = getFormattedTag(category, rawTagName);
+              final tagName = '#$rawTagName';
 
               selectedTags.putIfAbsent(category, () => []).add(tagName);
+
             }
+
+            final bool hasAnySelectedTags =
+            selectedTags.values.any((tags) => tags.isNotEmpty);
 
 
 
@@ -159,20 +156,41 @@ class _SeatDetailPageState extends State<SeatDetailPage> {
                       ),
                       const SizedBox(height: 16),
 
-                      // ✅ 해시태그 영역 (스크롤 가능 영역이 아니고, 전체 스크롤에 포함됨)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildCategory("응원", ["#일어남", "#일어날_사람은_일어남", "#앉아서"], selectedTags: selectedTags["응원"]),
-                            _buildCategory("햇빛", ["#강함", "#있다가_그늘짐", "#햇빛_없음"], selectedTags: selectedTags["햇빛"]),
-                            _buildCategory("지붕", ["#있음", "#없음"], selectedTags: selectedTags["지붕"]),
-                            _buildCategory("시야 방해", ["#그물", "#아크릴_가림막", "#시야방해_없음"], selectedTags: selectedTags["시야 방해"]),
-                            _buildCategory("좌석 공간", ["#아주_넓음", "#넓음", "#보통", "#좁음"], selectedTags: selectedTags["좌석 공간"]),
-                          ],
+                      if (hasAnySelectedTags)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildCategory(
+                                "응원",
+                                ["#일어남", "#일어날_사람은_일어남", "#앉아서"],
+                                selectedTags: selectedTags["응원"],
+                              ),
+                              _buildCategory(
+                                "햇빛",
+                                ["#강함", "#있다가_그늘짐", "#햇빛_없음"],
+                                selectedTags: selectedTags["햇빛"],
+                              ),
+                              _buildCategory(
+                                "지붕",
+                                ["#있음", "#없음"],
+                                selectedTags: selectedTags["지붕"],
+                              ),
+                              _buildCategory(
+                                "시야 방해",
+                                ["#그물", "#아크릴_가림막", "#시야방해_없음"],
+                                selectedTags: selectedTags["시야 방해"],
+                              ),
+                              _buildCategory(
+                                "좌석 공간",
+                                ["#아주_넓음", "#넓음", "#보통", "#좁음"],
+                                selectedTags: selectedTags["좌석 공간"],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+
 
 
                       // ✅ 좌석 정보 텍스트
@@ -232,6 +250,11 @@ class _SeatDetailPageState extends State<SeatDetailPage> {
   }
 
   Widget _buildCategory(String title, List<String> tags, {List<String>? selectedTags}) {
+
+    if (selectedTags == null || selectedTags.isEmpty) {
+      return const SizedBox.shrink(); // ✅ 값 없으면 아예 미노출
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -280,6 +303,11 @@ class _SeatDetailPageState extends State<SeatDetailPage> {
     );
   }
 
+
+
 }
+
+
+
 
 

@@ -15,9 +15,12 @@ final Map<String, String> tagCodeMap = {
   '#보통': 'SEAT_SPACE_NORMAL',
   '#좁음': 'SEAT_SPACE_NARROW',
 };
-List<String> getSelectedHashtagCodes(Map<String, String> selectedTags) {
+List<String> getSelectedHashtagCodes(
+    Map<String, List<String>> selectedTags,
+    ) {
   return selectedTags.values
-      .map((tag) => tagCodeMap[tag] ?? '')
-      .where((code) => code.isNotEmpty)
+      .expand((tags) => tags)
+      .map((tag) => tagCodeMap[tag])
+      .whereType<String>()
       .toList();
 }
