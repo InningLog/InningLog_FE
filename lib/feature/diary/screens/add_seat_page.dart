@@ -82,17 +82,24 @@ class AddSeatPage extends StatefulWidget {
   final String gameDateTime;
   final int journalId;
 
+
+  final String? initialSection;
+  final String? initialRow;
+
+
   const AddSeatPage({
     required this.journalId,
     super.key,
     required this.stadium,
     required this.gameDateTime,
+    this.initialSection,
+    this.initialRow,
   });
-
 
   @override
   State<AddSeatPage> createState() => _AddSeatPageState();
 }
+
 
 class _AddSeatPageState extends State<AddSeatPage> {
   bool isSaving = false;
@@ -189,11 +196,15 @@ class _AddSeatPageState extends State<AddSeatPage> {
     super.initState();
     print('🧾 AddSeatPage 전달된 stadium: ${widget.stadium}');
 
-    selectedStadiumCode = widget.stadium;
+    if ((widget.initialSection ?? '').trim().isNotEmpty) {
+      sectionController.text = widget.initialSection!.trim();
+    }
+    if ((widget.initialRow ?? '').trim().isNotEmpty) {
+      rowController.text = widget.initialRow!.trim();
+    }
     loadTodaySchedule();
 
   }
-
 
   List<String> get availableZoneCodes {
     var selectedStadiumCode;
@@ -238,7 +249,7 @@ class _AddSeatPageState extends State<AddSeatPage> {
                   ),
                   const SizedBox(width: 0),
                   const Text(
-                    '직관 일지 작성',
+                    '좌석 후기',
                     style: TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.w400,
@@ -333,48 +344,48 @@ class _AddSeatPageState extends State<AddSeatPage> {
                     ),
                     const SizedBox(height: 8),
 
-                    DropdownButtonFormField<String>(
-                      dropdownColor: Colors.white,
-                      decoration: InputDecoration(
-                        hintText: '존을 선택하세요.',
-                        hintStyle: const TextStyle(
-                          color: AppColors.gray700,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          fontFamily: 'Pretendard',
-                        ),
-                        filled: true,
-                        fillColor: AppColors.gray100,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: AppColors.gray300),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: AppColors.gray300),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: AppColors.primary700),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                      ),
-                      value: selectedZone,
-                      items: stadiumZones[selectedStadiumCode]!.entries.map((entry) {
-                        final code = entry.key;
-                        final name = entry.value;
-                        return DropdownMenuItem<String>(
-                          value: code, // ✅ key로 저장
-                          child: Text(name), // ✅ 사용자에겐 name 보여줌
-                        );
-                      }).toList(),
-
-                      onChanged: (value) {
-
-                        setState(() => selectedZone = value);
-                      },
-                    ),
-                    const SizedBox(height: 12),
+                    // DropdownButtonFormField<String>(
+                    //   dropdownColor: Colors.white,
+                    //   decoration: InputDecoration(
+                    //     hintText: '존을 선택하세요.',
+                    //     hintStyle: const TextStyle(
+                    //       color: AppColors.gray700,
+                    //       fontSize: 16,
+                    //       fontWeight: FontWeight.w500,
+                    //       fontFamily: 'Pretendard',
+                    //     ),
+                    //     filled: true,
+                    //     fillColor: AppColors.gray100,
+                    //     border: OutlineInputBorder(
+                    //       borderRadius: BorderRadius.circular(8),
+                    //       borderSide: const BorderSide(color: AppColors.gray300),
+                    //     ),
+                    //     enabledBorder: OutlineInputBorder(
+                    //       borderRadius: BorderRadius.circular(8),
+                    //       borderSide: const BorderSide(color: AppColors.gray300),
+                    //     ),
+                    //     focusedBorder: OutlineInputBorder(
+                    //       borderRadius: BorderRadius.circular(8),
+                    //       borderSide: const BorderSide(color: AppColors.primary700),
+                    //     ),
+                    //     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                    //   ),
+                    //   value: selectedZone,
+                    //   items: stadiumZones[selectedStadiumCode]!.entries.map((entry) {
+                    //     final code = entry.key;
+                    //     final name = entry.value;
+                    //     return DropdownMenuItem<String>(
+                    //       value: code, // ✅ key로 저장
+                    //       child: Text(name), // ✅ 사용자에겐 name 보여줌
+                    //     );
+                    //   }).toList(),
+                    //
+                    //   onChanged: (value) {
+                    //
+                    //     setState(() => selectedZone = value);
+                    //   },
+                    // ),
+                    // const SizedBox(height: 12),
 
                     Row(
                       children: [
