@@ -6,6 +6,7 @@ class Comment {
   final int likeCount;
   final bool likedByMe;
   final bool writeByMe;
+  final bool isDeleted;
   final String? createdAt;
   final List<Comment>? replies;
 
@@ -17,6 +18,7 @@ class Comment {
     this.likeCount = 0,
     this.likedByMe = false,
     this.writeByMe = false,
+    this.isDeleted = false,
     this.createdAt,
     this.replies = const [],
   });

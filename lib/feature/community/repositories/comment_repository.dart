@@ -56,4 +56,12 @@ class CommentRepository {
       throw const FormatException('Unexpected comment unlike response');
     }
   }
+
+  //댓글 삭제
+  Future<void> deleteComment({required int commentId}) async {
+    final res = await _dio.delete('/community/comments/$commentId');
+    if (res.data is! Map<String, dynamic>) {
+      throw const FormatException('Unexpected delete response');
+    }
+  }
 }
