@@ -11,6 +11,7 @@ import '../../../main.dart';
 import '../../../shared/service/api_service.dart';
 import '../../../shared/service/home_view.dart';
 import '../../../shared/service/api_service.dart';
+import '../../field/widgets/jamsil_map.dart';
 import 'add_diary_page.dart';
 import 'diary_page.dart';
 import 'package:http/http.dart' as http;
@@ -102,7 +103,139 @@ class AddSeatPage extends StatefulWidget {
 
 
 class _AddSeatPageState extends State<AddSeatPage> {
+
+  bool _isDirectSheetOpen = false;
+  String? _openPill;
+
+
+  void _showDirectSearchBottomSheet() async {
+    setState(() {
+      _isDirectSheetOpen = true;
+      _openPill = 'section';
+    });
+
+    // AddSeatPage에는 zone/section/row가 widget에 없음 → initial 값으로만 세팅
+    if (sectionController.text.isEmpty && (widget.initialSection ?? '').trim().isNotEmpty) {
+      sectionController.text = widget.initialSection!.trim();
+    }
+    if (rowController.text.isEmpty && (widget.initialRow ?? '').trim().isNotEmpty) {
+      rowController.text = widget.initialRow!.trim();
+    }
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      barrierColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            // widget.stadium가 'JAM' 같은 코드라고 가정 (너 initState에서도 그렇게 씀)
+            final stadiumDisplayName = stadiumNameMap[widget.stadium] ?? widget.stadium;
+            final isJamsil = stadiumDisplayName.replaceAll(' ', '') == '잠실야구장';
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 20,
+                right: 20,
+                top: 0,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 16),
+                    Container(
+                      width: 36,
+                      height: 2,
+                      decoration: BoxDecoration(
+                        color: AppColors.gray700,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    if (isJamsil) ...[
+                      const Center(
+                        child: Text(
+                          '원하는 구역을 선택해서\n 좌석 시야를 확인하세요.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            height: 1.25,
+                            letterSpacing: -0.16,
+                            fontFamily: 'Pretendard',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 360,
+                        child: ClipRect(
+                          child: InteractiveViewer(
+                            panEnabled: true,
+                            scaleEnabled: true,
+                            minScale: 1,
+                            maxScale: 5,
+                            boundaryMargin: EdgeInsets.zero,
+                            child: JamsilMap(
+                              onSectionSelected: (section) {
+                                sectionController.text = section;
+                                setModalState(() {});
+                                Navigator.pop(context);
+
+                                // 닫고 나서 '열' 입력으로 포커스 이동(원하면)
+                                // WidgetsBinding.instance.addPostFrameCallback((_) {
+                                //   if (!mounted) return;
+                                //   FocusScope.of(context).nextFocus();
+                                // });
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ] else ...[
+                      const SizedBox(height: 16),
+                      const Text(
+                        '현재는 잠실 야구장만\n지도 선택을 지원해요.\n구역을 직접 입력해주세요.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          height: 1.3,
+                          fontFamily: 'Pretendard',
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _isDirectSheetOpen = false;
+      _openPill = null;
+    });
+  }
+
+
   bool isSaving = false;
+
 
 
 
@@ -196,6 +329,9 @@ class _AddSeatPageState extends State<AddSeatPage> {
     super.initState();
     print('🧾 AddSeatPage 전달된 stadium: ${widget.stadium}');
 
+    selectedStadiumCode = widget.stadium; // widget.stadium이 이미 'JAM' 같은 코드라면 OK
+
+
     if ((widget.initialSection ?? '').trim().isNotEmpty) {
       sectionController.text = widget.initialSection!.trim();
     }
@@ -207,11 +343,11 @@ class _AddSeatPageState extends State<AddSeatPage> {
   }
 
   List<String> get availableZoneCodes {
-    var selectedStadiumCode;
     final map = stadiumZones[selectedStadiumCode];
     if (map == null) return [];
-    return map.keys.toList(); // ✅ key만 리스트로
+    return map.keys.toList();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -344,6 +480,8 @@ class _AddSeatPageState extends State<AddSeatPage> {
                     ),
                     const SizedBox(height: 8),
 
+
+
                     // DropdownButtonFormField<String>(
                     //   dropdownColor: Colors.white,
                     //   decoration: InputDecoration(
@@ -390,36 +528,43 @@ class _AddSeatPageState extends State<AddSeatPage> {
                     Row(
                       children: [
                         Expanded(
-                          child: TextField(
-                            controller: sectionController,
-                            textAlign: TextAlign.center,
-                            decoration: InputDecoration(
-                              hintText: 'ex) 314',
-                              hintStyle: TextStyle(
-                                color: AppColors.gray700,         // 글자 색
-                                fontSize: 16,               // 글자 크기
-                                fontWeight: FontWeight.w500, // 두께
-                                fontFamily: 'Pretendard',   // 폰트 (지정했을 경우)
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: _showDirectSearchBottomSheet,
+                            child: AbsorbPointer(
+                              child: TextField(
+                                controller: sectionController,
+                                textAlign: TextAlign.center,
+                                decoration: InputDecoration(
+                                  hintText: 'ex) 314',
+                                  hintStyle: TextStyle(
+                                    color: AppColors.gray700,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    fontFamily: 'Pretendard',
+                                  ),
+                                  filled: true,
+                                  fillColor: AppColors.gray100,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(color: AppColors.gray300),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(color: AppColors.gray300),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(color: Color(0xFFF94C32C)),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+
+                                ),
                               ),
-                              filled: true, // 내부 색상 적용하려면 이거 true!
-                              fillColor: AppColors.gray100, // 내부 배경 색상 (연한 회색 등)
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: AppColors.gray300), // 기본 border 색상
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: AppColors.gray300), // 비활성 상태 테두리
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: Color(0xFFF94C32C)),
-                                // 포커스 시 테두리
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                             ),
                           ),
                         ),
+
                         const SizedBox(width: 8),
                         const Text('구역',
                             style: TextStyle(
@@ -753,6 +898,8 @@ class _AddSeatPageState extends State<AddSeatPage> {
       ),
     );
   }
+
+
 
   String formatDateWithTodayCheck(DateTime date) {
     final today = DateTime.now();

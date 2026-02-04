@@ -587,9 +587,9 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                                 context.pushNamed(
                                   'add_seat',
                                   extra: {
-                                    'journalId': 0, // TODO 실제 journalId로 교체
+                                    'journalId': 0, // TODO 정은언니랑 여기 얘기해보기
                                     'stadium': selectedStadiumCode, // 예: 'JAM'
-                                    'gameDateTime': DateTime.now().toIso8601String(), // TODO 실제 경기시간
+                                    'gameDateTime': DateTime.now().toIso8601String(), // TODO 정은언니랑 여기 얘기해보기
 
                                     'initialSection': sectionController.text.trim().isNotEmpty
                                         ? apiSection(sectionController.text.trim())
