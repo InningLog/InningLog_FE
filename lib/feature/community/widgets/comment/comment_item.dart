@@ -95,7 +95,8 @@ class CommentItem extends StatelessWidget {
               Text(
                 comment.content,
                 style: AppTextStyles.bodyBody2Rg.copyWith(
-                  color: AppColors.gray800,
+                  color:
+                      comment.isDeleted ? AppColors.gray600 : AppColors.gray800,
                 ),
               ),
               Row(

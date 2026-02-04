@@ -26,6 +26,7 @@ class FreeBoardTab extends StatefulWidget {
 class _FreeBoardTabState extends State<FreeBoardTab> with RouteAware {
   bool _initialized = false;
   NavigatorObserver? _subscribedObserver;
+  ModalRoute<dynamic>? _route;
   late final PostListViewModel _vm;
 
   @override
@@ -39,6 +40,7 @@ class _FreeBoardTabState extends State<FreeBoardTab> with RouteAware {
 
     // 상세/작성 페이지에서 돌아올 때 pop 이벤트를 받을 수 있도록
     // 현재 네비게이터에 맞는 observer를 구독한다.
+    _route ??= ModalRoute.of(context);
     _subscribeRouteObserver();
   }
 
@@ -60,7 +62,7 @@ class _FreeBoardTabState extends State<FreeBoardTab> with RouteAware {
 
   @override
   void dispose() {
-    final route = ModalRoute.of(context);
+    final route = _route;
     if (route != null && _subscribedObserver != null) {
       if (_subscribedObserver == shellRouteObserver) {
         shellRouteObserver.unsubscribe(this);

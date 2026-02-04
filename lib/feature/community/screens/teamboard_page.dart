@@ -9,6 +9,7 @@ import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:inninglog/feature/community/screens/post_detail_market.dart';
 import 'package:inninglog/shared/widgets/common_header.dart';
 import 'tabs/free_board_tab.dart';
+import 'tabs/onlywan_tab.dart';
 
 enum BoardMode { normal, myPosts, myComments, scraps }
 
@@ -87,23 +88,34 @@ class _TeamBoardPageState extends State<TeamBoardPage>
 
   @override
   Widget build(BuildContext context) {
+    final isFreeTab = _tabs[_tabController.index].type == BoardTab.free;
     return Scaffold(
       backgroundColor: AppColors.primary50,
-      floatingActionButton: SizedBox(
-        width: 56,
-        height: 56,
-
-        child: FloatingActionButton(
-          backgroundColor: AppColors.primary700,
-          shape: const CircleBorder(),
-          onPressed: () {
-            // 기존 게시판 글쓰기
-            context.push(AppRoutePaths.boardPostWriteLocation(widget.teamCode));
-            debugPrint('[Team Board Page] teamCode: ${widget.teamCode}');
-          },
-          child: const Icon(Icons.add, size: 40, color: AppColors.primary50),
-        ),
-      ),
+      floatingActionButton:
+          isFreeTab
+              ? SizedBox(
+                width: 56,
+                height: 56,
+                child: FloatingActionButton(
+                  backgroundColor: AppColors.primary700,
+                  shape: const CircleBorder(),
+                  onPressed: () {
+                    // 기존 게시판 글쓰기
+                    context.push(
+                      AppRoutePaths.boardPostWriteLocation(widget.teamCode),
+                    );
+                    debugPrint(
+                      '[Team Board Page] teamCode: ${widget.teamCode}',
+                    );
+                  },
+                  child: const Icon(
+                    Icons.add,
+                    size: 40,
+                    color: AppColors.primary50,
+                  ),
+                ),
+              )
+              : null,
 
       body: SafeArea(
         child: Column(
@@ -129,7 +141,10 @@ class _TeamBoardPageState extends State<TeamBoardPage>
                   final isActive = index == _tabController.index;
                   switch (tab.type) {
                     case BoardTab.onlywan:
-                      return const Center(child: Text('오직완 페이지'));
+                      return OnlyWanTab(
+                        isActive: isActive,
+                        teamCode: widget.teamCode,
+                      );
                     case BoardTab.free:
                       return FreeBoardTab(
                         teamCode: widget.teamCode,

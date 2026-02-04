@@ -142,7 +142,7 @@ class _PostDetailPageState extends State<PostDetailPage>
     if (!mounted) return;
 
     if (success) {
-      context.read<PostDetailViewModel>().updateCommentCount(-1);
+      _vm.updateCommentCount(-1);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('댓글이 삭제되었습니다.')),
       );

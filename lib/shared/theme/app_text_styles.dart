@@ -154,6 +154,13 @@ class AppTextStyles {
     height: 1,
     letterSpacing: -0.16,
   );
+  static const TextStyle headHead6_5M = TextStyle(
+    fontFamily: "Pretendard",
+    fontSize: 15,
+    fontWeight: FontWeight.w500,
+    height: 1,
+    letterSpacing: -0.16,
+  );
 
   static const TextStyle headHead7R = TextStyle(
     fontFamily: "Pretendard",

@@ -5,21 +5,23 @@ import 'package:inninglog/shared/theme/app_text_styles.dart';
 
 // ---------- public components ----------
 
-enum CountVariant { primary, neutral }
+enum CountVariant { primary, neutral, black }
 
 class LikeCount extends StatelessWidget {
   final int count;
   final CountVariant variant;
+  final String? assetPathOverride;
   const LikeCount({
     required this.count,
     this.variant = CountVariant.primary,
+    this.assetPathOverride,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
     return _IconCount(
-      assetPath: 'assets/icons/green_heart.svg',
+      assetPath: assetPathOverride ?? 'assets/icons/green_heart.svg',
       count: count,
       variant: variant,
       iconWidth: 12.3,
@@ -52,16 +54,18 @@ class CommentCount extends StatelessWidget {
 class ScrapCount extends StatelessWidget {
   final int count;
   final CountVariant variant;
+  final String? assetPathOverride;
   const ScrapCount({
     required this.count,
     this.variant = CountVariant.primary,
+    this.assetPathOverride,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
     return _IconCount(
-      assetPath: 'assets/icons/green_bookmark.svg',
+      assetPath: assetPathOverride ?? 'assets/icons/green_bookmark.svg',
       count: count,
       variant: variant,
       iconWidth: 12.8,
@@ -91,10 +95,8 @@ class _IconCount extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        variant == CountVariant.neutral
-            ? AppColors.gray800
-            : AppColors.primary700;
+    final iconColor = _iconColor(variant);
+    final textColor = _textColor(variant);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -103,14 +105,39 @@ class _IconCount extends StatelessWidget {
           width: iconWidth,
           height: iconHeight,
           // 단색 틴트
-          colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+          colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
         ),
         SizedBox(width: 4),
         SizedBox(
           width: 32,
-          child: Text('$count', style: _baseTextStyle.copyWith(color: color)),
+          child: Text(
+            '$count',
+            style: _baseTextStyle.copyWith(color: textColor),
+          ),
         ),
       ],
     );
+  }
+}
+
+Color _iconColor(CountVariant variant) {
+  switch (variant) {
+    case CountVariant.neutral:
+      return AppColors.gray800;
+    case CountVariant.black:
+      return AppColors.primary700;
+    case CountVariant.primary:
+      return AppColors.primary700;
+  }
+}
+
+Color _textColor(CountVariant variant) {
+  switch (variant) {
+    case CountVariant.neutral:
+      return AppColors.gray800;
+    case CountVariant.black:
+      return AppColors.gray800;
+    case CountVariant.primary:
+      return AppColors.primary700;
   }
 }

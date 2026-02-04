@@ -8,6 +8,7 @@ class PostActionButton extends StatelessWidget {
   final Color color;
   final VoidCallback? onTap;
   final double iconSize;
+  final TextStyle? labelStyle;
 
   const PostActionButton({
     super.key,
@@ -16,10 +17,13 @@ class PostActionButton extends StatelessWidget {
     required this.color,
     required this.onTap,
     this.iconSize = 18,
+    this.labelStyle,
   });
 
   @override
   Widget build(BuildContext context) {
+    final resolvedLabelStyle =
+        (labelStyle ?? AppTextStyles.headHead8Sb).copyWith(color: color);
     final content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -30,7 +34,7 @@ class PostActionButton extends StatelessWidget {
           colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
         ),
         const SizedBox(width: 4),
-        Text(label, style: AppTextStyles.headHead8Sb.copyWith(color: color)),
+        Text(label, style: resolvedLabelStyle),
       ],
     );
 

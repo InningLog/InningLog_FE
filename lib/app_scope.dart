@@ -1,4 +1,5 @@
 import 'package:inninglog/feature/community/repositories/comment_repository.dart';
+import 'package:inninglog/feature/community/repositories/diary_repository.dart';
 import 'package:inninglog/feature/community/repositories/post_repository.dart';
 import 'package:inninglog/feature/user/repositories/user_repository.dart';
 import 'package:inninglog/shared/auth/token_storage.dart';
@@ -12,6 +13,7 @@ class AppScope {
       CommunityPostRepository(apiClient.dio);
   late final CommentRepository commentRepository =
       CommentRepository(apiClient.dio);
+  late final DiaryRepository diaryRepository = DiaryRepository(apiClient.dio);
   late final UserRepository userRepository = UserRepository(apiClient.dio);
 
   AppScope._({required this.tokenStorage, required this.apiClient});
