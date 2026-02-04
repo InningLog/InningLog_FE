@@ -1,0 +1,1 @@
+enum CommentDomainType { post, feed }

@@ -32,6 +32,12 @@ class PostDetailViewModel extends ChangeNotifier {
   int _commentCount = 0;
   int get commentCount => _commentCount;
 
+  void updateCommentCount(int delta) {
+    _commentCount += delta;
+    if (_commentCount < 0) _commentCount = 0;
+    notifyListeners();
+  }
+
   Future<void> fetch() async {
     _isLoading = true;
     _error = null;

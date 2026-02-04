@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:inninglog/feature/community/model/comment.dart';
 import 'package:inninglog/feature/community/model/comment_like_state.dart';
+import 'package:inninglog/feature/community/model/comment_domain_type.dart';
 import 'package:inninglog/feature/community/model/dto/comment_dtos.dart';
 import 'package:inninglog/feature/community/repositories/comment_repository.dart';
 
-class PostCommentViewModel extends ChangeNotifier {
-  final int postId;
+class CommentViewModel extends ChangeNotifier {
+  final CommentDomainType domainType;
+  final int domainId;
   final CommentRepository repo;
   final TextEditingController commentController = TextEditingController();
   final TextEditingController replyController = TextEditingController();
@@ -17,8 +19,9 @@ class PostCommentViewModel extends ChangeNotifier {
   int? _activeReplyIndex;
   bool _isLoading = false;
 
-  PostCommentViewModel({
-    required this.postId,
+  CommentViewModel({
+    required this.domainType,
+    required this.domainId,
     required this.repo,
     List<Comment>? initialComments,
   }) {
@@ -49,10 +52,10 @@ class PostCommentViewModel extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final commentDtos = await repo.getPostComments(postId: postId);
+      final commentDtos = await _fetchCommentsByDomain();
       _applyCommentDtos(commentDtos);
     } catch (e) {
-      debugPrint('[PostComment] fetch error: $e');
+      debugPrint('[Comment] fetch error: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -78,14 +81,13 @@ class PostCommentViewModel extends ChangeNotifier {
     final text = commentController.text.trim();
     if (text.isEmpty) return;
     try {
-      await repo.createPostComment(
-        postId: postId,
+      await _createCommentByDomain(
         request: CreateCommentRequest(content: text, rootCommentId: null),
       );
       commentController.clear();
       await fetchComments();
     } catch (e) {
-      debugPrint('[PostComment] submit comment error: $e');
+      debugPrint('[Comment] submit comment error: $e');
     }
   }
 
@@ -97,8 +99,7 @@ class PostCommentViewModel extends ChangeNotifier {
 
     try {
       final rootCommentId = _comments[index].id;
-      await repo.createPostComment(
-        postId: postId,
+      await _createCommentByDomain(
         request: CreateCommentRequest(
           content: text,
           rootCommentId: rootCommentId,
@@ -108,7 +109,7 @@ class PostCommentViewModel extends ChangeNotifier {
       replyController.clear();
       await fetchComments();
     } catch (e) {
-      debugPrint('[PostComment] submit reply error: $e');
+      debugPrint('[Comment] submit reply error: $e');
     }
   }
 
@@ -157,6 +158,34 @@ class PostCommentViewModel extends ChangeNotifier {
     }
   }
 
+  Future<bool> deleteComment(Comment target) async {
+    final previousComments = List<Comment>.from(_comments);
+    final previousReplies = _cloneReplies();
+    final previousActiveReplyIndex = _activeReplyIndex;
+    final previousReplyText = replyController.text;
+
+    final removed = _removeLocalCommentById(target.id);
+    if (!removed) return false;
+    notifyListeners();
+
+    try {
+      await repo.deleteComment(commentId: target.id);
+      return true;
+    } catch (e) {
+      debugPrint('[Comment] delete error: $e');
+      _comments
+        ..clear()
+        ..addAll(previousComments);
+      _replies
+        ..clear()
+        ..addAll(previousReplies);
+      _activeReplyIndex = previousActiveReplyIndex;
+      replyController.text = previousReplyText;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Comment _applyLikeState(Comment current, CommentLikeState state) {
     return Comment(
       id: current.id,
@@ -169,6 +198,83 @@ class PostCommentViewModel extends ChangeNotifier {
       writeByMe: current.writeByMe,
       replies: current.replies,
     );
+  }
+
+  bool _removeLocalCommentById(int commentId) {
+    final rootIndex = _comments.indexWhere((comment) => comment.id == commentId);
+    if (rootIndex != -1) {
+      _comments.removeAt(rootIndex);
+      _replies
+        ..clear()
+        ..addAll(_shiftRepliesAfterRemoval(rootIndex));
+
+      if (_activeReplyIndex != null) {
+        if (_activeReplyIndex == rootIndex) {
+          _activeReplyIndex = null;
+          replyController.clear();
+        } else if (_activeReplyIndex! > rootIndex) {
+          _activeReplyIndex = _activeReplyIndex! - 1;
+        }
+      }
+      return true;
+    }
+
+    for (final key in _replies.keys.toList()) {
+      final replies = _replies[key];
+      if (replies == null) continue;
+      final replyIndex =
+          replies.indexWhere((reply) => reply.id == commentId);
+      if (replyIndex == -1) continue;
+
+      final nextReplies = List<Comment>.from(replies)..removeAt(replyIndex);
+      if (nextReplies.isEmpty) {
+        _replies.remove(key);
+      } else {
+        _replies[key] = nextReplies;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  Map<int, List<Comment>> _shiftRepliesAfterRemoval(int removedIndex) {
+    final shifted = <int, List<Comment>>{};
+    for (final entry in _replies.entries) {
+      final index = entry.key;
+      if (index == removedIndex) continue;
+      final nextIndex = index > removedIndex ? index - 1 : index;
+      shifted[nextIndex] = entry.value;
+    }
+    return shifted;
+  }
+
+  Map<int, List<Comment>> _cloneReplies() {
+    final snapshot = <int, List<Comment>>{};
+    for (final entry in _replies.entries) {
+      snapshot[entry.key] = List<Comment>.from(entry.value);
+    }
+    return snapshot;
+  }
+
+  Future<List<CommentResDto>> _fetchCommentsByDomain() {
+    switch (domainType) {
+      case CommentDomainType.post:
+        return repo.getPostComments(postId: domainId);
+      case CommentDomainType.feed:
+        throw UnsupportedError('Feed comments are not supported yet.');
+    }
+  }
+
+  Future<void> _createCommentByDomain({
+    required CreateCommentRequest request,
+  }) async {
+    switch (domainType) {
+      case CommentDomainType.post:
+        await repo.createPostComment(postId: domainId, request: request);
+        return;
+      case CommentDomainType.feed:
+        throw UnsupportedError('Feed comments are not supported yet.');
+    }
   }
 
   void _applyCommentDtos(List<CommentResDto> dtos) {

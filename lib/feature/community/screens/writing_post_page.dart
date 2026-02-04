@@ -45,6 +45,8 @@ class _WritingPostView extends StatelessWidget {
   const _WritingPostView({required this.teamCode, this.initialPost});
 
   Future<void> _submit(BuildContext context, WritingPostViewModel vm) async {
+    // Save messenger early to avoid ancestor lookup after widget deactivates.
+    final messenger = ScaffoldMessenger.maybeOf(context);
     final isEditMode = initialPost != null;
     final success =
         isEditMode
@@ -54,7 +56,8 @@ class _WritingPostView extends StatelessWidget {
     if (success) {
       Navigator.of(context).pop(true);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (messenger == null) return;
+      messenger.showSnackBar(
         SnackBar(
           content: Text(
             isEditMode
