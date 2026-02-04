@@ -9,6 +9,7 @@ import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:inninglog/feature/community/screens/post_detail_market.dart';
 import 'package:inninglog/shared/widgets/common_header.dart';
 import 'tabs/free_board_tab.dart';
+import 'tabs/onlywan_tab.dart';
 
 enum BoardMode { normal, myPosts, myComments, scraps }
 
@@ -129,7 +130,7 @@ class _TeamBoardPageState extends State<TeamBoardPage>
                   final isActive = index == _tabController.index;
                   switch (tab.type) {
                     case BoardTab.onlywan:
-                      return const Center(child: Text('오직완 페이지'));
+                      return OnlyWanTab(isActive: isActive);
                     case BoardTab.free:
                       return FreeBoardTab(
                         teamCode: widget.teamCode,

@@ -44,10 +44,10 @@ class PostActionBar extends StatelessWidget {
             child: Center(
               child: PostActionButton(
                 asset: 'assets/icons/board_heart.svg',
-                color: likeActive ? AppColors.primary700 : AppColors.gray500,
+                color: likeActive ? AppColors.primary700 : AppColors.gray400,
                 label: _labelWithCount('공감', likeCount),
                 onTap: onTapLike,
-                iconSize: 18,
+                iconSize: 16,
               ),
             ),
           ),
@@ -57,10 +57,10 @@ class PostActionBar extends StatelessWidget {
             child: Center(
               child: PostActionButton(
                 asset: 'assets/icons/board_comment.svg',
-                color: AppColors.gray500,
+                color: AppColors.gray400,
                 label: _labelWithCount('댓글', commentCount),
                 onTap: null,
-                iconSize: 18,
+                iconSize: 16,
               ),
             ),
           ),
@@ -70,10 +70,10 @@ class PostActionBar extends StatelessWidget {
             child: Center(
               child: PostActionButton(
                 asset: 'assets/icons/board_scrap.svg',
-                color: scrapActive ? AppColors.primary700 : AppColors.gray500,
+                color: scrapActive ? AppColors.primary700 : AppColors.gray400,
                 label: _labelWithCount('스크랩', scrapCount),
                 onTap: onTapScrap,
-                iconSize: 18,
+                iconSize: 16,
               ),
             ),
           ),
