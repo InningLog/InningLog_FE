@@ -576,12 +576,35 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                           if (isEmpty) {
                             return EmptySeatState(
                               onCreateReview: () {
-                                // TODO: 후기 작성 페이지 라우트로 연결
-                                // context.pushNamed('seat_review_create', extra: {...});
+                                final section = sectionController.text.trim().isNotEmpty
+                                    ? apiSection(sectionController.text.trim()) // "314구역" -> "314"
+                                    : null;
+
+                                final row = rowController.text.trim().isNotEmpty
+                                    ? rowController.text.trim().replaceAll('열', '').trim() // "3열" -> "3"
+                                    : null;
+
+                                context.pushNamed(
+                                  'add_seat',
+                                  extra: {
+                                    'journalId': 0, // TODO 정은언니랑 여기 얘기해보기
+                                    'stadium': selectedStadiumCode, // 예: 'JAM'
+                                    'gameDateTime': DateTime.now().toIso8601String(), // TODO 정은언니랑 여기 얘기해보기
+
+                                    'initialSection': sectionController.text.trim().isNotEmpty
+                                        ? apiSection(sectionController.text.trim())
+                                        : null,
+                                    'initialRow': rowController.text.trim().isNotEmpty
+                                        ? rowController.text.trim().replaceAll('열', '').trim()
+                                        : null,
+                                  },
+                                );
+
                               },
                             );
-
                           }
+
+
 
                           return GridView.builder(
                             padding: const EdgeInsets.all(12),

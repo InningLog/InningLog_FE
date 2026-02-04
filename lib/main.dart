@@ -84,17 +84,26 @@ final GoRouter _router = GoRouter(
       },
     ),
 
+
     GoRoute(
-      path: '/addseat',
+      path: '/add-seat',
+      name: 'add_seat',
       builder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>;
+        final extra = (state.extra as Map<String, dynamic>?);
+
         return AddSeatPage(
-          stadium: extra['stadium'],
-          gameDateTime: extra['gameDateTime'],
-          journalId: extra['journalId'],
+          journalId: extra?['journalId'] as int,        // ✅ required
+          stadium: extra?['stadium'] as String,         // ✅ required
+          gameDateTime: extra?['gameDateTime'] as String, // ✅ required
+
+          // ✅ optional (이름 정확히!)
+          initialSection: extra?['initialSection'] as String?,
+          initialRow: extra?['initialRow'] as String?,
         );
       },
     ),
+
+
 
     GoRoute(path: '/onboarding6', builder: (_, __) => const OnboardingPage6()),
     GoRoute(
