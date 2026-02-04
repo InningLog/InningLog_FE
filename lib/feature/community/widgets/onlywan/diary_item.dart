@@ -90,8 +90,8 @@ class _HeaderRow extends StatelessWidget {
           radius: 15,
           backgroundColor: AppColors.gray200,
           backgroundImage:
-              item.thumbImageUrl != null
-                  ? NetworkImage(item.thumbImageUrl!)
+              item.profileUrl != null
+                  ? NetworkImage(item.profileUrl!)
                   : null,
         ),
         const SizedBox(width: 8),

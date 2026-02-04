@@ -1,25 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:inninglog/feature/community/model/diary_item.dart';
 import 'package:inninglog/feature/community/widgets/onlywan/diary_item.dart';
-import 'package:inninglog/shared/theme/app_colors.dart';
+import 'package:inninglog/feature/community/widgets/shared/board_list.dart';
+import 'package:inninglog/shared/widgets/empty_state.dart';
 
 class FeedList extends StatelessWidget {
   final List<DiaryItemModel> items;
+  final bool isLoading;
+  final bool hasNext;
+  final Future<void> Function()? onLoadMore;
 
-  const FeedList({super.key, required this.items});
+  const FeedList({
+    super.key,
+    required this.items,
+    this.isLoading = false,
+    this.hasNext = false,
+    this.onLoadMore,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemBuilder: (context, index) {
-        final item = items[index];
-        return FeedItem(item: item);
-      },
-      separatorBuilder:
-          (_, __) =>
-              const Divider(height: 1, thickness: 1, color: AppColors.gray200),
-      itemCount: items.length,
+    if (items.isEmpty && !isLoading) {
+      return const EmptyState(message: '게시물이 없습니다.');
+    }
+
+    return BoardList<DiaryItemModel>(
+      items: items,
+      hasNext: hasNext,
+      isLoading: isLoading,
+      onLoadMore: onLoadMore,
+      itemBuilder: (context, item) => FeedItem(item: item),
     );
   }
 }
