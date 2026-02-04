@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:inninglog/app_scope.dart';
 import 'package:inninglog/feature/community/data/team_catalog.dart';
-import 'package:inninglog/feature/community/viewmodel/post_comment_view_model.dart';
+import 'package:inninglog/feature/community/model/comment.dart';
+import 'package:inninglog/feature/community/model/comment_domain_type.dart';
+import 'package:inninglog/feature/community/viewmodel/comment_view_model.dart';
 import 'package:inninglog/feature/community/viewmodel/post_detail_view_model.dart';
 import 'package:inninglog/feature/community/repositories/comment_repository.dart';
 import 'package:inninglog/feature/community/repositories/post_repository.dart';
@@ -108,22 +110,80 @@ class _PostDetailPageState extends State<PostDetailPage>
     }
   }
 
+  Future<void> _confirmDeleteComment(
+    CommentViewModel commentVm,
+    Comment target,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (dialogContext) => AlertDialog(
+            title: const Text('댓글 삭제'),
+            content: const Text('이 댓글을 삭제하시겠어요?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('취소'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: const Text(
+                  '삭제',
+                  style: TextStyle(color: AppColors.secondary700),
+                ),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final success = await commentVm.deleteComment(target);
+    if (!mounted) return;
+
+    if (success) {
+      context.read<PostDetailViewModel>().updateCommentCount(-1);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('댓글이 삭제되었습니다.')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('댓글 삭제에 실패했습니다. 다시 시도해주세요.')),
+      );
+    }
+  }
+
+  void _showCommentActions(CommentViewModel commentVm, Comment target) {
+    if (!target.writeByMe) return;
+    showBottomActionSheet(
+      context,
+      actions: [
+        BottomActionSheetAction(
+          label: '삭제',
+          isDestructive: true,
+          onTap: () => _confirmDeleteComment(commentVm, target),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<PostDetailViewModel>.value(value: _vm),
-        ChangeNotifierProvider<PostCommentViewModel>(
+        ChangeNotifierProvider<CommentViewModel>(
           create:
               (_) =>
-                  PostCommentViewModel(
-                    postId: widget.postId,
+                  CommentViewModel(
+                    domainType: CommentDomainType.post,
+                    domainId: widget.postId,
                     repo: _commentRepo,
                   )
                     ..fetchComments(),
         ),
       ],
-      child: Consumer2<PostDetailViewModel, PostCommentViewModel>(
+      child: Consumer2<PostDetailViewModel, CommentViewModel>(
         builder: (context, vm, commentVm, _) {
           final post = vm.post;
           final teamCode = post?.teamCode ?? widget.teamCode;
@@ -224,8 +284,12 @@ class _PostDetailPageState extends State<PostDetailPage>
                             onToggleReplyLike:
                                 (reply, index) =>
                                     commentVm.toggleReplyLike(index, reply),
-                            onTapMore: (_) {},
-                            onTapReplyMore: (_) {},
+                            onTapMore:
+                                (comment) =>
+                                    _showCommentActions(commentVm, comment),
+                            onTapReplyMore:
+                                (reply) =>
+                                    _showCommentActions(commentVm, reply),
                           ),
                           const SizedBox(height: 6),
                         ],

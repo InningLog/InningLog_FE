@@ -4,10 +4,7 @@ class CommentMemberShortResDto {
   final String nickName;
   final String? profileUrl;
 
-  const CommentMemberShortResDto({
-    required this.nickName,
-    this.profileUrl,
-  });
+  const CommentMemberShortResDto({required this.nickName, this.profileUrl});
 
   factory CommentMemberShortResDto.fromJson(Map<String, dynamic> json) {
     return CommentMemberShortResDto(
@@ -70,8 +67,10 @@ class CommentResDto {
       nickName: member?.nickName ?? '',
       profileUrl: member?.profileUrl,
       content: content,
+      isDeleted: isDeleted,
       likeCount: likeCount,
       likedByMe: likedByMe,
+      writeByMe: writedByMe,
       createdAt: commentAt,
     );
   }
