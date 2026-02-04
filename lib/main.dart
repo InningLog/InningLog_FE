@@ -240,21 +240,27 @@ class InningLogApp extends StatelessWidget {
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
       builder: (context, child) {
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            const aspectRatio = 9 / 16;
-            double maxHeight = constraints.maxHeight;
-            double calculatedWidth = maxHeight * aspectRatio;
+        final isIOS = defaultTargetPlatform == TargetPlatform.iOS;
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(isIOS ? 1.06 : 1.0),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              const aspectRatio = 9 / 16;
+              double maxHeight = constraints.maxHeight;
+              double calculatedWidth = maxHeight * aspectRatio;
 
-            return Center(
-              child: Container(
-                width: calculatedWidth,
-                height: maxHeight,
-                color: Colors.white,
-                child: child,
-              ),
-            );
-          },
+              return Center(
+                child: Container(
+                  width: calculatedWidth,
+                  height: maxHeight,
+                  color: Colors.white,
+                  child: child ?? const SizedBox.shrink(),
+                ),
+              );
+            },
+          ),
         );
       },
       localizationsDelegates: const [
