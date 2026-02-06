@@ -174,7 +174,7 @@ class _ActionRow extends StatelessWidget {
           asset: 'assets/icons/green_comment.svg',
           color: AppColors.gray800,
           label: item.commentCount.toString(),
-          onTap: null,
+          onTap: onTapComment,
           iconSize: 14,
           labelStyle: AppTextStyles.bodyBody3M,
         ),

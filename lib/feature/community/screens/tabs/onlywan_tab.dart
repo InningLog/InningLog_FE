@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:inninglog/app_scope.dart';
+import 'package:inninglog/feature/community/model/comment.dart';
 import 'package:inninglog/feature/community/model/diary_item.dart';
 import 'package:inninglog/feature/community/viewmodel/diary_feed_view_model.dart';
+import 'package:inninglog/feature/community/widgets/comment/comment_bottom_sheet.dart';
 import 'package:inninglog/feature/community/widgets/onlywan/diary_item.dart';
 import 'package:inninglog/feature/community/widgets/shared/board_list.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
@@ -72,6 +74,11 @@ class _OnlyWanTabState extends State<OnlyWanTab> {
                     item: item,
                     onTapLike:
                         () => vm.toggleLike(journalId: item.journalId),
+                    onTapComment:
+                        () => showCommentBottomSheet(
+                          context,
+                          comments: const <Comment>[],
+                        ),
                     onTapScrap:
                         () => vm.toggleScrap(journalId: item.journalId),
                   ),
