@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:inninglog/app_scope.dart';
+import 'package:inninglog/feature/community/model/diary_item.dart';
+import 'package:inninglog/feature/community/model/comment_domain_type.dart';
+import 'package:inninglog/feature/community/viewmodel/comment_view_model.dart';
 import 'package:inninglog/feature/community/viewmodel/diary_feed_view_model.dart';
-import 'package:inninglog/feature/community/widgets/onlywan/diary_list.dart';
+import 'package:inninglog/feature/community/widgets/comment/comment_bottom_sheet.dart';
+import 'package:inninglog/feature/community/widgets/onlywan/diary_item.dart';
+import 'package:inninglog/feature/community/widgets/shared/board_list.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
+import 'package:inninglog/shared/widgets/empty_state.dart';
 import 'package:provider/provider.dart';
 
 class OnlyWanTab extends StatefulWidget {
@@ -55,15 +61,45 @@ class _OnlyWanTabState extends State<OnlyWanTab> {
       value: _vm,
       child: Consumer<DiaryFeedViewModel>(
         builder: (context, vm, _) {
-          return Container(
-            color: AppColors.primary50,
-            child: FeedList(
+          final Widget content;
+          if (vm.items.isEmpty && !vm.isLoading) {
+            content = const EmptyState(message: '게시물이 없습니다.');
+          } else {
+            content = BoardList<DiaryItemModel>(
               items: vm.items,
               hasNext: vm.hasNext,
               isLoading: vm.isLoading,
               onLoadMore: vm.loadMore,
-            ),
-          );
+              itemBuilder:
+                  (context, item) => DiaryItem(
+                    item: item,
+                    onTapLike:
+                        () => vm.toggleLike(journalId: item.journalId),
+                    onTapComment:
+                        () {
+                          final repo =
+                              context.read<AppScope>().commentRepository;
+                          final commentVm = CommentViewModel(
+                            domainType: CommentDomainType.feed,
+                            domainId: item.journalId,
+                            repo: repo,
+                          );
+                          showCommentBottomSheet(
+                            context,
+                            viewModel: commentVm,
+                            onCommentCountChanged:
+                                (count) => vm.updateCommentCount(
+                                  journalId: item.journalId,
+                                  count: count,
+                                ),
+                          );
+                        },
+                    onTapScrap:
+                        () => vm.toggleScrap(journalId: item.journalId),
+                  ),
+            );
+          }
+          return Container(color: AppColors.primary50, child: content);
         },
       ),
     );

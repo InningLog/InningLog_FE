@@ -25,6 +25,26 @@ class CommentRepository {
     return comments;
   }
 
+  /// 직관일지 댓글 조회
+  Future<List<CommentResDto>> getJournalComments({
+    required String journalId,
+  }) async {
+    final res = await _dio.get('/journals/$journalId/comments');
+    final json = res.data;
+    if (json is! Map<String, dynamic>) {
+      throw const FormatException('Unexpected comment list response');
+    }
+    final envelope = ApiEnvelope.fromJson(json);
+    final data = envelope.data;
+    final body = data is Map<String, dynamic> ? data : json;
+    final comments =
+        (body['comments'] as List<dynamic>? ?? const [])
+            .whereType<Map<String, dynamic>>()
+            .map(CommentResDto.fromJson)
+            .toList();
+    return comments;
+  }
+
   /// 게시글 댓글 생성
   Future<ApiEnvelope> createPostComment({
     required int postId,
@@ -32,6 +52,22 @@ class CommentRepository {
   }) async {
     final res = await _dio.post(
       '/community/posts/$postId/comments',
+      data: request.toJson(),
+    );
+    final json = res.data;
+    if (json is! Map<String, dynamic>) {
+      throw const FormatException('Unexpected create comment response');
+    }
+    return ApiEnvelope.fromJson(json);
+  }
+
+  /// 직관일지 댓글 생성
+  Future<ApiEnvelope> createJournalComment({
+    required String journalId,
+    required CreateCommentRequest request,
+  }) async {
+    final res = await _dio.post(
+      '/journals/$journalId/comments',
       data: request.toJson(),
     );
     final json = res.data;

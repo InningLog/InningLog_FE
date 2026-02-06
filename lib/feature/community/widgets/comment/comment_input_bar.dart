@@ -69,6 +69,7 @@ class CommentInputBar extends StatelessWidget {
                           minLines: 1,
                           maxLines: maxLines, // ✅ 4줄까지는 높이 증가, 이후는 내부 스크롤
                           keyboardType: TextInputType.multiline,
+
                           textAlignVertical: TextAlignVertical.top,
                           style: AppTextStyles.bodyBody2Rg.copyWith(
                             color: AppColors.gray800,
