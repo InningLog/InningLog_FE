@@ -29,4 +29,18 @@ class DiaryRepository {
 
     return DiaryFeedResponse.fromJson(json);
   }
+
+  Future<void> scrapJournal({required String journalId}) async {
+    final res = await _dio.post('/journals/$journalId/scraps');
+    if (res.data is! Map<String, dynamic>) {
+      throw const FormatException('Unexpected scrap response');
+    }
+  }
+
+  Future<void> unscrapJournal({required String journalId}) async {
+    final res = await _dio.delete('/journals/$journalId/scraps');
+    if (res.data is! Map<String, dynamic>) {
+      throw const FormatException('Unexpected unscrap response');
+    }
+  }
 }

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:inninglog/app_scope.dart';
+import 'package:inninglog/feature/community/model/diary_item.dart';
 import 'package:inninglog/feature/community/viewmodel/diary_feed_view_model.dart';
-import 'package:inninglog/feature/community/widgets/onlywan/diary_list.dart';
+import 'package:inninglog/feature/community/widgets/onlywan/diary_item.dart';
+import 'package:inninglog/feature/community/widgets/shared/board_list.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
+import 'package:inninglog/shared/widgets/empty_state.dart';
 import 'package:provider/provider.dart';
 
 class OnlyWanTab extends StatefulWidget {
@@ -55,15 +58,24 @@ class _OnlyWanTabState extends State<OnlyWanTab> {
       value: _vm,
       child: Consumer<DiaryFeedViewModel>(
         builder: (context, vm, _) {
-          return Container(
-            color: AppColors.primary50,
-            child: FeedList(
+          final Widget content;
+          if (vm.items.isEmpty && !vm.isLoading) {
+            content = const EmptyState(message: '게시물이 없습니다.');
+          } else {
+            content = BoardList<DiaryItemModel>(
               items: vm.items,
               hasNext: vm.hasNext,
               isLoading: vm.isLoading,
               onLoadMore: vm.loadMore,
-            ),
-          );
+              itemBuilder:
+                  (context, item) => DiaryItem(
+                    item: item,
+                    onTapScrap:
+                        () => vm.toggleScrap(journalId: item.journalId),
+                  ),
+            );
+          }
+          return Container(color: AppColors.primary50, child: content);
         },
       ),
     );

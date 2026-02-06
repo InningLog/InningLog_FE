@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:inninglog/feature/community/model/diary_item.dart';
-import 'package:inninglog/feature/community/widgets/post/post_action_counts.dart';
 import 'package:inninglog/feature/community/widgets/post_detail/post_action_button.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:inninglog/shared/theme/app_text_styles.dart';
 
 enum FeedImageRatio { ratio3x4, ratio1x1, ratio4x3 }
 
-class FeedItem extends StatelessWidget {
+class DiaryItem extends StatelessWidget {
   final DiaryItemModel item;
   final VoidCallback? onTapMore;
   final VoidCallback? onTap;
@@ -16,7 +15,7 @@ class FeedItem extends StatelessWidget {
   final VoidCallback? onTapComment;
   final VoidCallback? onTapScrap;
 
-  const FeedItem({
+  const DiaryItem({
     super.key,
     required this.item,
     this.onTapMore,
@@ -90,9 +89,7 @@ class _HeaderRow extends StatelessWidget {
           radius: 15,
           backgroundColor: AppColors.gray200,
           backgroundImage:
-              item.profileUrl != null
-                  ? NetworkImage(item.profileUrl!)
-                  : null,
+              item.profileUrl != null ? NetworkImage(item.profileUrl!) : null,
         ),
         const SizedBox(width: 8),
         Expanded(

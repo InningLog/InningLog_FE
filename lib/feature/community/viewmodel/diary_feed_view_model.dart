@@ -50,6 +50,32 @@ class DiaryFeedViewModel extends ChangeNotifier {
     await _fetch();
   }
 
+  Future<void> toggleScrap({required String journalId}) async {
+    final index = _items.indexWhere((item) => item.journalId == journalId);
+    if (index == -1) return;
+
+    final prev = _items[index];
+    final nextScraped = !prev.scrapedByMe;
+    final nextCount = (prev.scrapCount + (nextScraped ? 1 : -1));
+
+    _items[index] = prev.copyWith(
+      scrapedByMe: nextScraped,
+      scrapCount: nextCount < 0 ? 0 : nextCount,
+    );
+    notifyListeners();
+
+    try {
+      if (nextScraped) {
+        await repo.scrapJournal(journalId: journalId);
+      } else {
+        await repo.unscrapJournal(journalId: journalId);
+      }
+    } catch (e) {
+      _items[index] = prev;
+      notifyListeners();
+    }
+  }
+
   Future<void> _fetch() async {
     _isLoading = true;
     notifyListeners();
