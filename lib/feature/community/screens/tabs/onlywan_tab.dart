@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:inninglog/app_scope.dart';
-import 'package:inninglog/feature/community/model/comment.dart';
 import 'package:inninglog/feature/community/model/diary_item.dart';
+import 'package:inninglog/feature/community/model/comment_domain_type.dart';
+import 'package:inninglog/feature/community/viewmodel/comment_view_model.dart';
 import 'package:inninglog/feature/community/viewmodel/diary_feed_view_model.dart';
 import 'package:inninglog/feature/community/widgets/comment/comment_bottom_sheet.dart';
 import 'package:inninglog/feature/community/widgets/onlywan/diary_item.dart';
@@ -75,10 +76,24 @@ class _OnlyWanTabState extends State<OnlyWanTab> {
                     onTapLike:
                         () => vm.toggleLike(journalId: item.journalId),
                     onTapComment:
-                        () => showCommentBottomSheet(
-                          context,
-                          comments: const <Comment>[],
-                        ),
+                        () {
+                          final repo =
+                              context.read<AppScope>().commentRepository;
+                          final commentVm = CommentViewModel(
+                            domainType: CommentDomainType.feed,
+                            domainId: item.journalId,
+                            repo: repo,
+                          );
+                          showCommentBottomSheet(
+                            context,
+                            viewModel: commentVm,
+                            onCommentCountChanged:
+                                (count) => vm.updateCommentCount(
+                                  journalId: item.journalId,
+                                  count: count,
+                                ),
+                          );
+                        },
                     onTapScrap:
                         () => vm.toggleScrap(journalId: item.journalId),
                   ),

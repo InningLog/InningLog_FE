@@ -177,7 +177,7 @@ class _PostDetailPageState extends State<PostDetailPage>
               (_) =>
                   CommentViewModel(
                     domainType: CommentDomainType.post,
-                    domainId: widget.postId,
+                    domainId: widget.postId.toString(),
                     repo: _commentRepo,
                   )
                     ..fetchComments(),

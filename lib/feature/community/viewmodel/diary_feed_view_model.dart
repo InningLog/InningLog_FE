@@ -102,6 +102,16 @@ class DiaryFeedViewModel extends ChangeNotifier {
     }
   }
 
+  void updateCommentCount({
+    required String journalId,
+    required int count,
+  }) {
+    final index = _items.indexWhere((item) => item.journalId == journalId);
+    if (index == -1) return;
+    _items[index] = _items[index].copyWith(commentCount: count);
+    notifyListeners();
+  }
+
   Future<void> _fetch() async {
     _isLoading = true;
     notifyListeners();

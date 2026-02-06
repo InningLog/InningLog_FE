@@ -2,66 +2,70 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:inninglog/feature/community/model/comment.dart';
+import 'package:inninglog/feature/community/viewmodel/comment_view_model.dart';
 import 'package:inninglog/feature/community/widgets/comment/comment_input_bar.dart';
 import 'package:inninglog/feature/community/widgets/comment/comment_list.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:inninglog/shared/theme/app_text_styles.dart';
+import 'package:inninglog/shared/widgets/bottom_action_sheet.dart';
 import 'package:inninglog/shared/widgets/app_bottom_sheet.dart';
+import 'package:provider/provider.dart';
 
 Future<T?> showCommentBottomSheet<T>(
   BuildContext context, {
-  required List<Comment> comments,
+  required CommentViewModel viewModel,
   void Function(String text)? onSubmitComment,
   void Function(String text, Comment parent)? onSubmitReply,
   void Function(int index)? onTapReply,
-  void Function(int index)? onToggleLike,
-  void Function(Comment reply, int index)? onToggleReplyLike,
   void Function(Comment comment)? onTapMore,
   void Function(Comment reply)? onTapReplyMore,
+  void Function(int count)? onCommentCountChanged,
   String title = '댓글',
+  bool fetchOnShow = true,
 }) {
+  if (fetchOnShow) {
+    viewModel.fetchComments();
+  }
+
   return showAppBottomSheet<T>(
     context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     useRootNavigator: true,
     builder:
-        (_) => CommentBottomSheet(
-          comments: comments,
-          title: title,
-          onSubmitComment: onSubmitComment,
-          onSubmitReply: onSubmitReply,
-          onTapReply: onTapReply,
-          onToggleLike: onToggleLike,
-          onToggleReplyLike: onToggleReplyLike,
-          onTapMore: onTapMore,
-          onTapReplyMore: onTapReplyMore,
+        (_) => ChangeNotifierProvider<CommentViewModel>(
+          create: (_) => viewModel,
+          child: CommentBottomSheet(
+            title: title,
+            onSubmitComment: onSubmitComment,
+            onSubmitReply: onSubmitReply,
+            onTapReply: onTapReply,
+            onTapMore: onTapMore,
+            onTapReplyMore: onTapReplyMore,
+            onCommentCountChanged: onCommentCountChanged,
+          ),
         ),
   );
 }
 
 class CommentBottomSheet extends StatefulWidget {
-  final List<Comment> comments;
   final String title;
   final void Function(String text)? onSubmitComment;
   final void Function(String text, Comment parent)? onSubmitReply;
   final void Function(int index)? onTapReply;
-  final void Function(int index)? onToggleLike;
-  final void Function(Comment reply, int index)? onToggleReplyLike;
   final void Function(Comment comment)? onTapMore;
   final void Function(Comment reply)? onTapReplyMore;
+  final void Function(int count)? onCommentCountChanged;
 
   const CommentBottomSheet({
     super.key,
-    required this.comments,
     this.title = '댓글',
     this.onSubmitComment,
     this.onSubmitReply,
     this.onTapReply,
-    this.onToggleLike,
-    this.onToggleReplyLike,
     this.onTapMore,
     this.onTapReplyMore,
+    this.onCommentCountChanged,
   });
 
   @override
@@ -69,11 +73,11 @@ class CommentBottomSheet extends StatefulWidget {
 }
 
 class _CommentBottomSheetState extends State<CommentBottomSheet> {
+  int? _lastCount;
   final TextEditingController _commentCtrl = TextEditingController();
   final TextEditingController _replyCtrl = TextEditingController();
   final FocusNode _commentFocusNode = FocusNode();
   final FocusNode _replyFocusNode = FocusNode();
-  int? _activeReplyIndex;
 
   @override
   void dispose() {
@@ -84,51 +88,13 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
     super.dispose();
   }
 
-  void _handleTapReply(int index) {
-    widget.onTapReply?.call(index);
-    setState(() {
-      _activeReplyIndex = index;
-      _replyCtrl.clear();
+  void _notifyCount(int count) {
+    if (_lastCount == count) return;
+    _lastCount = count;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      widget.onCommentCountChanged?.call(count);
     });
-    _replyFocusNode.requestFocus();
-  }
-
-  void _cancelReply() {
-    if (_activeReplyIndex == null) return;
-    setState(() {
-      _activeReplyIndex = null;
-      _replyCtrl.clear();
-    });
-  }
-
-  void _handleSubmit() {
-    if (_activeReplyIndex != null) {
-      final text = _replyCtrl.text.trim();
-      if (text.isEmpty) return;
-      final parent = widget.comments[_activeReplyIndex!];
-      widget.onSubmitReply?.call(text, parent);
-      _replyCtrl.clear();
-      _cancelReply();
-      return;
-    }
-
-    final text = _commentCtrl.text.trim();
-    if (text.isEmpty) return;
-    widget.onSubmitComment?.call(text);
-    _commentCtrl.clear();
-  }
-
-  String? get _replyNickname {
-    final index = _activeReplyIndex;
-    if (index == null || index < 0 || index >= widget.comments.length) {
-      return null;
-    }
-    return widget.comments[index].nickName;
-  }
-
-  List<Comment> _repliesFor(int index) {
-    if (index < 0 || index >= widget.comments.length) return const [];
-    return widget.comments[index].replies ?? const [];
   }
 
   @override
@@ -138,72 +104,147 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
       530,
     );
 
-    final isReplyMode = _activeReplyIndex != null;
-    final controller = isReplyMode ? _replyCtrl : _commentCtrl;
-    final focusNode = isReplyMode ? _replyFocusNode : _commentFocusNode;
+    return Consumer<CommentViewModel>(
+      builder: (context, vm, _) {
+        _notifyCount(vm.totalCount);
 
-    return SafeArea(
-      top: false,
-      bottom: false,
-      child: AnimatedPadding(
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.easeOut,
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: AppBottomSheetContainer(
-            safeAreaBottom: true,
-            height: sheetHeight,
-            backgroundColor: AppColors.primary50,
-            child: Column(
+        final isReplyMode = vm.isReplyMode;
+        final controller = isReplyMode ? _replyCtrl : _commentCtrl;
+        final focusNode = isReplyMode ? _replyFocusNode : _commentFocusNode;
+
+        Future<void> showDefaultActions(Comment target) async {
+          if (!target.writeByMe || target.isDeleted) return;
+          await showBottomActionSheet<bool>(
+            context,
+            actions: [
+              BottomActionSheetAction(
+                label: '삭제',
+                isDestructive: true,
+                onTap: () async {
+                  await vm.deleteComment(target);
+                  // Navigator.of(context).pop(ok);
+                },
+              ),
+            ],
+          );
+        }
+
+        return SafeArea(
+          top: false,
+          bottom: false,
+          child: AnimatedPadding(
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOut,
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Stack(
               children: [
-                _CommentSheetHeader(title: widget.title),
-                Expanded(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    onTap: () {
-                      FocusScope.of(context).unfocus();
-                      _cancelReply();
-                    },
-                    child: ListView(
-                      padding: EdgeInsets.zero,
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: MediaQuery.of(context).viewInsets.bottom,
+                  child: const ColoredBox(color: AppColors.primary50),
+                ),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: AppBottomSheetContainer(
+                    safeAreaBottom: true,
+                    height: sheetHeight,
+                    backgroundColor: AppColors.primary50,
+                    child: Column(
                       children: [
-                        CommentList(
-                          comments: widget.comments,
-                          activeReplyIndex: _activeReplyIndex,
-                          repliesFor: _repliesFor,
-                          onTapReply: _handleTapReply,
-                          onToggleLike:
-                              (index) => widget.onToggleLike?.call(index),
-                          onToggleReplyLike:
-                              (reply, index) =>
-                                  widget.onToggleReplyLike?.call(reply, index),
-                          onTapMore:
-                              (comment) => widget.onTapMore?.call(comment),
-                          onTapReplyMore:
-                              (reply) => widget.onTapReplyMore?.call(reply),
+                        _CommentSheetHeader(title: widget.title),
+                        Expanded(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.translucent,
+                            onTap: () {
+                              FocusScope.of(context).unfocus();
+                              vm.cancelReply(clearController: false);
+                            },
+                            child: ListView(
+                              padding: EdgeInsets.zero,
+                              keyboardDismissBehavior:
+                                  ScrollViewKeyboardDismissBehavior.onDrag,
+                              children: [
+                                CommentList(
+                                  comments: vm.comments,
+                                  activeReplyIndex: vm.activeReplyIndex,
+                                  repliesFor: vm.repliesFor,
+                                  onTapReply: (index) {
+                                    widget.onTapReply?.call(index);
+                                    vm.startReply(
+                                      index,
+                                      requestFocus: false,
+                                      clearController: false,
+                                    );
+                                    _replyCtrl.clear();
+                                    _replyFocusNode.requestFocus();
+                                  },
+                                  onToggleLike: vm.toggleCommentLike,
+                                  onToggleReplyLike:
+                                      (reply, index) =>
+                                          vm.toggleReplyLike(index, reply),
+                                  onTapMore: (comment) {
+                                    final handler = widget.onTapMore;
+                                    if (handler != null) {
+                                      handler(comment);
+                                    } else {
+                                      showDefaultActions(comment);
+                                    }
+                                  },
+                                  onTapReplyMore: (reply) {
+                                    final handler = widget.onTapReplyMore;
+                                    if (handler != null) {
+                                      handler(reply);
+                                    } else {
+                                      showDefaultActions(reply);
+                                    }
+                                  },
+                                ),
+                                const SizedBox(height: 6),
+                              ],
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 6),
+                        CommentInputBar(
+                          controller: controller,
+                          focusNode: focusNode,
+                          isReplyMode: isReplyMode,
+                          replyNickname: vm.activeReplyNickname,
+                          onPressed: () {
+                            final text = controller.text.trim();
+                            if (text.isEmpty) return;
+
+                            if (isReplyMode) {
+                              final index = vm.activeReplyIndex;
+                              if (index != null &&
+                                  index >= 0 &&
+                                  index < vm.comments.length) {
+                                widget.onSubmitReply?.call(
+                                  text,
+                                  vm.comments[index],
+                                );
+                              }
+                              _replyCtrl.clear();
+                              vm.submitReply(text: text);
+                            } else {
+                              widget.onSubmitComment?.call(text);
+                              _commentCtrl.clear();
+                              vm.submitComment(text: text);
+                            }
+                          },
+                        ),
                       ],
                     ),
                   ),
                 ),
-                CommentInputBar(
-                  controller: controller,
-                  focusNode: focusNode,
-                  isReplyMode: isReplyMode,
-                  replyNickname: _replyNickname,
-                  onPressed: _handleSubmit,
-                ),
               ],
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

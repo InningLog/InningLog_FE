@@ -7,7 +7,7 @@ import 'package:inninglog/feature/community/repositories/comment_repository.dart
 
 class CommentViewModel extends ChangeNotifier {
   final CommentDomainType domainType;
-  final int domainId;
+  final String domainId;
   final CommentRepository repo;
   final TextEditingController commentController = TextEditingController();
   final TextEditingController replyController = TextEditingController();
@@ -34,6 +34,14 @@ class CommentViewModel extends ChangeNotifier {
 
   List<Comment> repliesFor(int index) =>
       List.unmodifiable(_replies[index] ?? const <Comment>[]);
+
+  int get totalCount {
+    var count = _comments.length;
+    for (final replies in _replies.values) {
+      count += replies.length;
+    }
+    return count;
+  }
 
   int? get activeReplyIndex => _activeReplyIndex;
 
@@ -62,51 +70,65 @@ class CommentViewModel extends ChangeNotifier {
     }
   }
 
-  void startReply(int index) {
+  void startReply(
+    int index, {
+    bool requestFocus = true,
+    bool clearController = true,
+  }) {
     if (index < 0 || index >= _comments.length) return;
     _activeReplyIndex = index;
-    replyController.clear();
-    replyFocusNode.requestFocus();
+    if (clearController) {
+      replyController.clear();
+    }
+    if (requestFocus) {
+      replyFocusNode.requestFocus();
+    }
     notifyListeners();
   }
 
-  void cancelReply() {
+  void cancelReply({bool clearController = true}) {
     if (_activeReplyIndex == null) return;
     _activeReplyIndex = null;
-    replyController.clear();
+    if (clearController) {
+      replyController.clear();
+    }
     notifyListeners();
   }
 
-  Future<void> submitComment() async {
-    final text = commentController.text.trim();
-    if (text.isEmpty) return;
+  Future<void> submitComment({String? text}) async {
+    final content = (text ?? commentController.text).trim();
+    if (content.isEmpty) return;
     try {
       await _createCommentByDomain(
-        request: CreateCommentRequest(content: text, rootCommentId: null),
+        request: CreateCommentRequest(content: content, rootCommentId: null),
       );
-      commentController.clear();
+      if (text == null) {
+        commentController.clear();
+      }
       await fetchComments();
     } catch (e) {
       debugPrint('[Comment] submit comment error: $e');
     }
   }
 
-  Future<void> submitReply() async {
+  Future<void> submitReply({String? text}) async {
     final index = _activeReplyIndex;
     if (index == null || index < 0 || index >= _comments.length) return;
-    final text = replyController.text.trim();
-    if (text.isEmpty) return;
+    final content = (text ?? replyController.text).trim();
+    if (content.isEmpty) return;
 
     try {
       final rootCommentId = _comments[index].id;
       await _createCommentByDomain(
         request: CreateCommentRequest(
-          content: text,
+          content: content,
           rootCommentId: rootCommentId,
         ),
       );
       _activeReplyIndex = null;
-      replyController.clear();
+      if (text == null) {
+        replyController.clear();
+      }
       await fetchComments();
     } catch (e) {
       debugPrint('[Comment] submit reply error: $e');
@@ -159,29 +181,12 @@ class CommentViewModel extends ChangeNotifier {
   }
 
   Future<bool> deleteComment(Comment target) async {
-    final previousComments = List<Comment>.from(_comments);
-    final previousReplies = _cloneReplies();
-    final previousActiveReplyIndex = _activeReplyIndex;
-    final previousReplyText = replyController.text;
-
-    final removed = _removeLocalCommentById(target.id);
-    if (!removed) return false;
-    notifyListeners();
-
     try {
       await repo.deleteComment(commentId: target.id);
+      await fetchComments();
       return true;
     } catch (e) {
       debugPrint('[Comment] delete error: $e');
-      _comments
-        ..clear()
-        ..addAll(previousComments);
-      _replies
-        ..clear()
-        ..addAll(previousReplies);
-      _activeReplyIndex = previousActiveReplyIndex;
-      replyController.text = previousReplyText;
-      notifyListeners();
       return false;
     }
   }
@@ -200,68 +205,16 @@ class CommentViewModel extends ChangeNotifier {
     );
   }
 
-  bool _removeLocalCommentById(int commentId) {
-    final rootIndex = _comments.indexWhere((comment) => comment.id == commentId);
-    if (rootIndex != -1) {
-      _comments.removeAt(rootIndex);
-      _replies
-        ..clear()
-        ..addAll(_shiftRepliesAfterRemoval(rootIndex));
-
-      if (_activeReplyIndex != null) {
-        if (_activeReplyIndex == rootIndex) {
-          _activeReplyIndex = null;
-          replyController.clear();
-        } else if (_activeReplyIndex! > rootIndex) {
-          _activeReplyIndex = _activeReplyIndex! - 1;
-        }
-      }
-      return true;
-    }
-
-    for (final key in _replies.keys.toList()) {
-      final replies = _replies[key];
-      if (replies == null) continue;
-      final replyIndex =
-          replies.indexWhere((reply) => reply.id == commentId);
-      if (replyIndex == -1) continue;
-
-      final nextReplies = List<Comment>.from(replies)..removeAt(replyIndex);
-      if (nextReplies.isEmpty) {
-        _replies.remove(key);
-      } else {
-        _replies[key] = nextReplies;
-      }
-      return true;
-    }
-    return false;
-  }
-
-  Map<int, List<Comment>> _shiftRepliesAfterRemoval(int removedIndex) {
-    final shifted = <int, List<Comment>>{};
-    for (final entry in _replies.entries) {
-      final index = entry.key;
-      if (index == removedIndex) continue;
-      final nextIndex = index > removedIndex ? index - 1 : index;
-      shifted[nextIndex] = entry.value;
-    }
-    return shifted;
-  }
-
-  Map<int, List<Comment>> _cloneReplies() {
-    final snapshot = <int, List<Comment>>{};
-    for (final entry in _replies.entries) {
-      snapshot[entry.key] = List<Comment>.from(entry.value);
-    }
-    return snapshot;
-  }
-
   Future<List<CommentResDto>> _fetchCommentsByDomain() {
     switch (domainType) {
       case CommentDomainType.post:
-        return repo.getPostComments(postId: domainId);
+        final postId = int.tryParse(domainId);
+        if (postId == null) {
+          throw FormatException('Invalid post id: $domainId');
+        }
+        return repo.getPostComments(postId: postId);
       case CommentDomainType.feed:
-        throw UnsupportedError('Feed comments are not supported yet.');
+        return repo.getJournalComments(journalId: domainId);
     }
   }
 
@@ -270,10 +223,14 @@ class CommentViewModel extends ChangeNotifier {
   }) async {
     switch (domainType) {
       case CommentDomainType.post:
-        await repo.createPostComment(postId: domainId, request: request);
+        final postId = int.tryParse(domainId);
+        if (postId == null) {
+          throw FormatException('Invalid post id: $domainId');
+        }
+        await repo.createPostComment(postId: postId, request: request);
         return;
       case CommentDomainType.feed:
-        throw UnsupportedError('Feed comments are not supported yet.');
+        await repo.createJournalComment(journalId: domainId, request: request);
     }
   }
 
