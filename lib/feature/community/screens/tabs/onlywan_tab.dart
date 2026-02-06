@@ -70,6 +70,8 @@ class _OnlyWanTabState extends State<OnlyWanTab> {
               itemBuilder:
                   (context, item) => DiaryItem(
                     item: item,
+                    onTapLike:
+                        () => vm.toggleLike(journalId: item.journalId),
                     onTapScrap:
                         () => vm.toggleScrap(journalId: item.journalId),
                   ),

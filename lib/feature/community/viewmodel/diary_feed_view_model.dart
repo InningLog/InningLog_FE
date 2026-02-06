@@ -50,6 +50,32 @@ class DiaryFeedViewModel extends ChangeNotifier {
     await _fetch();
   }
 
+  Future<void> toggleLike({required String journalId}) async {
+    final index = _items.indexWhere((item) => item.journalId == journalId);
+    if (index == -1) return;
+
+    final prev = _items[index];
+    final nextLiked = !prev.likedByMe;
+    final nextCount = prev.likeCount + (nextLiked ? 1 : -1);
+
+    _items[index] = prev.copyWith(
+      likedByMe: nextLiked,
+      likeCount: nextCount < 0 ? 0 : nextCount,
+    );
+    notifyListeners();
+
+    try {
+      if (nextLiked) {
+        await repo.likeJournal(journalId: journalId);
+      } else {
+        await repo.unlikeJournal(journalId: journalId);
+      }
+    } catch (e) {
+      _items[index] = prev;
+      notifyListeners();
+    }
+  }
+
   Future<void> toggleScrap({required String journalId}) async {
     final index = _items.indexWhere((item) => item.journalId == journalId);
     if (index == -1) return;
