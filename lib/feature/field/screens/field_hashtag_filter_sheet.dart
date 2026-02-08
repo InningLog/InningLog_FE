@@ -577,19 +577,17 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                             return EmptySeatState(
                               onCreateReview: () {
                                 final section = sectionController.text.trim().isNotEmpty
-                                    ? apiSection(sectionController.text.trim()) // "314구역" -> "314"
+                                    ? apiSection(sectionController.text.trim())
                                     : null;
 
                                 final row = rowController.text.trim().isNotEmpty
-                                    ? rowController.text.trim().replaceAll('열', '').trim() // "3열" -> "3"
+                                    ? rowController.text.trim().replaceAll('열', '').trim()
                                     : null;
 
                                 context.pushNamed(
                                   'add_seat',
                                   extra: {
-                                    'journalId': 0, // TODO 정은언니랑 여기 얘기해보기
-                                    'stadium': selectedStadiumCode, // 예: 'JAM'
-                                    'gameDateTime': DateTime.now().toIso8601String(), // TODO 정은언니랑 여기 얘기해보기
+                                    'stadium': selectedStadiumCode,
 
                                     'initialSection': sectionController.text.trim().isNotEmpty
                                         ? apiSection(sectionController.text.trim())
@@ -597,6 +595,8 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                                     'initialRow': rowController.text.trim().isNotEmpty
                                         ? rowController.text.trim().replaceAll('열', '').trim()
                                         : null,
+
+                                    'showGameTime': false,
                                   },
                                 );
 
