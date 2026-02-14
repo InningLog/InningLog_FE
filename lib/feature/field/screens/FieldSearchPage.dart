@@ -275,164 +275,9 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                     ),
 
 
+                    ///TODO : 여기에 추천탭 화면 만들기
 
-                    //해시태그 검색 화면
-                SingleChildScrollView(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 1),
-                        child :  SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 22),
-                            const Text(
-                              '좌석에 관한 해시태그로 검색해보세요!',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 16,
-                                fontFamily: 'Pretendard',
-                              ),
-                            ),
-                            const SizedBox(height: 0),
-                            const Text(
-                              '최대 5개까지 고를 수 있어요.',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                                fontSize: 12,
-                                color: Color(0xFFA9A9A9),
-                              ),
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            // 해시태그 Wrap
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: tagCategories.entries.map((entry) {
-                                final category = entry.key;
-                                final tags = entry.value;
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(category,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 14,
-                                          letterSpacing: -0.14,)),
-                                    const SizedBox(height: 6),
-                                    Wrap(
-                                      spacing: 12,
-                                      runSpacing: 12,
-                                      children: tags.map((tag) {
-                                        final selected = selectedTags[category] == tag;
-                                        return ChoiceChip(
-                                          showCheckmark: false, // ✅ 체크 아이콘 제거
-                                          label: Text(tag),
-                                          selected: selected,
-                                          onSelected: (_) {
-                                            setState(() {
-                                              if (selected) {
-                                                // ✅ 이미 선택된 경우 → 해제
-                                                selectedTags.remove(category);
-                                              } else {
-                                                // ✅ 선택되지 않은 경우 → 해당 카테고리에 tag 할당
-                                                selectedTags[category] = tag;
-                                              }
-                                            });
-                                          },
-                                          selectedColor: AppColors.primary100,
-                                          backgroundColor: Colors.white,
-                                          labelStyle: TextStyle(
-                                            color: selected ?  Color(0xFF272727) : AppColors.gray700,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 12,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(16),
-                                            side: BorderSide(
-                                              color: selected ? AppColors.primary700 : AppColors.gray300,
-                                              width: 1,
-                                            ),
-                                          ),
-                                        );
-                                      }).toList(),
-                                    ),
-                                    const SizedBox(height: 16),
-                                  ],
-                                );
-                              }).toList(),
-                            ),
-
-
-                            const SizedBox(height: 22),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 54,
-                              child: ElevatedButton(
-                                onPressed: (_selectedIndex == 0 && isDirectSearchValid)
-                                    ? () {
-
-                                  debugPrint(
-                                    '[FieldSearchPage] press search stadium="${widget.stadiumName}" section="${sectionController.text.trim()}"',
-                                  );
-
-                                  context.pushNamed(
-                                    'field_result',
-                                    extra: {
-                                      'index': 0,
-                                      'stadiumName': widget.stadiumName,
-                                      'section': sectionController.text.trim(),
-                                    },
-                                  );
-                                }
-                                    : (_selectedIndex == 1 && isHashtagSearchValid)
-                                    ? () {
-                                  context.pushNamed(
-                                    'field_result',
-                                    extra: {
-                                      'index': 1,
-                                      'stadiumName': widget.stadiumName,
-                                      'selectedTags': selectedTags,
-                                      'tagCategories': tagCategories,
-                                    },
-                                  );
-                                }
-                                    : null,
-
-
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: ((_selectedIndex == 0 && isDirectSearchValid) ||
-                                      (_selectedIndex == 1 && isHashtagSearchValid))
-                                      ? AppColors.primary700
-                                      : AppColors.gray200,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(36),
-                                  ),
-                                ),
-                                child: Text(
-                                  '검색하기',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: ((_selectedIndex == 0 && isDirectSearchValid) ||
-                                        (_selectedIndex == 1 && isHashtagSearchValid))
-                                        ? Colors.white
-                                        : AppColors.gray700,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                          ],
-
-                        ),
-                        ),
-
-
-                      ),
-                    )
-
-
+                    _buildRecommendTab(),
 
 
                   ],
@@ -588,6 +433,202 @@ class StadiumBottomSheet extends StatelessWidget {
     );
   }
 }
+
+Widget _buildRecommendTab() {
+  // ✅ 위 섹션(이미지에 텍스트 포함)
+  final bestCategoryImages = <String>[
+    'assets/images/seat_reco_cheer.png',
+    'assets/images/seat_reco_sun.png',
+    'assets/images/seat_reco_view.png',
+    'assets/images/seat_reco_rain.png',
+    'assets/images/seat_reco_wide.png',
+  ];
+
+  return SingleChildScrollView(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 24),
+
+        // =========================
+        // 카테고리 별 BEST
+        // =========================
+        const Text(
+          '카테고리 별 BEST',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+            fontFamily: 'Pretendard',
+            letterSpacing: -0.18,
+            color: AppColors.gray900,
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        SizedBox(
+          height: 178,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: bestCategoryImages.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              return _ImageCard(
+                assetPath: bestCategoryImages[index],
+                width: 130,
+                height: 178,
+                onTap: () {
+                  // TODO: 나중에 추천 상세로 이동 필요하면 여기 연결
+                },
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: 60),
+
+        // =========================
+        // 꿀팁 이닝 (아직 없음 -> 자리만)
+        // =========================
+        Row(
+          children: [
+            const Text(
+              '꿀팁 이닝',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+                fontFamily: 'Pretendard',
+                letterSpacing: -0.18,
+                color: AppColors.gray900,
+              ),
+            ),
+            const Spacer(),
+            GestureDetector(
+              onTap: () {
+                // TODO: 더보기 이동
+              },
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 6),
+                child: Text(
+                  '더보기 >',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: 'Pretendard',
+                    color: AppColors.gray500,
+                    letterSpacing: -0.12,
+
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+
+        SizedBox(
+          height: 200,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: 6, // 임시 카드 개수
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              return _PlaceholderCard(
+                width: 150,
+                height: 200,
+                borderRadius: 12,
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: 24),
+      ],
+    ),
+  );
+}
+
+/// ✅ 이미지(텍스트 포함된 png)를 그대로 카드로 보여주는 위젯
+class _ImageCard extends StatelessWidget {
+  final String assetPath;
+  final double width;
+  final double height;
+  final VoidCallback? onTap;
+
+  const _ImageCard({
+    required this.assetPath,
+    required this.width,
+    required this.height,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          width: width,
+          height: height,
+          child: Image.asset(
+            assetPath,
+            fit: BoxFit.cover,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// ✅ 아직 이미지 없는 카드 자리(placeholder)
+class _PlaceholderCard extends StatelessWidget {
+  final double width;
+  final double height;
+  final double borderRadius;
+
+  const _PlaceholderCard({
+    required this.width,
+    required this.height,
+    this.borderRadius = 8,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(borderRadius),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x40000000),
+            offset: Offset(1, 1),
+            blurRadius: 3,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              stops: [0.27, 1.0],
+              colors: [
+                Colors.transparent,
+                Colors.black,
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+
 
 
 final Map<String, String> stadiumNameToCode = {
