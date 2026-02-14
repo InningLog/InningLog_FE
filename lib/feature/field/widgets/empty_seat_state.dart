@@ -39,7 +39,6 @@ class EmptySeatState extends StatelessWidget {
             const SizedBox(height: 16),
             SizedBox(
               height: 48,
-              width: 152,
               child: OutlinedButton(
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.primary600, width: 1),
