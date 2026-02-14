@@ -89,19 +89,37 @@ final GoRouter _router = GoRouter(
       path: '/add-seat',
       name: 'add_seat',
       builder: (context, state) {
-        final extra = (state.extra as Map<String, dynamic>?);
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+
+        // ✅ stadium만 필수
+        final stadium = extra['stadium'] as String?;
+        if (stadium == null || stadium.trim().isEmpty) {
+          return const Scaffold(
+            body: Center(child: Text('잘못된 접근입니다')),
+          );
+        }
+
+        // ✅ journalId는 null 가능 + 타입도 안전하게 변환
+        final rawJournalId = extra['journalId'];
+        final int? journalId = rawJournalId is int
+            ? rawJournalId
+            : int.tryParse(rawJournalId?.toString() ?? '');
+
+        // ✅ gameDateTime도 null 가능
+        final gameDateTime = extra['gameDateTime'] as String?;
 
         return AddSeatPage(
-          journalId: extra?['journalId'] as int,        // ✅ required
-          stadium: extra?['stadium'] as String,         // ✅ required
-          gameDateTime: extra?['gameDateTime'] as String, // ✅ required
-
-          // ✅ optional (이름 정확히!)
-          initialSection: extra?['initialSection'] as String?,
-          initialRow: extra?['initialRow'] as String?,
+          stadium: stadium,
+          journalId: journalId,                 // ✅ nullable
+          gameDateTime: gameDateTime,           // ✅ nullable
+          initialSection: extra['initialSection'] as String?,
+          initialRow: extra['initialRow'] as String?,
+          showGameTime: (extra['showGameTime'] as bool?) ?? true,
         );
       },
     ),
+
+
 
 
 

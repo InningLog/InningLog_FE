@@ -79,22 +79,22 @@ Future<bool> uploadToS3(String presignedUrl, {File? file, Uint8List? bytes}) asy
 
 
 class AddSeatPage extends StatefulWidget {
-  final String stadium;
-  final String gameDateTime;
-  final int journalId;
-
+  final int? journalId;            // ✅ nullable
+  final String stadium;            // 이건 계속 required면 OK (없을 수도 있으면 이것도 ?로)
+  final String? gameDateTime;      // ✅ nullable
+  final bool showGameTime;
 
   final String? initialSection;
   final String? initialRow;
 
-
   const AddSeatPage({
-    required this.journalId,
     super.key,
     required this.stadium,
-    required this.gameDateTime,
+    this.journalId,
+    this.gameDateTime,
     this.initialSection,
     this.initialRow,
+    this.showGameTime = true,
   });
 
   @override
@@ -107,6 +107,11 @@ class _AddSeatPageState extends State<AddSeatPage> {
   bool _isDirectSheetOpen = false;
   String? _openPill;
 
+  int reviewLength = 0;
+
+
+  final TextEditingController reviewController = TextEditingController();
+  int _reviewLen = 0;
 
   void _showDirectSearchBottomSheet() async {
     setState(() {
@@ -133,7 +138,6 @@ class _AddSeatPageState extends State<AddSeatPage> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            // widget.stadium가 'JAM' 같은 코드라고 가정 (너 initState에서도 그렇게 씀)
             final stadiumDisplayName = stadiumNameMap[widget.stadium] ?? widget.stadium;
             final isJamsil = stadiumDisplayName.replaceAll(' ', '') == '잠실야구장';
 
@@ -201,20 +205,6 @@ class _AddSeatPageState extends State<AddSeatPage> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                    ] else ...[
-                      const SizedBox(height: 16),
-                      const Text(
-                        '현재는 잠실 야구장만\n지도 선택을 지원해요.\n구역을 직접 입력해주세요.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          height: 1.3,
-                          fontFamily: 'Pretendard',
-                          color: Colors.grey,
-                        ),
-                      ),
                       const SizedBox(height: 24),
                     ],
                   ],
@@ -271,23 +261,23 @@ class _AddSeatPageState extends State<AddSeatPage> {
       todaySchedule = MyTeamSchedule.fromJson(jsonData);
     });
   }
-  String _formatDateTime(String rawDateTime) {
+  String _formatDateTime(String? rawDateTime) {
+    if (rawDateTime == null || rawDateTime.trim().isEmpty) return '';
     try {
       final date = DateTime.parse(rawDateTime);
       final isToday = DateTime.now().year == date.year &&
           DateTime.now().month == date.month &&
           DateTime.now().day == date.day;
 
-      final formattedDate = isToday
-          ? 'Today'
-          : DateFormat('MM.dd(E)', 'ko').format(date);
+      final formattedDate = isToday ? 'Today' : DateFormat('MM.dd(E)', 'ko').format(date);
       final formattedTime = DateFormat('HH:mm').format(date);
 
       return '$formattedDate $formattedTime';
     } catch (e) {
-      return rawDateTime; // 파싱 실패 시 원본 그대로
+      return rawDateTime;
     }
   }
+
 
 
 
@@ -327,7 +317,13 @@ class _AddSeatPageState extends State<AddSeatPage> {
   @override
   void initState() {
     super.initState();
-    print('🧾 AddSeatPage 전달된 stadium: ${widget.stadium}');
+
+
+    reviewController.addListener(() {
+      if (!mounted) return;
+      setState(() => _reviewLen = reviewController.text.characters.length);
+    });
+
 
     selectedStadiumCode = widget.stadium; // widget.stadium이 이미 'JAM' 같은 코드라면 OK
 
@@ -350,7 +346,22 @@ class _AddSeatPageState extends State<AddSeatPage> {
 
 
   @override
+  void dispose() {
+    sectionController.dispose();
+    rowController.dispose();
+    reviewController.dispose();
+    super.dispose();
+  }
+
+
+
+  @override
   Widget build(BuildContext context) {
+
+
+    final dt = widget.gameDateTime;
+
+
 
 
     return Scaffold(
@@ -374,16 +385,10 @@ class _AddSeatPageState extends State<AddSeatPage> {
                       height: 20,
                     ),
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => DiaryPage(),
-                        ),
-                      );
+                      Navigator.pop(context);
                     },
 
                   ),
-                  const SizedBox(width: 0),
                   const Text(
                     '좌석 후기',
                     style: TextStyle(
@@ -415,7 +420,6 @@ class _AddSeatPageState extends State<AddSeatPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // 경기 정보 박스
-                    // 경기 정보 박스
                     Container(
                       width: double.infinity,
                       margin: const EdgeInsets.symmetric(vertical: 16),
@@ -440,17 +444,17 @@ class _AddSeatPageState extends State<AddSeatPage> {
                           const SizedBox(height: 4),
                           // 날짜 + 시간
                           Text(
-                            _formatDateTime(widget.gameDateTime),
+                            widget.showGameTime ? _formatDateTime(dt) : _formatDateOnly(dt),
                             style: const TextStyle(
                               fontWeight: FontWeight.w500,
                               fontSize: 14,
                             ),
-                            textAlign: TextAlign.center, // ✅ 가운데 정렬
+                            textAlign: TextAlign.center,
                           ),
+
                         ],
                       ),
                     ),
-
 
 
 
@@ -720,6 +724,103 @@ class _AddSeatPageState extends State<AddSeatPage> {
                       }).toList(),
                     ),
 
+                    const SizedBox(height: 16),
+
+                    const Text(
+                      '좌석 후기 한줄평',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Pretendard',
+                        letterSpacing: -0.16,
+                        color: AppColors.gray900
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      '다른 사람들이 후기를 참고할 수 있어요.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.gray500,
+                        fontFamily: 'Pretendard',
+                        letterSpacing: -0.12
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.gray50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.gray300),
+                      ),
+                      child: Column(
+
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          TextField(
+                            controller: reviewController,
+                            maxLength: 150,
+                            maxLines: 5,
+                            minLines: 5,
+                            textInputAction: TextInputAction.newline,
+
+                            onChanged: (value) {
+                              setState(() {
+                                reviewLength = value.length;
+                              });
+                              // ✅ 글자가 1자 이상 입력된 순간 한 번만 로그 전송
+
+                            },
+
+                            decoration: const InputDecoration(
+                              hintText: '후기를 입력해보세요!',
+                              hintStyle: TextStyle(
+                                color: AppColors.gray700,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                fontFamily: 'Pretendard',
+                                height: 1.42857,
+                                letterSpacing: -0.14,
+                              ),
+                              border: InputBorder.none,
+                              counterText: '', // 기본 카운터 숨김(우리가 아래에서 커스텀으로 보여줄거)
+                            ),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              fontFamily: 'Pretendard',
+                              color:AppColors.gray900,
+                              height: 1.25,
+                              letterSpacing: -0.16,
+                            ),
+                          ),
+                        ],
+                      ),
+
+
+                    ),
+
+                    const SizedBox(height: 4),
+
+
+                    Text(
+                      '($_reviewLen/150)',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w300,
+                        color: AppColors.gray500,
+                        fontFamily: 'Pretendard',
+                        height: 1.16667,
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+
 
 
 
@@ -728,11 +829,20 @@ class _AddSeatPageState extends State<AddSeatPage> {
                       width: double.infinity,
                       height: 54,
                       child: ElevatedButton(
-    onPressed: (isFormValid && !isSaving) // 저장 중이면 비활성화
-    ? () async {
-    setState(() => isSaving = true); // 저장 시작
+                        onPressed: (isFormValid && !isSaving) // 저장 중이면 비활성화
+                        ? () async {
 
-    try {
+                          final jid = widget.journalId;
+                          if (jid == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('일기 정보가 없어서 저장할 수 없어요.')),
+                            );
+                            return;
+                          }
+
+                          setState(() => isSaving = true); // 저장 시작
+
+                        try {
                           print('🟢 버튼 클릭됨!');
                           print('🧪 isFormValid: $isFormValid');
 
@@ -823,7 +933,7 @@ class _AddSeatPageState extends State<AddSeatPage> {
                               .toList();
 
                           await ApiService.uploadSeatView(
-                            journalId: widget.journalId,
+                            journalId: jid,
                             stadiumShortCode: widget.stadium,
                             zoneShortCode: selectedZone!,
                             section: sectionController.text.trim(),
@@ -898,6 +1008,22 @@ class _AddSeatPageState extends State<AddSeatPage> {
       ),
     );
   }
+
+
+  String _formatDateOnly(String? rawDateTime) {
+    if (rawDateTime == null || rawDateTime.trim().isEmpty) return '';
+    try {
+      final date = DateTime.parse(rawDateTime);
+      final isToday = DateTime.now().year == date.year &&
+          DateTime.now().month == date.month &&
+          DateTime.now().day == date.day;
+
+      return isToday ? 'Today' : DateFormat('MM.dd(E)', 'ko').format(date);
+    } catch (e) {
+      return rawDateTime;
+    }
+  }
+
 
 
 
@@ -998,7 +1124,7 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
 
 
   final Map<String, String> stadiumNameToCode = {
-    '잠실 야구장': 'JAM',
+    '잠실 종합 운동장 잠실 야구장': 'JAM',
     '고척 스카이돔': 'GOC',
     '랜더스 필드': 'ICN',
     '위즈 파크': 'SUW',
