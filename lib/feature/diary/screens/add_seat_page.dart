@@ -344,6 +344,16 @@ class _AddSeatPageState extends State<AddSeatPage> {
     return map.keys.toList();
   }
 
+// build 안에서 (경기 정보 박스 만들기 직전에)
+  late final dt = widget.gameDateTime;
+
+// 날짜/시간 표시 문자열 만들어두기
+  late final dateTimeText = widget.showGameTime ? _formatDateTime(dt) : _formatDateOnly(dt);
+
+// _formatDateTime / _formatDateOnly가 ''를 리턴하면 "표시할 게 없음"으로 판단
+  late final hasDateTime = dateTimeText.trim().isNotEmpty;
+
+
 
   @override
   void dispose() {
@@ -422,39 +432,45 @@ class _AddSeatPageState extends State<AddSeatPage> {
                     // 경기 정보 박스
                     Container(
                       width: double.infinity,
-                      margin: const EdgeInsets.symmetric(vertical: 16),
-                      padding: const EdgeInsets.all(12),
+                      margin: EdgeInsets.symmetric(vertical: hasDateTime ? 16 : 12), // ✅ 없으면 margin도 살짝 줄임
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: hasDateTime ? 12 : 10, // ✅ 없으면 세로 padding 줄임
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primary50,
                         border: Border.all(color: AppColors.primary400),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center, // ✅ 중앙 정렬
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min, // ✅ 내용만큼만
                         children: [
-                          // 경기장 이름
                           Text(
                             stadiumNameMap[widget.stadium] ?? widget.stadium,
                             style: const TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 16,
                             ),
-                            textAlign: TextAlign.center, // ✅ 가운데 정렬
-                          ),
-                          const SizedBox(height: 4),
-                          // 날짜 + 시간
-                          Text(
-                            widget.showGameTime ? _formatDateTime(dt) : _formatDateOnly(dt),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14,
-                            ),
                             textAlign: TextAlign.center,
                           ),
 
+                          // ✅ 날짜/시간 있을 때만 간격+텍스트 렌더
+                          if (hasDateTime) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              dateTimeText,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                                fontSize: 14,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ],
                       ),
                     ),
+
 
 
 
