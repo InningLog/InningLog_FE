@@ -284,6 +284,20 @@ class SeatInfo {
   }
 }
 
+class HomeApiResult {
+  final int statusCode;
+  final String code;
+  final String message;
+  final HomeData? data;
+
+  HomeApiResult({
+    required this.statusCode,
+    required this.code,
+    required this.message,
+    required this.data,
+  });
+}
+
 class EmotionTag {
   final String code;
   final String label;
@@ -297,5 +311,7 @@ class EmotionTag {
     );
   }
 }
+
+
 
 
