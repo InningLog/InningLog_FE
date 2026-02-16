@@ -13,6 +13,9 @@ import '../../../shared/service/api_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import 'package:inninglog/app_scope.dart';
+
 
 
 
@@ -76,113 +79,84 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  DateTime currentDate = DateTime.now();
-
-  String nickName = '유저'; // 기본값 설정
-  String teamShortCode = 'LG'; // 기본 응원팀 코드
-
-
-
-  //HomePage에서 상태 변수 추가
   HomeData? homeData;
-
+  String nickName = '유저';
+  String teamShortCode = 'LG';
+  int? myWeaningRate;
 
   @override
   void initState() {
     super.initState();
-    fetchData();           // 홈 데이터 불러오기
-    fetchMyWeaningRate();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final scope = context.read<AppScope>();
+      final token = await scope.tokenStorage.readAccessToken();
+
+      await fetchData(accessToken: token);
+      await fetchMyWeaningRate(accessToken: token);
+    });
   }
 
-  void saveScheduleToPrefs(MyTeamSchedule schedule) async {
-    final prefs = await SharedPreferences.getInstance();
-    final gameDate = DateTime.parse(schedule.gameDateTime);
-    final key = DateFormat('yyyy-MM-dd').format(gameDate);
-    await prefs.setString('schedule_$key', jsonEncode(schedule.toJson()));
-    print('📝 저장 중: $key -> ${schedule.toJson()}');
+  Future<void> fetchData({String? accessToken}) async {
+    final result = await ApiService.fetchHomeDataRaw(accessToken: accessToken);
 
-  }
+    if (!mounted) return;
 
-  void saveScheduleListToPrefs(List<MyTeamSchedule> scheduleList) async {
-    final prefs = await SharedPreferences.getInstance();
-    for (var schedule in scheduleList) {
-      final gameDate = DateTime.parse(schedule.gameDateTime);
-      final key = 'schedule_${DateFormat('yyyy-MM-dd').format(gameDate)}';
-      print('📦 저장할 키: $key');
-      await prefs.setString(key, jsonEncode(schedule.toJson()));
-    }
-  }
-
-
-
-
-  void fetchData() async {
-    final data = await ApiService.fetchHomeData();
-    print('🏠 받아온 홈 데이터: $data'); // ← 이거 추가해봐
-
-    if (data != null) {
-      // 🔽 임시 필터 제거: 날짜 상관 없이 다 저장
+    if (result.statusCode == 200 && result.data != null) {
+      final data = result.data!;
       setState(() {
         homeData = data;
         nickName = data.nickName;
         teamShortCode = data.supportTeamSC;
+        myWeaningRate = data.myWeaningRate; // ✅ home 응답에 승률도 있으니 같이 세팅
       });
       if (data.myTeamSchedule.isNotEmpty) {
         saveScheduleListToPrefs(data.myTeamSchedule);
       }
+      return;
     }
+
+    // ✅ 서버가 "등록되지 않은 팀"이라고 하면 온보딩/팀선택으로
+    if (result.statusCode == 404 && result.message.contains('등록되지 않은 팀')) {
+      // 예: 응원팀 선택 페이지로
+      context.go('/onboarding6'); // 너희 라우트에 맞게
+      return;
+    }
+
+    print('🏠 홈 데이터 실패: ${result.statusCode} ${result.message}');
   }
 
 
-  int? myWeaningRate;
-
 
   Future<void> fetchMyWeaningRate({String? accessToken}) async {
-    // 릴리즈에서도 보이게
     void log(Object? m) => print('[fetchMyWeaningRate] $m');
-
     if (!mounted) return;
 
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final scope = context.read<AppScope>();
+      final token = accessToken ?? await scope.tokenStorage.readAccessToken();
 
-      // 우선순위: Authorization 토큰 → (백업) memberId 쿼리
-      final token = accessToken ?? prefs.getString('accessToken');
-      final memberId = prefs.getInt('memberId');
-
-      // baseUrl 없으면 고정 URL 사용
-      final base = 'https://api.inninglog.shop';
-      final endpoint = '$base/report/main';
-
-      // 토큰 있으면 헤더 인증, 없으면 memberId 쿼리로 백업
-      Uri url;
-      Map<String, String> headers = {'Accept': 'application/json, */*'};
-
-      if (token != null && token.isNotEmpty) {
-        url = Uri.parse(endpoint);
-        headers['Authorization'] = 'Bearer $token';
-      } else if (memberId != null) {
-        url = Uri.parse('$endpoint?memberId=$memberId');
-      } else {
-        log('❌ 토큰/멤버ID 모두 없음');
+      if (token == null || token.isEmpty) {
+        log('❌ 토큰 없음');
         if (!mounted) return;
         setState(() => myWeaningRate = 0);
         return;
       }
 
+      final url = Uri.parse('https://api.inninglog.shop/report/main');
+      final headers = {
+        'Accept': 'application/json, */*',
+        'Authorization': 'Bearer $token',
+      };
+
       log('→ GET $url');
-      final res = await http.get(url, headers: headers).timeout(const Duration(seconds: 15));
+      final res = await http.get(url, headers: headers).timeout(
+          const Duration(seconds: 15));
       log('→ status: ${res.statusCode}');
       log('→ body: ${res.body}');
 
-      // JSON 파싱 시도
-      Map<String, dynamic>? body;
-      try {
-        final decoded = jsonDecode(res.body);
-        body = decoded is Map<String, dynamic> ? decoded : null;
-      } catch (_) {
-        body = null;
-      }
+      final decoded = jsonDecode(res.body);
+      final body = decoded is Map<String, dynamic> ? decoded : null;
 
       num _toNum(dynamic v) {
         if (v is num) return v;
@@ -193,7 +167,6 @@ class _HomePageState extends State<HomePage> {
       if (res.statusCode == 200) {
         final data = body?['data'];
         if (data is Map<String, dynamic>) {
-          // 서버 키 혼재 대응: myWeaningRate / winningRateHalPoongRi / halPoongRi 등
           final rate = _toNum(
             data['myWeaningRate'] ??
                 data['winningRateHalPoongRi'] ??
@@ -204,37 +177,10 @@ class _HomePageState extends State<HomePage> {
           if (!mounted) return;
           setState(() => myWeaningRate = rate);
           return;
-        } else {
-          log('❌ 200이지만 data 없음/형식 불일치');
-          if (!mounted) return;
-          setState(() => myWeaningRate = 0);
-          return;
         }
       }
 
-      // ---- 에러 분기 ----
-      final codeField = (body?['code']);
-      final codeStr = (codeField ?? '').toString().toUpperCase();
-
-      // 직관기록 없음: NOVISITEDGAMES / NO_VISITED_GAME 등 혼재 처리
-      final noVisited =
-          codeStr.contains('NOVISITEDGAMES') || codeStr.contains('NO_VISITED_GAME');
-
-      if (res.statusCode == 400 && noVisited) {
-        log('📭 직관 기록 없음 (400/$codeStr)');
-        if (!mounted) return;
-        setState(() => myWeaningRate = 0);
-        return;
-      }
-
-      if (res.statusCode == 404) {
-        log('❌ 존재하지 않는 회원 (404)');
-        if (!mounted) return;
-        setState(() => myWeaningRate = 0);
-        return;
-      }
-
-      log('❌ 기타 오류: ${res.statusCode} / msg: ${body?['message'] ?? ''} / code: $codeStr');
+      // 에러면 0 처리
       if (!mounted) return;
       setState(() => myWeaningRate = 0);
     } catch (e, st) {
@@ -243,12 +189,6 @@ class _HomePageState extends State<HomePage> {
       setState(() => myWeaningRate = 0);
     }
   }
-
-
-
-
-
-
 
 
   // 팀별 색상 정의
@@ -265,11 +205,16 @@ class _HomePageState extends State<HomePage> {
     'KT': const Color(0xFF000000),
   };
 
+  DateTime currentDate = DateTime.now();
+
+
   //우리 예매처 바로가기 링크 모음
   Future<void> openTicketUrl(String teamCode) async {
     final Map<String, String> ticketUrls = {
-      'OB': 'https://ticket.interpark.com/Contents/Sports/GoodsInfo?SportsCode=07001&TeamCode=PB004', // 두산
-      'WO': 'https://ticket.interpark.com/Contents/Sports/GoodsInfo?SportsCode=07001&TeamCode=PB003', // 키움
+      'OB': 'https://ticket.interpark.com/Contents/Sports/GoodsInfo?SportsCode=07001&TeamCode=PB004',
+      // 두산
+      'WO': 'https://ticket.interpark.com/Contents/Sports/GoodsInfo?SportsCode=07001&TeamCode=PB003',
+      // 키움
       'LG': 'https://www.ticketlink.co.kr/sports/137/59',
       'HT': 'https://www.ticketlink.co.kr/sports/137/58',
       'SS': 'https://www.ticketlink.co.kr/sports/137/57',
@@ -351,11 +296,6 @@ class _HomePageState extends State<HomePage> {
     }
 
 
-
-
-
-
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -408,7 +348,7 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(height: 16),
                     OutlinedButton(
                       onPressed: () async {
-                        await  AmplitudeFlutter.getInstance().logEvent(
+                        await AmplitudeFlutter.getInstance().logEvent(
                           'view_home_report',
                           eventProperties: {
                             'category': 'Custom',
@@ -421,12 +361,12 @@ class _HomePageState extends State<HomePage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => HomeDetailPage(
-                              teamShortCode: teamShortCode, // ✅ 이거 넘겨주기
-                            ),
+                            builder: (context) =>
+                                HomeDetailPage(
+                                  teamShortCode: teamShortCode, // ✅ 이거 넘겨주기
+                                ),
                           ),
                         );
-
                       },
 
                       style: OutlinedButton.styleFrom(
@@ -475,7 +415,8 @@ class _HomePageState extends State<HomePage> {
 
               Container(
                 width: 360,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   border: Border.all(color: AppColors.gray300),
                   borderRadius: BorderRadius.circular(12),
@@ -488,7 +429,9 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         IconButton(
                           onPressed: _goToPreviousDay,
-                          icon: SvgPicture.asset('assets/icons/month_left.svg', width: 20, height: 27),
+                          icon: SvgPicture.asset(
+                              'assets/icons/month_left.svg', width: 20,
+                              height: 27),
                         ),
                         Text(
                           _formatDate(currentDate),
@@ -500,7 +443,9 @@ class _HomePageState extends State<HomePage> {
                         ),
                         IconButton(
                           onPressed: _goToNextDay,
-                          icon: SvgPicture.asset('assets/icons/month_right.svg', width: 20, height: 27),
+                          icon: SvgPicture.asset(
+                              'assets/icons/month_right.svg', width: 20,
+                              height: 27),
                         ),
                       ],
                     ),
@@ -510,8 +455,9 @@ class _HomePageState extends State<HomePage> {
                     if (todaySchedule == null)
 
                       Padding(
-                        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 19),
-                        child:  Row(
+                        padding: const EdgeInsets.only(
+                            left: 16, right: 16, bottom: 19),
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
@@ -542,8 +488,10 @@ class _HomePageState extends State<HomePage> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                teamNameMap[todaySchedule!.myTeam] ?? todaySchedule!.myTeam,
-                                style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+                                teamNameMap[todaySchedule!.myTeam] ??
+                                    todaySchedule!.myTeam,
+                                style: const TextStyle(
+                                    fontSize: 19, fontWeight: FontWeight.w800),
                               ),
                               const SizedBox(width: 66),
                               const Text(
@@ -556,8 +504,10 @@ class _HomePageState extends State<HomePage> {
                               ),
                               const SizedBox(width: 66),
                               Text(
-                                teamNameMap[todaySchedule!.opponentTeam] ?? todaySchedule!.opponentTeam,
-                                style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+                                teamNameMap[todaySchedule!.opponentTeam] ??
+                                    todaySchedule!.opponentTeam,
+                                style: const TextStyle(
+                                    fontSize: 19, fontWeight: FontWeight.w800),
                               ),
                             ],
                           ),
@@ -566,11 +516,14 @@ class _HomePageState extends State<HomePage> {
                             todaySchedule!.gameDateTime.contains(' ')
                                 ? todaySchedule!.gameDateTime.split(' ')[1]
                                 : '',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            style: const TextStyle(fontSize: 16,
+                                fontWeight: FontWeight.w600),
                           ),
                           Text(
-                            '@ ${stadiumNameMap[todaySchedule!.stadium] ?? todaySchedule!.stadium}',
-                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+                            '@ ${stadiumNameMap[todaySchedule!.stadium] ??
+                                todaySchedule!.stadium}',
+                            style: const TextStyle(fontSize: 10,
+                                fontWeight: FontWeight.w500),
                           ),
                         ],
                       ),
@@ -584,11 +537,10 @@ class _HomePageState extends State<HomePage> {
                 width: 360,
                 height: 57,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal:0),
+                  padding: const EdgeInsets.symmetric(horizontal: 0),
                   child: ElevatedButton(
                     onPressed: () async {
-
-                      await  AmplitudeFlutter.getInstance().logEvent(
+                      await AmplitudeFlutter.getInstance().logEvent(
                         'click_home_ticket_button',
                         eventProperties: {
                           'component': 'btn_click',
@@ -597,7 +549,8 @@ class _HomePageState extends State<HomePage> {
                         },
                       );
 
-                      openTicketUrl(teamShortCode); // 이 변수는 현재 'LG' 같은 코드로 정의돼 있음
+                      openTicketUrl(
+                          teamShortCode); // 이 변수는 현재 'LG' 같은 코드로 정의돼 있음
 
                     },
                     style: ElevatedButton.styleFrom(
@@ -629,18 +582,36 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-}
 
-String getImageForRate(double rate) {
-  if (rate <= 0.3) return 'assets/images/bori30.jpg';
-  if (rate <= 0.5) return 'assets/images/bori50.jpg';
-  if (rate <= 0.7) return 'assets/images/bori70.jpg';
-  return 'assets/images/bori100.jpg';
-}
-String _getTicketProviderName(String url) {
-  if (url.contains('ticket.interpark.com')) return '인터파크';
-  if (url.contains('ticketlink.co.kr')) return '티켓링크';
-  if (url.contains('ncdinos.com')) return 'NC 다이노스';
-  if (url.contains('giantsclub.com')) return '롯데 자이언츠';
-  return '기타';
+  void saveScheduleToPrefs(MyTeamSchedule schedule) async {
+    final prefs = await SharedPreferences.getInstance();
+    final gameDate = DateTime.parse(schedule.gameDateTime);
+    final key = DateFormat('yyyy-MM-dd').format(gameDate);
+    await prefs.setString('schedule_$key', jsonEncode(schedule.toJson()));
+  }
+
+  void saveScheduleListToPrefs(List<MyTeamSchedule> scheduleList) async {
+    final prefs = await SharedPreferences.getInstance();
+    for (final schedule in scheduleList) {
+      final gameDate = DateTime.parse(schedule.gameDateTime);
+      final key = 'schedule_${DateFormat('yyyy-MM-dd').format(gameDate)}';
+      await prefs.setString(key, jsonEncode(schedule.toJson()));
+    }
+  }
+
+
+  String getImageForRate(double rate) {
+    if (rate <= 0.3) return 'assets/images/bori30.jpg';
+    if (rate <= 0.5) return 'assets/images/bori50.jpg';
+    if (rate <= 0.7) return 'assets/images/bori70.jpg';
+    return 'assets/images/bori100.jpg';
+  }
+
+  String _getTicketProviderName(String url) {
+    if (url.contains('ticket.interpark.com')) return '인터파크';
+    if (url.contains('ticketlink.co.kr')) return '티켓링크';
+    if (url.contains('ncdinos.com')) return 'NC 다이노스';
+    if (url.contains('giantsclub.com')) return '롯데 자이언츠';
+    return '기타';
+  }
 }

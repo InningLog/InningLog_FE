@@ -16,39 +16,87 @@ class ApiService {
 
 
   /// 파싱까지 해서 바로 쓰기 좋은 함수
-  static Future<HomeData?> fetchHomeData({String? accessToken}) async {
+  static Future<HomeData?> fetchHomeData({required String? accessToken}) async {
+    void log(Object? m) => print('[fetchHomeData] $m');
+
+    final url = Uri.parse('$baseUrl/home/view');
+
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      if (accessToken != null && accessToken.isNotEmpty)
+        'Authorization': 'Bearer $accessToken',
+    };
+
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = accessToken ?? prefs.getString('accessToken');
-      if (token == null) {
-        debugPrint('❌ accessToken 없음');
-        return null;
+      log('→ GET $url');
+      log('→ hasToken: ${accessToken != null && accessToken.isNotEmpty}');
+      final res = await http
+          .get(url, headers: headers)
+          .timeout(const Duration(seconds: 15));
+
+      log('→ status: ${res.statusCode}');
+      log('→ body: ${res.body}');
+
+      Map<String, dynamic>? body;
+      try {
+        final decoded = jsonDecode(res.body);
+        body = decoded is Map<String, dynamic> ? decoded : null;
+      } catch (e) {
+        log('❌ JSON decode fail: $e');
+        body = null;
       }
 
-      final url = Uri.parse('$baseUrl/home/view');
-      final res = await http.get(
-        url,
-        headers: {
-          'Authorization': 'Bearer $token', // ✅ 인증은 헤더로
-          'Accept': 'application/json',
-        },
-      );
-
-      debugPrint('GET /home/view → ${res.statusCode}');
+      // 200 OK
       if (res.statusCode == 200) {
-        final body = jsonDecode(res.body) as Map<String, dynamic>;
-        final data = body['data'];
-        if (data == null) return null;
-        return HomeData.fromJson(data);
-      } else {
-        debugPrint('응답 바디: ${res.body}');
+        final data = body?['data'];
+        if (data is Map<String, dynamic>) {
+          return HomeData.fromJson(data);
+        }
+        log('❌ 200 but data is null/not map');
         return null;
       }
-    } catch (e) {
-      debugPrint('🚨 fetchHomeData 에러: $e');
+
+      // 400/404/500 등
+      final serverMsg = (body?['message'] ?? '').toString();
+      final serverCode = (body?['code'] ?? '').toString();
+      log('❌ error status=${res
+          .statusCode} code=$serverCode message=$serverMsg');
+      return null;
+    } catch (e, st) {
+      log('🚨 exception: $e\n$st');
       return null;
     }
   }
+
+  static Future<HomeApiResult> fetchHomeDataRaw({String? accessToken}) async {
+    final url = Uri.parse('https://api.inninglog.shop/home/view');
+
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      if (accessToken != null && accessToken.isNotEmpty)
+        'Authorization': 'Bearer $accessToken',
+    };
+
+    final res = await http.get(url, headers: headers);
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+
+    final code = (body['code'] ?? '').toString();
+    final message = (body['message'] ?? '').toString();
+    final dataJson = body['data'];
+
+    HomeData? data;
+    if (res.statusCode == 200 && dataJson is Map<String, dynamic>) {
+      data = HomeData.fromJson(dataJson);
+    }
+
+    return HomeApiResult(
+      statusCode: res.statusCode,
+      code: code,
+      message: message,
+      data: data,
+    );
+  }
+
 
   /// 디버깅용: 원본 Response가 필요할 때
   static Future<http.Response?> getHomeViewRaw({String? accessToken}) async {
@@ -979,7 +1027,8 @@ class ApiService {
     final hasSection = cleanedSection != null;
 
     if (cleanedRow != null && !hasZone && !hasSection) {
-      throw ArgumentError('seatRow는 단독 사용 불가입니다. 최소 zoneShortCode 또는 section을 함께 전달하세요.');
+      throw ArgumentError(
+          'seatRow는 단독 사용 불가입니다. 최소 zoneShortCode 또는 section을 함께 전달하세요.');
     }
 
 
@@ -1233,4 +1282,8 @@ class ApiService {
       throw Exception('요청 시간이 초과되었습니다. 네트워크 상태를 확인해주세요.');
     }
   }
+
+
+
 }
+

@@ -281,39 +281,20 @@ class _OnboardingPage6State extends State<OnboardingPage6> {
 
                 // ✅ 여기부터 새로 작성
                 try {
-                  final prefs = await SharedPreferences.getInstance();
-                  final memberId = prefs.getInt('member_id');
-
-                  if (memberId == null) {
-                    throw Exception('memberId가 없습니다.');
-                  }
-
-                  final url = Uri.parse('https://api.inninglog.shop/member/setup?memberId=$memberId');
-
-                  final response = await http.post(
-                    url,
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: jsonEncode({
-                      'nickname': nickname,
-                      'teamShortCode': shortCode,
-                    }),
+                  await MemberApi.postMemberSetup(
+                    nickname: nickname,
+                    teamShortCode: shortCode,
                   );
 
-                  if (response.statusCode == 200) {
-                    if (!mounted) return;
-                    context.go('/home');
-                  } else {
-                    final resBody = jsonDecode(response.body);
-                    throw Exception(resBody['message'] ?? '회원 설정 실패');
-                  }
+                  if (!mounted) return;
+                  context.go('/home');
                 } catch (e) {
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(e.toString())),
                   );
                 }
+
               }
                   : null,
 
