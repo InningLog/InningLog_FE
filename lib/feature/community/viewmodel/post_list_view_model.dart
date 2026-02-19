@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:inninglog/feature/community/model/community_post.dart';
 import 'package:inninglog/feature/community/model/dto/post_dtos.dart';
-import 'package:inninglog/feature/community/repositories/post_repository.dart';
+
+typedef PostFetcher = Future<PostListResponse> Function(int page, int size);
 
 class PostListViewModel extends ChangeNotifier {
-  final CommunityPostRepository repo;
-  final String teamCode;
+  final PostFetcher _fetcher;
   final int pageSize;
 
   PostListViewModel({
-    required this.repo,
-    required this.teamCode,
+    required PostFetcher fetcher,
     this.pageSize = 10,
-  });
+  }) : _fetcher = fetcher;
 
   final List<CommunityPostItem> _items = [];
   List<CommunityPostItem> get items => List.unmodifiable(_items);
@@ -54,11 +53,7 @@ class PostListViewModel extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final PostListResponse res = await repo.getPostList(
-        teamCode: teamCode,
-        page: _page,
-        size: pageSize,
-      );
+      final PostListResponse res = await _fetcher(_page, pageSize);
 
       if (_page == 0) {
         _items

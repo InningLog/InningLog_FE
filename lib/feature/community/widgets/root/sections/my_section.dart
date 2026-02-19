@@ -34,7 +34,11 @@ class MySection extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => const TeamBoardPage(teamCode: '댓글 단 글'),
+              builder:
+                  (_) => const TeamBoardPage(
+                    teamCode: '댓글 단 글',
+                    mode: BoardMode.myComments,
+                  ),
             ),
           );
         },
@@ -46,7 +50,11 @@ class MySection extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => const TeamBoardPage(teamCode: '스크랩'),
+              builder:
+                  (_) => const TeamBoardPage(
+                    teamCode: '스크랩',
+                    mode: BoardMode.scraps,
+                  ),
             ),
           );
         },

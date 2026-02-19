@@ -71,7 +71,7 @@ class _SplashScreenState extends State<SplashScreen> {
     await Future.delayed(const Duration(milliseconds: 1500));
 
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
+    final token = prefs.getString('accessToken');
     if (token != null) {
       context.go('/home');
       return;

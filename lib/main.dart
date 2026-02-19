@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inninglog/app_scope.dart';
+import 'package:inninglog/shared/auth/auth_session.dart';
 import 'package:inninglog/router/app_routes.dart';
 import 'package:inninglog/router/route_observer.dart';
 import 'package:inninglog/shared/widgets/main_navigation.dart';
@@ -44,6 +45,21 @@ Future<void> main() async {
     print('⚠️ AMPLITUDE_API_KEY is missing');
   }
   final scope = await AppScope.create();
+
+  // ─── DEV ONLY: 로그인 없이 테스트용 토큰 주입 ───
+  // 실행 방법: flutter run --dart-define=DEV_ACCESS_TOKEN=<token>
+  if (kDebugMode) {
+    const devToken = String.fromEnvironment('DEV_ACCESS_TOKEN');
+    if (devToken.isNotEmpty) {
+      final existing = await scope.tokenStorage.readAccessToken();
+      if (existing == null || existing.isEmpty) {
+        await scope.tokenStorage.saveSession(
+          AuthSession(accessToken: devToken, isNewMember: false),
+        );
+      }
+    }
+  }
+  // ────────────────────────────────────────────────
 
   runApp(Provider<AppScope>.value(value: scope, child: const InningLogApp()));
 }
