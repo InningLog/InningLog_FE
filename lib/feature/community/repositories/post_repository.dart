@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:inninglog/feature/community/model/community_post.dart';
 import 'package:inninglog/feature/community/model/dto/post_dtos.dart';
 import '../../../shared/network/api_envelope.dart';
-import '../model/dto/post_dtos.dart';
 
 class CommunityPostRepository {
   final Dio _dio;
@@ -109,6 +108,57 @@ class CommunityPostRepository {
     final json = res.data;
     if (json is! Map<String, dynamic>) {
       throw const FormatException('Unexpected post list response');
+    }
+    return PostListResponse.fromJson(json);
+  }
+
+  /// 내가 쓴 글 페이지네이션 조회
+  Future<PostListResponse> getMyPosts({
+    required int page,
+    required int size,
+  }) async {
+    final res = await _dio.get(
+      '/community/posts/my',
+      queryParameters: {'page': page, 'size': size},
+    );
+
+    final json = res.data;
+    if (json is! Map<String, dynamic>) {
+      throw const FormatException('Unexpected my posts response');
+    }
+    return PostListResponse.fromJson(json);
+  }
+
+  /// 내가 댓글 단 글 페이지네이션 조회
+  Future<PostListResponse> getMyCommentedPosts({
+    required int page,
+    required int size,
+  }) async {
+    final res = await _dio.get(
+      '/community/posts/my/commented',
+      queryParameters: {'page': page, 'size': size},
+    );
+
+    final json = res.data;
+    if (json is! Map<String, dynamic>) {
+      throw const FormatException('Unexpected my commented posts response');
+    }
+    return PostListResponse.fromJson(json);
+  }
+
+  /// 스크랩한 글 페이지네이션 조회
+  Future<PostListResponse> getMyScrappedPosts({
+    required int page,
+    required int size,
+  }) async {
+    final res = await _dio.get(
+      '/community/posts/my/scrapped',
+      queryParameters: {'page': page, 'size': size},
+    );
+
+    final json = res.data;
+    if (json is! Map<String, dynamic>) {
+      throw const FormatException('Unexpected my scrapped posts response');
     }
     return PostListResponse.fromJson(json);
   }

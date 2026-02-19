@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inninglog/app_scope.dart';
 import 'package:inninglog/feature/community/model/community_post.dart';
+import 'package:inninglog/feature/community/screens/teamboard_page.dart';
 import 'package:inninglog/feature/community/viewmodel/post_list_view_model.dart';
 import 'package:inninglog/feature/community/widgets/post/post_item_card.dart';
 import 'package:inninglog/feature/community/widgets/shared/board_list.dart';
@@ -13,10 +14,13 @@ import 'package:provider/provider.dart';
 class FreeBoardTab extends StatefulWidget {
   final String teamCode;
   final bool isActive;
+  final BoardMode mode;
+
   const FreeBoardTab({
     super.key,
     required this.teamCode,
     this.isActive = false,
+    this.mode = BoardMode.normal,
   });
 
   @override
@@ -57,7 +61,24 @@ class _FreeBoardTabState extends State<FreeBoardTab> with RouteAware {
   void initState() {
     super.initState();
     final repo = context.read<AppScope>().communityPostRepository;
-    _vm = PostListViewModel(repo: repo, teamCode: widget.teamCode);
+    final PostFetcher fetcher;
+    switch (widget.mode) {
+      case BoardMode.normal:
+        fetcher = (page, size) => repo.getPostList(
+              teamCode: widget.teamCode,
+              page: page,
+              size: size,
+            );
+      case BoardMode.myPosts:
+        fetcher = (page, size) => repo.getMyPosts(page: page, size: size);
+      case BoardMode.myComments:
+        fetcher = (page, size) =>
+            repo.getMyCommentedPosts(page: page, size: size);
+      case BoardMode.scraps:
+        fetcher = (page, size) =>
+            repo.getMyScrappedPosts(page: page, size: size);
+    }
+    _vm = PostListViewModel(fetcher: fetcher);
   }
 
   @override

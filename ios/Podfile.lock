@@ -3,9 +3,9 @@ PODS:
     - AmplitudeSwift (~> 1.11)
     - Flutter
     - FlutterMacOS
-  - AmplitudeCore (1.2.3)
-  - AmplitudeSwift (1.15.1):
-    - AmplitudeCore (< 2.0.0, >= 1.1.0)
+  - AmplitudeCore (1.2.4)
+  - AmplitudeSwift (1.15.5):
+    - AmplitudeCore (< 2.0.0, >= 1.2.4)
     - AnalyticsConnector (~> 1.3.0)
   - AnalyticsConnector (1.3.1)
   - device_info_plus (0.0.1):
@@ -76,8 +76,8 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   amplitude_flutter: 6d1f1befdf0c5601a44012331adb1ca207bcd02b
-  AmplitudeCore: 1726496e562154146bf3c65c50c1c141fe8f3287
-  AmplitudeSwift: 41d52966044cc377435eda13124854ab7b4ec454
+  AmplitudeCore: 25385873104770c5245ed5780acd3eb1b3ae74b7
+  AmplitudeSwift: 9ab3b1624ea544a2e7d85030f73e64ccce2b460d
   AnalyticsConnector: 3def11199b4ddcad7202c778bde982ec5da0ebb3
   device_info_plus: 71ffc6ab7634ade6267c7a93088ed7e4f74e5896
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
