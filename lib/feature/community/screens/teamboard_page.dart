@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inninglog/feature/community/data/tabs_config.dart';
 import 'package:inninglog/feature/community/data/team_catalog.dart';
 import 'package:inninglog/feature/community/widgets/shared/segmented_tabs.dart';
 import 'package:inninglog/router/app_routes.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
-import 'package:inninglog/feature/community/screens/post_detail_market.dart';
 import 'package:inninglog/shared/widgets/common_header.dart';
 import 'tabs/free_board_tab.dart';
 import 'tabs/onlywan_tab.dart';
 
-enum BoardMode { normal, myPosts, myComments, scraps }
+enum BoardMode { normal, myPosts, myComments, scraps, popular }
 
 class TeamBoardPage extends StatefulWidget {
   final String teamCode; // e.g. 'HT', 'LG', ...
@@ -94,6 +92,8 @@ class _TeamBoardPageState extends State<TeamBoardPage>
         return '댓글 단 글';
       case BoardMode.scraps:
         return '스크랩';
+      case BoardMode.popular:
+        return '인기 게시물';
       case BoardMode.normal:
         return widget.teamCode == 'ALL'
             ? 'KBO 전체게시판'
@@ -139,9 +139,8 @@ class _TeamBoardPageState extends State<TeamBoardPage>
             // 상단 헤더 (뒤로가기 포함)
             CommonHeader(
               title: _headerTitle,
-              onSearchPressed: isNormal
-                  ? () => context.push(AppRoutePaths.search)
-                  : null,
+              onSearchPressed:
+                  isNormal ? () => context.push(AppRoutePaths.search) : null,
             ),
 
             SegmentedTabs(controller: _tabController, items: _tabs),

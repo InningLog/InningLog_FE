@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inninglog/app_scope.dart';
 import 'package:inninglog/feature/community/data/team_catalog.dart';
+import 'package:inninglog/feature/community/screens/teamboard_page.dart';
 import 'package:inninglog/feature/community/widgets/root/sections/banner_section.dart';
 import 'package:inninglog/feature/community/widgets/root/sections/my_section.dart';
 import 'package:inninglog/feature/community/widgets/root/sections/popular_posts_section.dart';
@@ -88,6 +89,17 @@ class _CommunityRootView extends StatelessWidget {
                 context.pushNamed(
                   AppRouteNames.postDetail,
                   pathParameters: {'code': teamCode, 'postId': '$postId'},
+                );
+              },
+              onMoreTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const TeamBoardPage(
+                      teamCode: 'popular',
+                      mode: BoardMode.popular,
+                    ),
+                  ),
                 );
               },
             ),

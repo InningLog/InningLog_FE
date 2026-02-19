@@ -77,6 +77,9 @@ class _FreeBoardTabState extends State<FreeBoardTab> with RouteAware {
       case BoardMode.scraps:
         fetcher = (page, size) =>
             repo.getMyScrappedPosts(page: page, size: size);
+      case BoardMode.popular:
+        fetcher = (page, size) =>
+            repo.getPopularPosts(page: page, size: size);
     }
     _vm = PostListViewModel(fetcher: fetcher);
   }
