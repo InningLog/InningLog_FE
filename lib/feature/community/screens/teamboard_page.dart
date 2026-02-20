@@ -12,16 +12,20 @@ import 'tabs/onlywan_tab.dart';
 enum BoardMode { normal, myPosts, myComments, scraps, popular }
 
 class TeamBoardPage extends StatefulWidget {
-  final String teamCode; // e.g. 'HT', 'LG', ...
+  /// normal 모드에서만 필수. 그 외 모드(myPosts, myComments, scraps, popular)는 null 가능.
+  final String? teamCode;
   final BoardTab? activeTab;
   final BoardMode mode;
 
   const TeamBoardPage({
     super.key,
-    required this.teamCode,
+    this.teamCode,
     this.activeTab,
     this.mode = BoardMode.normal,
-  });
+  }) : assert(
+         mode != BoardMode.normal || teamCode != null,
+         'teamCode is required for BoardMode.normal',
+       );
 
   @override
   State<TeamBoardPage> createState() => _TeamBoardPageState();
@@ -81,7 +85,7 @@ class _TeamBoardPageState extends State<TeamBoardPage>
     if (widget.mode != BoardMode.normal) return;
     final tabType = _tabs[_tabController.index].type;
     final tabPath = boardTabPath(tabType);
-    context.go(AppRoutePaths.boardLocation(widget.teamCode, tab: tabPath));
+    context.replace(AppRoutePaths.boardLocation(widget.teamCode!, tab: tabPath));
   }
 
   String get _headerTitle {
@@ -97,7 +101,7 @@ class _TeamBoardPageState extends State<TeamBoardPage>
       case BoardMode.normal:
         return widget.teamCode == 'ALL'
             ? 'KBO 전체게시판'
-            : kboTeamLabelOf(widget.teamCode);
+            : kboTeamLabelOf(widget.teamCode!);
     }
   }
 
@@ -118,7 +122,7 @@ class _TeamBoardPageState extends State<TeamBoardPage>
                   onPressed: () {
                     // 기존 게시판 글쓰기
                     context.push(
-                      AppRoutePaths.boardPostWriteLocation(widget.teamCode),
+                      AppRoutePaths.boardPostWriteLocation(widget.teamCode!),
                     );
                     debugPrint(
                       '[Team Board Page] teamCode: ${widget.teamCode}',
@@ -157,7 +161,7 @@ class _TeamBoardPageState extends State<TeamBoardPage>
                     case BoardTab.onlywan:
                       return OnlyWanTab(
                         isActive: isActive,
-                        teamCode: widget.teamCode,
+                        teamCode: widget.teamCode ?? '',
                       );
                     case BoardTab.free:
                       return FreeBoardTab(

@@ -24,7 +24,10 @@ class MainNavigation extends StatelessWidget {
       builder: (context, _) {
         // 현재 위치로 활성 탭 인덱스를 계산한다.
         final location = router.routeInformationProvider.value.location;
-        final currentIndex = _routes.indexWhere((r) => location.startsWith(r));
+        // /boards/:code 경로는 커뮤니티(index 3) 탭 하위로 간주한다.
+        final currentIndex = location.startsWith('/boards')
+            ? 3
+            : _routes.indexWhere((r) => location.startsWith(r));
         // 현재 활성 라우트의 name을 기준으로 하단 네비 노출 여부를 판단한다.
         final hideBottomNav = _shouldHideBottomNav(router);
 
