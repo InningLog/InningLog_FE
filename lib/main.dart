@@ -12,11 +12,8 @@ import 'package:inninglog/feature/diary/screens/add_diary_page.dart';
 import 'package:inninglog/feature/diary/screens/add_seat_page.dart';
 import 'package:inninglog/feature/community/screens/community_search_page.dart';
 import 'package:inninglog/feature/field/screens/field_hashtag_filter_sheet.dart';
-import 'package:inninglog/feature/community/screens/market_upload_step1.dart';
-import 'package:inninglog/feature/community/screens/market_upload_step2.dart';
-import 'package:inninglog/feature/community/screens/market_upload_step3.dart';
+import 'package:inninglog/feature/community/screens/legacy/market_upload_step1.dart';
 import 'package:inninglog/feature/community/screens/writing_post_page.dart';
-import 'package:inninglog/feature/community/screens/post_detail_market.dart';
 import 'package:inninglog/feature/community/screens/post_detail_page.dart';
 import 'package:inninglog/feature/field/screens/seat_detail_page.dart';
 import 'package:inninglog/feature/onboarding/screens/onboarding_page6.dart';
@@ -100,7 +97,6 @@ final GoRouter _router = GoRouter(
       },
     ),
 
-
     GoRoute(
       path: '/add-seat',
       name: 'add_seat',
@@ -110,34 +106,29 @@ final GoRouter _router = GoRouter(
         // ✅ stadium만 필수
         final stadium = extra['stadium'] as String?;
         if (stadium == null || stadium.trim().isEmpty) {
-          return const Scaffold(
-            body: Center(child: Text('잘못된 접근입니다')),
-          );
+          return const Scaffold(body: Center(child: Text('잘못된 접근입니다')));
         }
 
         // ✅ journalId는 null 가능 + 타입도 안전하게 변환
         final rawJournalId = extra['journalId'];
-        final int? journalId = rawJournalId is int
-            ? rawJournalId
-            : int.tryParse(rawJournalId?.toString() ?? '');
+        final int? journalId =
+            rawJournalId is int
+                ? rawJournalId
+                : int.tryParse(rawJournalId?.toString() ?? '');
 
         // ✅ gameDateTime도 null 가능
         final gameDateTime = extra['gameDateTime'] as String?;
 
         return AddSeatPage(
           stadium: stadium,
-          journalId: journalId,                 // ✅ nullable
-          gameDateTime: gameDateTime,           // ✅ nullable
+          journalId: journalId, // ✅ nullable
+          gameDateTime: gameDateTime, // ✅ nullable
           initialSection: extra['initialSection'] as String?,
           initialRow: extra['initialRow'] as String?,
           showGameTime: (extra['showGameTime'] as bool?) ?? true,
         );
       },
     ),
-
-
-
-
 
     GoRoute(path: '/onboarding6', builder: (_, __) => const OnboardingPage6()),
     GoRoute(
@@ -154,32 +145,6 @@ final GoRouter _router = GoRouter(
       },
     ),
 
-    GoRoute(
-      path: '/market/:code/upload/step2',
-      builder:
-          (ctx, state) =>
-              MarketUploadStep2(teamCode: state.pathParameters['code']!),
-    ),
-    GoRoute(
-      path: '/market/:code/upload/step3',
-      builder:
-          (ctx, state) =>
-              MarketUploadStep3(teamCode: state.pathParameters['code']!),
-    ),
-
-    GoRoute(
-      name: 'post_detail_market',
-      path: '/post/market/detail',
-      builder: (context, state) {
-        final args = state.extra as PostDetailMarketArgs;
-        return PostDetailMarketPage(args: args);
-      },
-    ),
-
-
-
-
-
     /// GNB 있는 ShellRoute
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
@@ -193,10 +158,7 @@ final GoRouter _router = GoRouter(
         GoRoute(
           path: '/seat',
           builder: (_, __) => const SeatPage(),
-          routes: [
-
-
-          ],
+          routes: [],
         ),
 
         GoRoute(path: '/mypage', builder: (_, __) => const MyPage()),
@@ -209,13 +171,33 @@ final GoRouter _router = GoRouter(
             final int seatViewId = extra['seatViewId'];
             final String imageUrl = extra['imageUrl'];
 
-            return SeatDetailPage(seatViewId: seatViewId, imageUrl: imageUrl, stadiumName: '',);
+            return SeatDetailPage(
+              seatViewId: seatViewId,
+              imageUrl: imageUrl,
+              stadiumName: '',
+            );
           },
         ),
         // 커뮤니티
         GoRoute(
           path: '/community',
           builder: (_, __) => const CommunityRootPage(),
+        ),
+        GoRoute(
+          path: AppRoutePaths.communityPopular,
+          builder: (_, __) => const TeamBoardPage(mode: BoardMode.popular),
+        ),
+        GoRoute(
+          path: AppRoutePaths.communityMyPosts,
+          builder: (_, __) => const TeamBoardPage(mode: BoardMode.myPosts),
+        ),
+        GoRoute(
+          path: AppRoutePaths.communityMyComments,
+          builder: (_, __) => const TeamBoardPage(mode: BoardMode.myComments),
+        ),
+        GoRoute(
+          path: AppRoutePaths.communityMyScraps,
+          builder: (_, __) => const TeamBoardPage(mode: BoardMode.scraps),
         ),
 
         GoRoute(
@@ -247,7 +229,6 @@ final GoRouter _router = GoRouter(
               },
             ),
           ],
-
         ),
         GoRoute(
           name: 'field_result',
@@ -260,7 +241,9 @@ final GoRouter _router = GoRouter(
             final stadiumName = extra['stadiumName'] as String;
             final section = extra['section'] as String?;
 
-            debugPrint('[GoRouter] parsed index=$index stadiumName=$stadiumName section=$section');
+            debugPrint(
+              '[GoRouter] parsed index=$index stadiumName=$stadiumName section=$section',
+            );
 
             return FieldHashtagSearchResultPage(
               stadiumName: stadiumName,
@@ -268,7 +251,6 @@ final GoRouter _router = GoRouter(
             );
           },
         ),
-
       ],
     ),
   ],
@@ -285,9 +267,9 @@ class InningLogApp extends StatelessWidget {
       builder: (context, child) {
         final isIOS = defaultTargetPlatform == TargetPlatform.iOS;
         return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.linear(isIOS ? 1.06 : 1.0),
-          ),
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(isIOS ? 1.06 : 1.0)),
           child: LayoutBuilder(
             builder: (context, constraints) {
               const aspectRatio = 9 / 16;
