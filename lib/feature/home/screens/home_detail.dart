@@ -52,53 +52,83 @@ class Player {
 }
 
 class MyReportResponse {
+  final String nickname;
   final int totalVisitedGames;
   final int winGames;
   final int loseGames;
   final int drawGames;
-  final double winningRateHalPoongRi;
+  final int myWeaningRate; // <- int 0~1000
   final double teamWinRate;
   final List<Player> topBatters;
   final List<Player> topPitchers;
   final List<Player> bottomBatters;
   final List<Player> bottomPitchers;
-  final String nickname;
 
   MyReportResponse({
+    required this.nickname,
     required this.totalVisitedGames,
     required this.winGames,
     required this.loseGames,
     required this.drawGames,
-    required this.winningRateHalPoongRi,
+    required this.myWeaningRate,
     required this.teamWinRate,
     required this.topBatters,
     required this.topPitchers,
     required this.bottomBatters,
     required this.bottomPitchers,
-    required this.nickname,
   });
 
-
-  factory MyReportResponse.fromJson(Map<String, dynamic> json) {
-    List<Player> parsePlayers(List<dynamic> list) =>
-        list.map((item) => Player.fromJson(item)).toList();
-
-    return MyReportResponse(
-      totalVisitedGames: json['totalVisitedGames'],
-      winGames: json['winGames'],
-      loseGames: json['loseGames'],
-      drawGames: json['drawGames'],
-      winningRateHalPoongRi: json['myWeaningRate'] / 1000,
-      teamWinRate: json['teamWinRate'].toDouble(),
-      topBatters: parsePlayers(json['topBatters']),
-      topPitchers: parsePlayers(json['topPitchers']),
-      bottomBatters: parsePlayers(json['bottomBatters']),
-      bottomPitchers: parsePlayers(json['bottomPitchers']),
-      nickname : json['nickname'],
-
-    );
+  static int _toInt(dynamic v) {
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    if (v is String) return int.tryParse(v) ?? 0;
+    return 0;
   }
 
+  static double _toDouble(dynamic v) {
+    if (v is double) return v;
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v) ?? 0.0;
+    return 0.0;
+  }
+
+  factory MyReportResponse.fromJson(Map<String, dynamic> json) {
+    // ✅ 닉네임 키 혼재 대응
+    final nickname = (json['nickname'] ?? json['nickName'] ?? '유저').toString();
+
+    // ✅ 승률 키 혼재 대응 (스웨거: myWeaningRate / 너 기존코드: winningRateHalPoongRi 등)
+    final myWeaningRate = _toInt(
+      json['myWeaningRate'] ??
+          json['winningRateHalPoongRi'] ??
+          json['halPoongRi'] ??
+          0,
+    );
+
+    List<Player> _list(String key) {
+      final raw = json[key];
+      if (raw is List) {
+        return raw
+            .whereType<Map<String, dynamic>>()
+            .map((e) => Player.fromJson(e))
+            .toList();
+      }
+      return const [];
+    }
+
+    return MyReportResponse(
+      nickname: nickname,
+      totalVisitedGames: _toInt(json['totalVisitedGames']),
+      winGames: _toInt(json['winGames']),
+      loseGames: _toInt(json['loseGames']),
+      drawGames: _toInt(json['drawGames']),
+      myWeaningRate: myWeaningRate,
+      teamWinRate: _toDouble(json['teamWinRate']),
+      topBatters: _list('topBatters'),
+      topPitchers: _list('topPitchers'),
+      bottomBatters: _list('bottomBatters'),
+      bottomPitchers: _list('bottomPitchers'),
+    );
+  }
 }
 
 
@@ -182,7 +212,7 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
         reportData.topPitchers.isNotEmpty && reportData.topBatters.isNotEmpty;
     final hasBottomPlayers =
         reportData.bottomPitchers.isNotEmpty && reportData.bottomBatters.isNotEmpty;
-    final myRate = reportData.winningRateHalPoongRi;
+    final myRate = reportData.myWeaningRate;
     final teamRate = reportData.teamWinRate;
     final diff = (myRate - teamRate).abs(); // 차이 절댓값
     final comparison = myRate > teamRate ? '높아요' : '낮아요';
@@ -415,13 +445,13 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
                               Column(
                                 children: [
                                   Image.asset(
-                                    getImageForRate(reportData.winningRateHalPoongRi),
+                                    getImageForRate(reportData.myWeaningRate/1000),
                                     width: 51,
                                     height: 51,
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    getCaptionForRate(reportData.winningRateHalPoongRi),
+                                    getCaptionForRate(reportData.myWeaningRate/1000),
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: 12,
@@ -438,7 +468,7 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Text(
-                                    reportData.winningRateHalPoongRi.toStringAsFixed(3),
+                                    reportData.myWeaningRate.toStringAsFixed(3),
                                     style: TextStyle(
                                       fontSize: 26,
                                       fontWeight: FontWeight.w800,
@@ -496,7 +526,7 @@ class _HomeDetailPageState extends State<HomeDetailPage> {
                           ),
                           const SizedBox(height: 12),
                           _buildBar(label: '내 직관 승률',
-                            value: reportData.winningRateHalPoongRi,
+                            value: reportData.myWeaningRate / 1000,
                             color: AppColors.primary300,),
                           const SizedBox(height: 10),
                           _buildBar(label: '팀 승률',

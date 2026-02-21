@@ -124,13 +124,15 @@ class ApiService {
 
 
   /// 직관 리포트 조회 (/report/main)
-  /// - 파라미터 없음
-  /// - Authorization: Bearer <accessToken>
   static Future<MyReportResponse?> fetchMyReport({String? accessToken}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = accessToken ?? prefs.getString('accessToken');
-      if (token == null) {
+
+      final token = accessToken
+          ?? prefs.getString('accessToken')
+          ?? prefs.getString('access_token');
+
+      if (token == null || token.isEmpty) {
         debugPrint('❌ accessToken 없음');
         return null;
       }
@@ -147,24 +149,34 @@ class ApiService {
       debugPrint('GET /report/main → ${res.statusCode}');
       debugPrint('응답: ${res.body}');
 
+      Map<String, dynamic>? body;
+      try {
+        final decoded = jsonDecode(res.body);
+        body = decoded is Map<String, dynamic> ? decoded : null;
+      } catch (_) {
+        body = null;
+      }
+
       if (res.statusCode == 200) {
-        final body = jsonDecode(res.body) as Map<String, dynamic>;
-        final data = body['data'];
-        if (data == null) return null;
-        return MyReportResponse.fromJson(data);
+        final data = body?['data'];
+        if (data is Map<String, dynamic>) {
+          return MyReportResponse.fromJson(data);
+        }
+        return null;
       }
 
       // ---- 에러 처리 ----
-      Map<String, dynamic>? err;
-      try {
-        err = jsonDecode(res.body) as Map<String, dynamic>;
-      } catch (_) {}
+      final codeRaw = body?['code'];
+      final codeStr = (codeRaw ?? '').toString().toUpperCase();
+      final msg = (body?['message'] ?? '').toString();
 
-      final code = (err?['code'] ?? '').toString().toUpperCase();
+      // ✅ "직관 기록 없음" 판별 강화
+      final isNoVisited =
+          codeStr.contains('NOVISITEDGAMES') ||
+              codeStr.contains('NO_VISITED_GAME') ||
+              msg.contains('직관') && msg.contains('없');
 
-      // 직관 기록 없음 (문서/서버 표기가 혼재할 수 있어 둘 다 처리)
-      if (res.statusCode == 400 &&
-          (code == 'NOVISITEDGAMES' || code == 'NO_VISITED_GAME')) {
+      if (res.statusCode == 400 && isNoVisited) {
         debugPrint('📭 직관 기록 없음');
         final nickname = prefs.getString('nickname') ?? '유저';
         return MyReportResponse(
@@ -173,7 +185,7 @@ class ApiService {
           winGames: 0,
           loseGames: 0,
           drawGames: 0,
-          winningRateHalPoongRi: 0,
+          myWeaningRate: 0,
           teamWinRate: 0,
           topBatters: const [],
           topPitchers: const [],
@@ -183,11 +195,11 @@ class ApiService {
       }
 
       if (res.statusCode == 404) {
-        debugPrint('❌ 존재하지 않는 회원');
+        debugPrint('❌ 존재하지 않는 회원 / 혹은 팀 미설정');
         return null;
       }
 
-      debugPrint('❌ 서버/요청 오류: ${res.statusCode} ${err?['message'] ?? ''}');
+      debugPrint('❌ 서버/요청 오류: ${res.statusCode} $msg code=$codeStr');
       return null;
     } catch (e) {
       debugPrint('🚨 fetchMyReport 에러: $e');
