@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:inninglog/feature/community/model/community_post.dart';
 import 'package:inninglog/feature/community/model/dto/post_dtos.dart';
+import 'package:inninglog/feature/community/model/post_base.dart';
 import '../../../shared/network/api_envelope.dart';
 
 class CommunityPostRepository {
@@ -196,6 +197,41 @@ class CommunityPostRepository {
     if (res.data is! Map<String, dynamic>) {
       throw const FormatException('Unexpected update response');
     }
+  }
+
+  /// 인기 게시글 목록 페이지네이션 조회
+  Future<PostListResponse> getPopularPosts({
+    required int page,
+    required int size,
+  }) async {
+    final res = await _dio.get(
+      '/community/posts/popular',
+      queryParameters: {'page': page, 'size': size},
+    );
+
+    final json = res.data;
+    if (json is! Map<String, dynamic>) {
+      throw const FormatException('Unexpected popular posts response');
+    }
+    return PostListResponse.fromJson(json);
+  }
+
+  /// 커뮤니티 홈 인기 게시글 조회
+  Future<List<PostBase>> getCommunityHome() async {
+    final res = await _dio.get('/community/home');
+
+    final json = res.data;
+    if (json is! Map<String, dynamic>) {
+      throw const FormatException('Unexpected community home response');
+    }
+
+    final data = (json['data'] as Map<String, dynamic>?) ?? {};
+    final list = (data['popularPosts'] as List<dynamic>?) ?? [];
+
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(PostBase.fromJson)
+        .toList();
   }
 
   /// 게시글 좋아요

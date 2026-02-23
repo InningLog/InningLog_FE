@@ -3,12 +3,9 @@ import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
 
-import 'market_upload_step2.dart';
-
 class MarketUploadStep1 extends StatefulWidget {
   final String teamCode;
   const MarketUploadStep1({super.key, required this.teamCode});
-
 
   @override
   State<MarketUploadStep1> createState() => _MarketUploadStep1State();
@@ -23,8 +20,8 @@ class _MarketUploadStep1State extends State<MarketUploadStep1> {
 
   bool get _isFilled =>
       _nameCtrl.text.trim().isNotEmpty &&
-          _descCtrl.text.trim().isNotEmpty &&
-          _selectedCategory != null;
+      _descCtrl.text.trim().isNotEmpty &&
+      _selectedCategory != null;
 
   void _next() {
     context.push('/market/${widget.teamCode}/upload/step2');
@@ -69,7 +66,6 @@ class _MarketUploadStep1State extends State<MarketUploadStep1> {
               ),
             ),
 
-
             const _ProgressDots(activeIndex: 0, total: 3),
 
             const SizedBox(height: 24),
@@ -88,7 +84,7 @@ class _MarketUploadStep1State extends State<MarketUploadStep1> {
                         height: 1.25,
                         fontWeight: FontWeight.w700,
                         fontFamily: 'Pretendard',
-                        color:Color(0xFF272727),
+                        color: Color(0xFF272727),
                         letterSpacing: -0.24,
                       ),
                     ),
@@ -107,17 +103,19 @@ class _MarketUploadStep1State extends State<MarketUploadStep1> {
                     // 라벨 + 멀티라인 입력창(상품 설명)
                     const _FieldLabel('상품 설명'),
                     const SizedBox(height: 12),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 84), // 예: 104px
-                  child: _FigmaInput(
-                      controller: _descCtrl,
-                      minLines: 3,        // 초기 높이(3줄)
-                      maxLines: null,
-                      hintText:
-                      '상품에 대한 설명을 작성해 주세요.\n고장이나 손상된 부분이 있다면 빠짐없이 작성해야\n오해나 분쟁을 미리 예방할 수 있어요.',
-                      onChanged: (_) => setState(() {}),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        minHeight: 84,
+                      ), // 예: 104px
+                      child: _FigmaInput(
+                        controller: _descCtrl,
+                        minLines: 3, // 초기 높이(3줄)
+                        maxLines: null,
+                        hintText:
+                            '상품에 대한 설명을 작성해 주세요.\n고장이나 손상된 부분이 있다면 빠짐없이 작성해야\n오해나 분쟁을 미리 예방할 수 있어요.',
+                        onChanged: (_) => setState(() {}),
+                      ),
                     ),
-                ),
                     const SizedBox(height: 24),
 
                     // 카테고리
@@ -146,7 +144,7 @@ class _MarketUploadStep1State extends State<MarketUploadStep1> {
                   onPressed: _isFilled ? _next : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor:
-                    _isFilled ? AppColors.primary700 : AppColors.gray400,
+                        _isFilled ? AppColors.primary700 : AppColors.gray400,
                     disabledBackgroundColor: AppColors.gray300,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(36),
@@ -161,7 +159,6 @@ class _MarketUploadStep1State extends State<MarketUploadStep1> {
                       fontFamily: 'Pretendard',
                       color: Color(0xFFFFFFFF),
                       letterSpacing: -0.16,
-
                     ),
                   ),
                 ),
@@ -190,10 +187,10 @@ class _ProgressDots extends StatelessWidget {
     required this.activeIndex,
     required this.total,
     this.activeWidth = 36, // 활성된 점 길이
-    this.dotSize = 15,      // 점 높이 및 비활성 점 크기
-    this.spacing = 12,      // 점 사이 간격
+    this.dotSize = 15, // 점 높이 및 비활성 점 크기
+    this.spacing = 12, // 점 사이 간격
     this.activeColor = AppColors.primary700, // 활성 색
-    this.inactiveColor = AppColors.primary300,  // 비활성 색
+    this.inactiveColor = AppColors.primary300, // 비활성 색
     this.margin = const EdgeInsets.only(left: 15, top: 5), // 위치 여백
   });
 
@@ -219,7 +216,6 @@ class _ProgressDots extends StatelessWidget {
   }
 }
 
-
 /// 섹션 라벨
 class _FieldLabel extends StatelessWidget {
   final String text;
@@ -244,8 +240,8 @@ class _FieldLabel extends StatelessWidget {
 class _FigmaInput extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;
-  final int? maxLines;     // ← nullable
-  final int? minLines;     // ← 추가
+  final int? maxLines; // ← nullable
+  final int? minLines; // ← 추가
   final ValueChanged<String>? onChanged;
 
   const _FigmaInput({
@@ -266,8 +262,8 @@ class _FigmaInput extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
-      minLines: minLines,                 // ← 추가
-      maxLines: maxLines,                 // ← nullable 허용
+      minLines: minLines, // ← 추가
+      maxLines: maxLines, // ← nullable 허용
       cursorColor: AppColors.primary700,
       onChanged: onChanged,
       style: const TextStyle(
@@ -291,8 +287,10 @@ class _FigmaInput extends StatelessWidget {
           height: 1.25,
           letterSpacing: -0.16,
         ),
-        contentPadding:
-        const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 12,
+        ),
         border: _border(AppColors.gray200),
         enabledBorder: _border(AppColors.gray200),
         focusedBorder: _border(AppColors.gray200),
@@ -383,5 +381,3 @@ class _CategoryButton extends StatelessWidget {
     );
   }
 }
-
-

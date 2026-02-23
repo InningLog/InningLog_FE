@@ -17,6 +17,12 @@ final class AppRoutePaths {
   // 커뮤니티 검색
   static const search = '/search';
 
+  // 커뮤니티 하위 활동 페이지
+  static const communityMyPosts    = '/community/my/posts';
+  static const communityMyComments = '/community/my/comments';
+  static const communityMyScraps   = '/community/my/scraps';
+  static const communityPopular    = '/community/popular';
+
   static String boardLocation(String code, {String? tab}) {
     final tabQuery = '?tab=${tab ?? 'onlywan'}';
     return '/boards/$code$tabQuery';

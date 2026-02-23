@@ -1,3 +1,4 @@
+import 'package:adaptive_dialog/adaptive_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:inninglog/app_scope.dart';
 import 'package:inninglog/feature/community/data/team_catalog.dart';
@@ -74,29 +75,16 @@ class _PostDetailPageState extends State<PostDetailPage>
   }
 
   Future<void> _confirmDelete(PostDetailViewModel vm) async {
-    final confirmed = await showDialog<bool>(
+    final result = await showOkCancelAlertDialog(
       context: context,
-      builder:
-          (dialogContext) => AlertDialog(
-            title: const Text('게시글 삭제'),
-            content: const Text('이 게시글을 삭제하시겠어요?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('취소'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: const Text(
-                  '삭제',
-                  style: TextStyle(color: AppColors.secondary700),
-                ),
-              ),
-            ],
-          ),
+      title: '게시글 삭제',
+      message: '이 게시글을 삭제하시겠어요?',
+      okLabel: '삭제',
+      cancelLabel: '취소',
+      isDestructiveAction: true,
     );
 
-    if (confirmed != true || !mounted) return;
+    if (result != OkCancelResult.ok || !mounted) return;
 
     final success = await vm.deletePost();
     if (!mounted) return;
@@ -114,29 +102,16 @@ class _PostDetailPageState extends State<PostDetailPage>
     CommentViewModel commentVm,
     Comment target,
   ) async {
-    final confirmed = await showDialog<bool>(
+    final result = await showOkCancelAlertDialog(
       context: context,
-      builder:
-          (dialogContext) => AlertDialog(
-            title: const Text('댓글 삭제'),
-            content: const Text('이 댓글을 삭제하시겠어요?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('취소'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: const Text(
-                  '삭제',
-                  style: TextStyle(color: AppColors.secondary700),
-                ),
-              ),
-            ],
-          ),
+      title: '댓글 삭제',
+      message: '이 댓글을 삭제하시겠어요?',
+      okLabel: '삭제',
+      cancelLabel: '취소',
+      isDestructiveAction: true,
     );
 
-    if (confirmed != true || !mounted) return;
+    if (result != OkCancelResult.ok || !mounted) return;
 
     final success = await commentVm.deleteComment(target);
     if (!mounted) return;

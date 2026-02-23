@@ -17,12 +17,15 @@ class CommunityRootPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final userRepo = context.read<AppScope>().userRepository;
+    final scope = context.read<AppScope>();
 
     return ChangeNotifierProvider(
-      create:
-          (_) =>
-              CommunityRootViewModel(userRepository: userRepo)..fetchMyTeam(),
+      create: (_) => CommunityRootViewModel(
+        userRepository: scope.userRepository,
+        postRepository: scope.communityPostRepository,
+      )
+        ..fetchMyTeam()
+        ..fetchPopularPosts(),
       child: const _CommunityRootView(),
     );
   }
@@ -48,7 +51,6 @@ class _CommunityRootView extends StatelessWidget {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-
         child: Column(
           spacing: 24,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,7 +63,7 @@ class _CommunityRootView extends StatelessWidget {
                 context.push(AppRoutePaths.boardLocation(vm.myTeamCode ?? ''));
               },
             ),
-            //전체 게시판
+            // 전체 게시판
             BannerSection(
               title: 'KBO 전체 게시판',
               imagePath: 'assets/images/card_kbo.png',
@@ -69,7 +71,6 @@ class _CommunityRootView extends StatelessWidget {
                 context.push(AppRoutePaths.boardLocation('ALL'));
               },
             ),
-
             // 팀 게시판
             TeamBoardsSection(
               items: vm.teamGridItems,
@@ -77,7 +78,20 @@ class _CommunityRootView extends StatelessWidget {
                 context.push(AppRoutePaths.boardLocation(team.code));
               },
             ),
-            PopularPostsSection(onTap: () {}),
+            PopularPostsSection(
+              posts: vm.popularPosts,
+              isLoading: vm.isPopularPostsLoading,
+              onTap: (postId) {
+                final teamCode = vm.popularPosts
+                    .firstWhere((p) => p.postId == postId)
+                    .teamShortCode;
+                context.pushNamed(
+                  AppRouteNames.postDetail,
+                  pathParameters: {'code': teamCode, 'postId': '$postId'},
+                );
+              },
+              onMoreTap: () => context.push(AppRoutePaths.communityPopular),
+            ),
             MySection(),
           ],
         ),
