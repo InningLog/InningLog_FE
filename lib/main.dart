@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
@@ -26,6 +27,7 @@ import 'package:inninglog/feature/community/screens/root_page.dart';
 import 'package:inninglog/feature/mypage/screens/my_page.dart';
 import 'package:inninglog/feature/community/screens/teamboard_page.dart';
 import 'package:inninglog/feature/community/widgets/shared/segmented_tabs.dart';
+import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:inninglog/shared/amplitude/AmplitudeFlutter.dart';
 
@@ -261,9 +263,51 @@ class InningLogApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final baseTheme = ThemeData.light();
     return MaterialApp.router(
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
+      theme: baseTheme.copyWith(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.black,
+          brightness: Brightness.light,
+        ),
+        dialogTheme: const DialogThemeData(
+          titleTextStyle: TextStyle(
+            color: AppColors.gray900,
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w700,
+          ),
+          contentTextStyle: TextStyle(
+            color: AppColors.gray800,
+            fontFamily: 'Pretendard',
+          ),
+        ),
+        textTheme: baseTheme.textTheme.apply(
+          bodyColor: AppColors.gray900,
+          displayColor: AppColors.gray900,
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.gray900,
+            surfaceTintColor: AppColors.gray900,
+          ),
+        ),
+        cupertinoOverrideTheme: const NoDefaultCupertinoThemeData(
+          primaryColor: AppColors.gray900,
+          textTheme: CupertinoTextThemeData(
+            textStyle: TextStyle(
+              color: AppColors.gray900,
+              fontFamily: 'Pretendard',
+            ),
+            actionTextStyle: TextStyle(
+              color: AppColors.gray900,
+              fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
       builder: (context, child) {
         final isIOS = defaultTargetPlatform == TargetPlatform.iOS;
         return MediaQuery(
