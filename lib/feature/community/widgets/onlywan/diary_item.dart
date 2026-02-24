@@ -4,6 +4,7 @@ import 'package:inninglog/feature/community/model/diary_item.dart';
 import 'package:inninglog/feature/community/widgets/post_detail/post_action_button.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:inninglog/shared/theme/app_text_styles.dart';
+import 'package:inninglog/shared/utils/image_url_utils.dart';
 
 enum FeedImageRatio { ratio3x4, ratio1x1, ratio4x3 }
 
@@ -46,10 +47,7 @@ class DiaryItem extends StatelessWidget {
                   child:
                       item.thumbImageUrl == null
                           ? Container(color: const Color(0xFFD9D9D9))
-                          : Image.network(
-                            item.thumbImageUrl!,
-                            fit: BoxFit.cover,
-                          ),
+                          : _DiaryThumbImage(imageUrl: item.thumbImageUrl!),
                 ),
               ),
 
@@ -71,6 +69,67 @@ class DiaryItem extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _DiaryThumbImage extends StatefulWidget {
+  final String imageUrl;
+
+  const _DiaryThumbImage({required this.imageUrl});
+
+  @override
+  State<_DiaryThumbImage> createState() => _DiaryThumbImageState();
+}
+
+class _DiaryThumbImageState extends State<_DiaryThumbImage> {
+  late String _currentImageUrl;
+  bool _triedOriginalFallback = false;
+  bool _fallbackScheduled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentImageUrl = widget.imageUrl;
+  }
+
+  @override
+  void didUpdateWidget(covariant _DiaryThumbImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.imageUrl != widget.imageUrl) {
+      _currentImageUrl = widget.imageUrl;
+      _triedOriginalFallback = false;
+      _fallbackScheduled = false;
+    }
+  }
+
+  void _fallbackToOriginalIfNeeded(Object error) {
+    if (_triedOriginalFallback || _fallbackScheduled) return;
+    if (error is! NetworkImageLoadException || error.statusCode != 403) return;
+
+    final originalUrl = originalImageUrlFromThumb(widget.imageUrl);
+    if (originalUrl == null || originalUrl == _currentImageUrl) return;
+
+    _fallbackScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _currentImageUrl = originalUrl;
+        _triedOriginalFallback = true;
+        _fallbackScheduled = false;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.network(
+      _currentImageUrl,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        _fallbackToOriginalIfNeeded(error);
+        return Container(color: const Color(0xFFD9D9D9));
+      },
     );
   }
 }
