@@ -4,6 +4,7 @@ import 'package:inninglog/feature/community/widgets/post/post_action_counts.dart
 import 'package:inninglog/feature/community/widgets/post/post_texts.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:inninglog/shared/utils/date_time_utils.dart';
+import 'package:inninglog/shared/utils/image_url_utils.dart';
 
 class PopularPostCard extends StatelessWidget {
   final PostBase post;
@@ -57,14 +58,14 @@ class PopularPostCard extends StatelessWidget {
                 ],
               ),
             ),
-            if (post.thumbImageUrl != null && post.thumbImageUrl!.isNotEmpty)
-              ...[
-                const SizedBox(width: 10),
-                _ThumbImage(
-                  imageUrl: post.thumbImageUrl!,
-                  imageCount: post.imageCount,
-                ),
-              ],
+            if (post.thumbImageUrl != null &&
+                post.thumbImageUrl!.isNotEmpty) ...[
+              const SizedBox(width: 10),
+              _ThumbImage(
+                imageUrl: post.thumbImageUrl!,
+                imageCount: post.imageCount,
+              ),
+            ],
           ],
         ),
       ),
@@ -72,11 +73,54 @@ class PopularPostCard extends StatelessWidget {
   }
 }
 
-class _ThumbImage extends StatelessWidget {
+class _ThumbImage extends StatefulWidget {
   final String imageUrl;
   final int imageCount;
 
   const _ThumbImage({required this.imageUrl, required this.imageCount});
+
+  @override
+  State<_ThumbImage> createState() => _ThumbImageState();
+}
+
+class _ThumbImageState extends State<_ThumbImage> {
+  late String _currentImageUrl;
+  bool _triedOriginalFallback = false;
+  bool _fallbackScheduled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentImageUrl = widget.imageUrl;
+  }
+
+  @override
+  void didUpdateWidget(covariant _ThumbImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.imageUrl != widget.imageUrl) {
+      _currentImageUrl = widget.imageUrl;
+      _triedOriginalFallback = false;
+      _fallbackScheduled = false;
+    }
+  }
+
+  void _fallbackToOriginalIfNeeded(Object error) {
+    if (_triedOriginalFallback || _fallbackScheduled) return;
+    if (error is! NetworkImageLoadException || error.statusCode != 403) return;
+
+    final originalUrl = originalImageUrlFromThumb(widget.imageUrl);
+    if (originalUrl == null || originalUrl == _currentImageUrl) return;
+
+    _fallbackScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _currentImageUrl = originalUrl;
+        _triedOriginalFallback = true;
+        _fallbackScheduled = false;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +129,14 @@ class _ThumbImage extends StatelessWidget {
       child: SizedBox(
         width: 64,
         height: 64,
-        child: Image.network(imageUrl, fit: BoxFit.cover),
+        child: Image.network(
+          _currentImageUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            _fallbackToOriginalIfNeeded(error);
+            return const SizedBox.expand();
+          },
+        ),
       ),
     );
   }
