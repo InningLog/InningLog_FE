@@ -85,7 +85,9 @@ class _TeamBoardPageState extends State<TeamBoardPage>
     if (widget.mode != BoardMode.normal) return;
     final tabType = _tabs[_tabController.index].type;
     final tabPath = boardTabPath(tabType);
-    context.replace(AppRoutePaths.boardLocation(widget.teamCode!, tab: tabPath));
+    context.replace(
+      AppRoutePaths.boardLocation(widget.teamCode!, tab: tabPath),
+    );
   }
 
   String get _headerTitle {
@@ -103,6 +105,11 @@ class _TeamBoardPageState extends State<TeamBoardPage>
             ? 'KBO 전체게시판'
             : kboTeamLabelOf(widget.teamCode!);
     }
+  }
+
+  BoardTab get _searchInitialTab {
+    final current = _tabs[_tabController.index].type;
+    return current == BoardTab.free ? BoardTab.free : BoardTab.onlywan;
   }
 
   @override
@@ -144,7 +151,14 @@ class _TeamBoardPageState extends State<TeamBoardPage>
             CommonHeader(
               title: _headerTitle,
               onSearchPressed:
-                  isNormal ? () => context.push(AppRoutePaths.search) : null,
+                  isNormal
+                      ? () => context.push(
+                        AppRoutePaths.searchLocation(
+                          teamCode: widget.teamCode ?? 'ALL',
+                          tab: boardTabPath(_searchInitialTab),
+                        ),
+                      )
+                      : null,
             ),
 
             SegmentedTabs(controller: _tabController, items: _tabs),
