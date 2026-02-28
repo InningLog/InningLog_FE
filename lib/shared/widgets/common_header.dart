@@ -63,10 +63,10 @@ class CommonHeader extends StatelessWidget {
               icon: SvgPicture.asset(
                 'assets/icons/search.svg', // 🔍 아이콘 파일명에 맞춰 수정
                 width: 33,
+                height: 33,
               ),
               onPressed:
                   onSearchPressed ?? () => context.push(AppRoutePaths.search),
-              splashRadius: 33,
             ),
             const SizedBox(width: 0), // Figma 느낌 간격
           ],

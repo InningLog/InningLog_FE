@@ -11,7 +11,7 @@ import 'package:inninglog/shared/widgets/main_navigation.dart';
 import 'package:inninglog/feature/login/models/KakaoLoginWebViewPage.dart';
 import 'package:inninglog/feature/diary/screens/add_diary_page.dart';
 import 'package:inninglog/feature/diary/screens/add_seat_page.dart';
-import 'package:inninglog/feature/community/screens/community_search_page.dart';
+import 'package:inninglog/feature/community/screens/search_page.dart';
 import 'package:inninglog/feature/field/screens/field_hashtag_filter_sheet.dart';
 import 'package:inninglog/feature/community/screens/legacy/market_upload_step1.dart';
 import 'package:inninglog/feature/community/screens/writing_post_page.dart';
@@ -135,7 +135,17 @@ final GoRouter _router = GoRouter(
     GoRoute(path: '/onboarding6', builder: (_, __) => const OnboardingPage6()),
     GoRoute(
       path: AppRoutePaths.search,
-      builder: (_, __) => const CommunitySearchPage(),
+      builder: (_, state) {
+        final teamCode = state.uri.queryParameters['teamCode'] ?? 'ALL';
+        final tabPath = state.uri.queryParameters['tab'] ?? 'onlywan';
+        final parsedTab = boardTabFromPath(tabPath);
+        final initialTab =
+            parsedTab == BoardTab.free ? BoardTab.free : BoardTab.onlywan;
+        return CommunitySearchPage(
+          initialTeamCode: teamCode,
+          initialTab: initialTab,
+        );
+      },
     ),
 
     GoRoute(

@@ -30,6 +30,36 @@ class DiaryRepository {
     return DiaryFeedResponse.fromJson(json);
   }
 
+  Future<DiaryFeedResponse> searchJournals({
+    required String teamShortCode,
+    required String keyword,
+    required int page,
+    required int size,
+  }) async {
+    final res = await _dio.get(
+      '/journals/search',
+      queryParameters: {
+        'teamShortCode': teamShortCode,
+        'keyword': keyword,
+        'page': page,
+        'size': size,
+      },
+    );
+
+    final json = res.data;
+    if (json is! Map<String, dynamic>) {
+      throw const FormatException('Unexpected journal search response shape');
+    }
+
+    final envelope = ApiEnvelope.fromJson(json);
+    final data = envelope.data;
+    if (data is Map<String, dynamic>) {
+      return DiaryFeedResponse.fromJson(data);
+    }
+
+    return DiaryFeedResponse.fromJson(json);
+  }
+
   Future<void> scrapJournal({required String journalId}) async {
     final res = await _dio.post('/journals/$journalId/scraps');
     if (res.data is! Map<String, dynamic>) {
