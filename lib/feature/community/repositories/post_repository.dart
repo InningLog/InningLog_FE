@@ -113,6 +113,29 @@ class CommunityPostRepository {
     return PostListResponse.fromJson(json);
   }
 
+  Future<PostListResponse> searchPosts({
+    required String teamShortCode,
+    required String keyword,
+    required int page,
+    required int size,
+  }) async {
+    final res = await _dio.get(
+      '/community/posts/search',
+      queryParameters: {
+        'teamShortCode': teamShortCode,
+        'keyword': keyword,
+        'page': page,
+        'size': size,
+      },
+    );
+
+    final json = res.data;
+    if (json is! Map<String, dynamic>) {
+      throw const FormatException('Unexpected post search response');
+    }
+    return PostListResponse.fromJson(json);
+  }
+
   /// 내가 쓴 글 페이지네이션 조회
   Future<PostListResponse> getMyPosts({
     required int page,

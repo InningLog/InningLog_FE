@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inninglog/feature/community/model/community_post.dart';
@@ -7,7 +9,6 @@ import 'package:inninglog/feature/community/widgets/post/post_item_card.dart';
 import 'package:inninglog/feature/community/widgets/shared/board_list.dart';
 import 'package:inninglog/feature/community/widgets/shared/segmented_tabs.dart';
 import 'package:inninglog/router/app_routes.dart';
-import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:inninglog/shared/widgets/empty_state.dart';
 
 class SearchResultSection extends StatelessWidget {
@@ -19,6 +20,11 @@ class SearchResultSection extends StatelessWidget {
   final Future<void> Function() onLoadMore;
   final String query;
   final String teamCode;
+  final Future<void> Function(String journalId) onToggleJournalLike;
+  final Future<void> Function(String journalId) onToggleJournalScrap;
+  final void Function(DiaryItemModel item) onTapJournalComment;
+  final bool Function(String journalId) isJournalLikePending;
+  final bool Function(String journalId) isJournalScrapPending;
 
   const SearchResultSection({
     super.key,
@@ -30,6 +36,11 @@ class SearchResultSection extends StatelessWidget {
     required this.onLoadMore,
     required this.query,
     required this.teamCode,
+    required this.onToggleJournalLike,
+    required this.onToggleJournalScrap,
+    required this.onTapJournalComment,
+    required this.isJournalLikePending,
+    required this.isJournalScrapPending,
   });
 
   @override
@@ -52,6 +63,11 @@ class SearchResultSection extends StatelessWidget {
                 hasNext: hasNext,
                 onLoadMore: onLoadMore,
                 query: query,
+                onToggleJournalLike: onToggleJournalLike,
+                onToggleJournalScrap: onToggleJournalScrap,
+                onTapJournalComment: onTapJournalComment,
+                isJournalLikePending: isJournalLikePending,
+                isJournalScrapPending: isJournalScrapPending,
               ),
               _FreeResultList(
                 items: freeResults,
@@ -74,6 +90,11 @@ class _OnlywanResultList extends StatelessWidget {
   final bool hasNext;
   final Future<void> Function() onLoadMore;
   final String query;
+  final Future<void> Function(String journalId) onToggleJournalLike;
+  final Future<void> Function(String journalId) onToggleJournalScrap;
+  final void Function(DiaryItemModel item) onTapJournalComment;
+  final bool Function(String journalId) isJournalLikePending;
+  final bool Function(String journalId) isJournalScrapPending;
 
   const _OnlywanResultList({
     required this.items,
@@ -81,6 +102,11 @@ class _OnlywanResultList extends StatelessWidget {
     required this.hasNext,
     required this.onLoadMore,
     required this.query,
+    required this.onToggleJournalLike,
+    required this.onToggleJournalScrap,
+    required this.onTapJournalComment,
+    required this.isJournalLikePending,
+    required this.isJournalScrapPending,
   });
 
   @override
@@ -94,7 +120,19 @@ class _OnlywanResultList extends StatelessWidget {
       hasNext: hasNext,
       isLoading: isLoading,
       onLoadMore: onLoadMore,
-      itemBuilder: (context, item) => DiaryItem(item: item),
+      itemBuilder:
+          (context, item) => DiaryItem(
+            item: item,
+            onTapLike:
+                isJournalLikePending(item.journalId)
+                    ? null
+                    : () => unawaited(onToggleJournalLike(item.journalId)),
+            onTapComment: () => onTapJournalComment(item),
+            onTapScrap:
+                isJournalScrapPending(item.journalId)
+                    ? null
+                    : () => unawaited(onToggleJournalScrap(item.journalId)),
+          ),
     );
   }
 }
@@ -129,7 +167,7 @@ class _FreeResultList extends StatelessWidget {
           (context, item) => PostItemCard(
             item: item,
             onTap:
-                () => context.push(
+                () => context.go(
                   AppRoutePaths.boardPostDetailLocation(item.teamCode, item.id),
                 ),
           ),

@@ -5,6 +5,7 @@ import 'package:inninglog/feature/community/model/diary_item.dart';
 import 'package:inninglog/feature/community/model/comment_domain_type.dart';
 import 'package:inninglog/feature/community/viewmodel/comment_view_model.dart';
 import 'package:inninglog/feature/community/viewmodel/diary_feed_view_model.dart';
+import 'package:inninglog/feature/community/viewmodel/journal_action_view_model.dart';
 import 'package:inninglog/feature/community/widgets/comment/comment_bottom_sheet.dart';
 import 'package:inninglog/feature/community/widgets/onlywan/diary_item.dart';
 import 'package:inninglog/feature/community/widgets/shared/board_list.dart';
@@ -26,12 +27,18 @@ class OnlyWanTab extends StatefulWidget {
 class _OnlyWanTabState extends State<OnlyWanTab> {
   bool _initialized = false;
   late final DiaryFeedViewModel _vm;
+  late final JournalActionsViewModel _journalActionsVm;
 
   @override
   void initState() {
     super.initState();
     final repo = context.read<AppScope>().diaryRepository;
-    _vm = DiaryFeedViewModel(repo: repo, teamCode: widget.teamCode);
+    _journalActionsVm = JournalActionsViewModel(repo: repo);
+    _vm = DiaryFeedViewModel(
+      repo: repo,
+      teamCode: widget.teamCode,
+      journalActions: _journalActionsVm,
+    );
   }
 
   @override
@@ -54,6 +61,7 @@ class _OnlyWanTabState extends State<OnlyWanTab> {
   @override
   void dispose() {
     _vm.dispose();
+    _journalActionsVm.dispose();
     super.dispose();
   }
 
@@ -111,7 +119,10 @@ class _OnlyWanTabState extends State<OnlyWanTab> {
                         ],
                       );
                     },
-                    onTapLike: () => vm.toggleLike(journalId: item.journalId),
+                    onTapLike:
+                        vm.isJournalLikePending(item.journalId)
+                            ? null
+                            : () => vm.toggleLike(journalId: item.journalId),
                     onTapComment: () {
                       final repo = context.read<AppScope>().commentRepository;
                       final commentVm = CommentViewModel(
@@ -129,7 +140,10 @@ class _OnlyWanTabState extends State<OnlyWanTab> {
                             ),
                       );
                     },
-                    onTapScrap: () => vm.toggleScrap(journalId: item.journalId),
+                    onTapScrap:
+                        vm.isJournalScrapPending(item.journalId)
+                            ? null
+                            : () => vm.toggleScrap(journalId: item.journalId),
                   ),
             );
           }

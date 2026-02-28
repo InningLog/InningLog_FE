@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:inninglog/app_scope.dart';
+import 'package:inninglog/feature/community/model/comment_domain_type.dart';
+import 'package:inninglog/feature/community/model/diary_item.dart';
+import 'package:inninglog/feature/community/viewmodel/comment_view_model.dart';
 import 'package:inninglog/feature/community/viewmodel/community_search_view_model.dart';
+import 'package:inninglog/feature/community/viewmodel/journal_action_view_model.dart';
+import 'package:inninglog/feature/community/widgets/comment/comment_bottom_sheet.dart';
 import 'package:inninglog/feature/community/widgets/search/recent_search_section.dart';
 import 'package:inninglog/feature/community/widgets/search/search_result_section.dart';
 import 'package:inninglog/feature/community/widgets/search/search_top_bar.dart';
@@ -30,6 +36,7 @@ class _CommunitySearchPageState extends State<CommunitySearchPage>
   final FocusNode _focus = FocusNode();
   TabController? _tabController;
   CommunitySearchViewModel? _vm;
+  JournalActionsViewModel? _journalActionsVm;
   bool _didRequestFocus = false;
 
   @override
@@ -49,6 +56,7 @@ class _CommunitySearchPageState extends State<CommunitySearchPage>
       ?..removeListener(_handleTabChange)
       ..dispose();
     _vm?.dispose();
+    _journalActionsVm?.dispose();
     super.dispose();
   }
 
@@ -57,6 +65,8 @@ class _CommunitySearchPageState extends State<CommunitySearchPage>
 
     final initialTab =
         (widget.initialTab == BoardTab.free) ? BoardTab.free : BoardTab.onlywan;
+    final appScope = context.read<AppScope>();
+    _journalActionsVm = JournalActionsViewModel(repo: appScope.diaryRepository);
 
     _tabController = TabController(
       length: 2,
@@ -67,6 +77,9 @@ class _CommunitySearchPageState extends State<CommunitySearchPage>
     _vm = CommunitySearchViewModel(
       teamCode: widget.initialTeamCode ?? 'ALL',
       initialTab: initialTab,
+      diaryRepository: appScope.diaryRepository,
+      postRepository: appScope.communityPostRepository,
+      journalActions: _journalActionsVm!,
     )..init();
   }
 
@@ -163,6 +176,30 @@ class _CommunitySearchPageState extends State<CommunitySearchPage>
                                 onLoadMore: vm.loadMore,
                                 query: vm.query,
                                 teamCode: vm.teamCode,
+                                onToggleJournalLike: vm.toggleJournalLike,
+                                onToggleJournalScrap: vm.toggleJournalScrap,
+                                onTapJournalComment: (DiaryItemModel item) {
+                                  final repo =
+                                      context
+                                          .read<AppScope>()
+                                          .commentRepository;
+                                  final commentVm = CommentViewModel(
+                                    domainType: CommentDomainType.feed,
+                                    domainId: item.journalId,
+                                    repo: repo,
+                                  );
+                                  showCommentBottomSheet(
+                                    context,
+                                    viewModel: commentVm,
+                                    onCommentCountChanged:
+                                        (count) => vm.updateJournalCommentCount(
+                                          journalId: item.journalId,
+                                          count: count,
+                                        ),
+                                  );
+                                },
+                                isJournalLikePending: vm.isJournalLikePending,
+                                isJournalScrapPending: vm.isJournalScrapPending,
                               )
                               : RecentSearchSection(
                                 history: vm.history,

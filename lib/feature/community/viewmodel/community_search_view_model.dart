@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:inninglog/feature/community/model/community_post.dart';
 import 'package:inninglog/feature/community/model/diary_item.dart';
+import 'package:inninglog/feature/community/repositories/diary_repository.dart';
+import 'package:inninglog/feature/community/repositories/post_repository.dart';
+import 'package:inninglog/feature/community/viewmodel/journal_action_view_model.dart';
 import 'package:inninglog/feature/community/widgets/shared/segmented_tabs.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -9,12 +12,21 @@ class CommunitySearchViewModel extends ChangeNotifier {
   static const _maxHistory = 15;
 
   final String teamCode;
+  final DiaryRepository diaryRepository;
+  final CommunityPostRepository postRepository;
+  final JournalActionsViewModel _journalActions;
+  final int pageSize;
   BoardTab _selectedTab;
 
   CommunitySearchViewModel({
     required this.teamCode,
     required BoardTab initialTab,
-  }) : _selectedTab = _normalizeTab(initialTab);
+    required this.diaryRepository,
+    required this.postRepository,
+    required JournalActionsViewModel journalActions,
+    this.pageSize = 10,
+  }) : _selectedTab = _normalizeTab(initialTab),
+       _journalActions = journalActions;
 
   String _query = '';
   List<String> _history = [];
@@ -24,8 +36,13 @@ class CommunitySearchViewModel extends ChangeNotifier {
 
   final Set<BoardTab> _loadedTabs = {};
 
+  int _onlywanPage = -1;
+  int _freePage = -1;
+  bool _onlywanHasNext = false;
+  bool _freeHasNext = false;
+
   bool _isLoading = false;
-  bool _hasNext = false;
+  String? _error;
 
   String get query => _query;
   bool get hasQuery => _query.trim().isNotEmpty;
@@ -36,7 +53,18 @@ class CommunitySearchViewModel extends ChangeNotifier {
   List<CommunityPostItem> get freeResults => List.unmodifiable(_freeResults);
 
   bool get isLoading => _isLoading;
-  bool get hasNext => _hasNext;
+  bool get hasNext {
+    if (_selectedTab == BoardTab.onlywan) return _onlywanHasNext;
+    if (_selectedTab == BoardTab.free) return _freeHasNext;
+    return false;
+  }
+
+  String? get error => _error;
+
+  bool isJournalLikePending(String journalId) =>
+      _journalActions.isLikePending(journalId);
+  bool isJournalScrapPending(String journalId) =>
+      _journalActions.isScrapPending(journalId);
 
   static BoardTab _normalizeTab(BoardTab tab) {
     return tab == BoardTab.free ? BoardTab.free : BoardTab.onlywan;
@@ -64,8 +92,16 @@ class CommunitySearchViewModel extends ChangeNotifier {
   void clearQuery() {
     if (_query.isEmpty) return;
     _query = '';
+    _loadedTabs.clear();
+    _onlywanResults.clear();
+    _freeResults.clear();
+    _journalActions.clearPending();
+    _onlywanPage = -1;
+    _freePage = -1;
+    _onlywanHasNext = false;
+    _freeHasNext = false;
     _isLoading = false;
-    _hasNext = false;
+    _error = null;
     notifyListeners();
   }
 
@@ -86,8 +122,38 @@ class CommunitySearchViewModel extends ChangeNotifier {
   }
 
   Future<void> loadMore() async {
-    if (!hasQuery || _isLoading || !_hasNext) return;
+    if (!hasQuery || _isLoading || !hasNext) return;
     await _loadCurrentTab(reset: false);
+  }
+
+  Future<void> toggleJournalLike(String journalId) async {
+    await _journalActions.toggleLike(
+      items: _onlywanResults,
+      journalId: journalId,
+      notifyItems: notifyListeners,
+      onError: (error) => _error = error.toString(),
+    );
+  }
+
+  Future<void> toggleJournalScrap(String journalId) async {
+    await _journalActions.toggleScrap(
+      items: _onlywanResults,
+      journalId: journalId,
+      notifyItems: notifyListeners,
+      onError: (error) => _error = error.toString(),
+    );
+  }
+
+  void updateJournalCommentCount({
+    required String journalId,
+    required int count,
+  }) {
+    _journalActions.updateCommentCount(
+      items: _onlywanResults,
+      journalId: journalId,
+      count: count,
+      notifyItems: notifyListeners,
+    );
   }
 
   Future<void> removeHistoryTerm(String term) async {
@@ -107,13 +173,9 @@ class CommunitySearchViewModel extends ChangeNotifier {
     if (_isLoading) return;
 
     _isLoading = true;
+    _error = null;
     if (reset) {
-      _hasNext = false;
-      if (_selectedTab == BoardTab.onlywan) {
-        _onlywanResults.clear();
-      } else {
-        _freeResults.clear();
-      }
+      _resetTabState(_selectedTab);
     }
     notifyListeners();
 
@@ -129,6 +191,8 @@ class CommunitySearchViewModel extends ChangeNotifier {
           break;
       }
       _loadedTabs.add(_selectedTab);
+    } catch (e) {
+      _error = e.toString();
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -136,15 +200,61 @@ class CommunitySearchViewModel extends ChangeNotifier {
   }
 
   Future<void> _searchOnlywan({required bool reset}) async {
-    // TODO(API): teamCode + query + tab(onlywan) 조건으로 검색 API 연결
-    // TODO(API): 페이징(loadMore) 처리 시 _hasNext와 리스트 append 적용
-    _hasNext = false;
+    final nextPage = reset ? 0 : _onlywanPage + 1;
+    final response = await diaryRepository.searchJournals(
+      teamShortCode: teamCode,
+      keyword: _query,
+      page: nextPage,
+      size: pageSize,
+    );
+    final mapped = response.content.map((item) => item.toModel()).toList();
+
+    if (reset) {
+      _onlywanResults
+        ..clear()
+        ..addAll(mapped);
+    } else {
+      _onlywanResults.addAll(mapped);
+    }
+
+    _onlywanPage = response.page;
+    _onlywanHasNext = response.hasNext;
   }
 
   Future<void> _searchFree({required bool reset}) async {
-    // TODO(API): teamCode + query + tab(free) 조건으로 검색 API 연결
-    // TODO(API): 페이징(loadMore) 처리 시 _hasNext와 리스트 append 적용
-    _hasNext = false;
+    final nextPage = reset ? 0 : _freePage + 1;
+    final response = await postRepository.searchPosts(
+      teamShortCode: teamCode,
+      keyword: _query,
+      page: nextPage,
+      size: pageSize,
+    );
+
+    if (reset) {
+      _freeResults
+        ..clear()
+        ..addAll(response.content);
+    } else {
+      _freeResults.addAll(response.content);
+    }
+
+    _freePage = response.page;
+    _freeHasNext = response.hasNext;
+  }
+
+  void _resetTabState(BoardTab tab) {
+    if (tab == BoardTab.onlywan) {
+      _onlywanResults.clear();
+      _journalActions.clearPending();
+      _onlywanPage = -1;
+      _onlywanHasNext = false;
+      return;
+    }
+    if (tab == BoardTab.free) {
+      _freeResults.clear();
+      _freePage = -1;
+      _freeHasNext = false;
+    }
   }
 
   Future<void> _addHistory(String term) async {
