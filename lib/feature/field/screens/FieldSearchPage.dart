@@ -6,7 +6,8 @@ import '../../../shared/theme/app_colors.dart';
 import '../../../main.dart';
 import '../../../shared/widgets/common_header.dart';
 import 'package:go_router/go_router.dart';
-
+import '../../diary/screens/add_seat_page.dart';
+import 'recommend_detail_page.dart';
 import '../widgets/jamsil_map.dart';
 
 
@@ -50,6 +51,168 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
   }
 
 
+  Widget _buildRecommendTab() {
+    final categories = [
+      {
+        'thumb': 'assets/images/seat_reco_cheer.png',
+        'banner': 'assets/images/cheer_long.png',
+        'title': '열정 가득! 응원 명당',
+      },
+      {
+        'thumb': 'assets/images/seat_reco_sun.png',
+        'banner': 'assets/images/sun_long.png',
+        'title': '햇빛 피해 즐기는 직관',
+      },
+      {
+        'thumb': 'assets/images/seat_reco_rain.png',
+        'banner': 'assets/images/rain_long.png',
+        'title': '비 와도 끝까지 쾌적하게',
+      },
+      {
+        'thumb': 'assets/images/seat_reco_view.png',
+        'banner': 'assets/images/view_long.png',
+        'title': '시야 방해 없이!',
+      },
+      {
+        'thumb': 'assets/images/seat_reco_wide.png',
+        'banner': 'assets/images/wide_long.png',
+        'title': '두 다리 쭉! 넓은 좌석',
+      },
+    ];
+
+    // ⚠️ 반드시 실제 존재하는 에셋으로 바꿔줘야 런타임 에러 안 남!
+    final dummySeatImages = List.generate(
+      6,
+          (_) => 'assets/images/sample_seat.jpg',
+    );
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 24),
+
+          // ✅ 위에 글씨(너가 말한 "위에 글씨도 있어야해" 부분)
+          const Text(
+            '내 취향에 맞는 좌석을 추천받아보세요!',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              fontFamily: 'Pretendard',
+              letterSpacing: -0.16,
+              height: 1,
+              color: AppColors.gray900,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // =========================
+          // 카테고리 별 BEST
+          // =========================
+          const Text(
+            '카테고리 별 BEST',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+              fontFamily: 'Pretendard',
+              letterSpacing: -0.18,
+              color: AppColors.gray900,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          SizedBox(
+            height: 178,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: categories.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final item = categories[index];
+
+                return _ImageCard(
+                  assetPath: item['thumb']!,
+                  width: 130,
+                  height: 178,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => RecommendDetailPage(
+                          stadiumName: widget.stadiumName,
+                          bannerAsset: item['banner']!,
+                          title: item['title']!, // ✅ 추가
+                          seatImages: dummySeatImages,
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+
+          const SizedBox(height: 60),
+
+          // =========================
+          // 꿀팁 이닝 (✅ 너가 붙여둔 그대로 유지)
+          // =========================
+          Row(
+            children: [
+              const Text(
+                '꿀팁 이닝',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                  fontFamily: 'Pretendard',
+                  letterSpacing: -0.18,
+                  color: AppColors.gray900,
+                ),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () {
+                  // TODO: 더보기 이동
+                },
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    '더보기 >',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'Pretendard',
+                      color: AppColors.gray500,
+                      letterSpacing: -0.12,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          SizedBox(
+            height: 200,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: 6, // 임시 카드 개수
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                return _PlaceholderCard(
+                  width: 150,
+                  height: 200,
+                  borderRadius: 12,
+                );
+              },
+            ),
+          ),
+
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     final bool isJamsil = widget.stadiumName == '잠실 야구장';
@@ -148,6 +311,8 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                 ),
               )
             else
+
+
 
             // 본문 영역
             Expanded(
@@ -274,8 +439,6 @@ class _FieldSearchPageState extends State<FieldSearchPage> {
                       ],
                     ),
 
-
-                    ///TODO : 여기에 추천탭 화면 만들기
 
                     _buildRecommendTab(),
 
@@ -434,118 +597,6 @@ class StadiumBottomSheet extends StatelessWidget {
   }
 }
 
-Widget _buildRecommendTab() {
-  // ✅ 위 섹션(이미지에 텍스트 포함)
-  final bestCategoryImages = <String>[
-    'assets/images/seat_reco_cheer.png',
-    'assets/images/seat_reco_sun.png',
-    'assets/images/seat_reco_view.png',
-    'assets/images/seat_reco_rain.png',
-    'assets/images/seat_reco_wide.png',
-  ];
-
-  return SingleChildScrollView(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 24),
-
-        // =========================
-        // 카테고리 별 BEST
-        // =========================
-        const Text(
-          '카테고리 별 BEST',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-            fontFamily: 'Pretendard',
-            letterSpacing: -0.18,
-            color: AppColors.gray900,
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        SizedBox(
-          height: 178,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: bestCategoryImages.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
-            itemBuilder: (context, index) {
-              return _ImageCard(
-                assetPath: bestCategoryImages[index],
-                width: 130,
-                height: 178,
-                onTap: () {
-                  // TODO: 나중에 추천 상세로 이동 필요하면 여기 연결
-                },
-              );
-            },
-          ),
-        ),
-
-        const SizedBox(height: 60),
-
-        // =========================
-        // 꿀팁 이닝 (아직 없음 -> 자리만)
-        // =========================
-        Row(
-          children: [
-            const Text(
-              '꿀팁 이닝',
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 18,
-                fontFamily: 'Pretendard',
-                letterSpacing: -0.18,
-                color: AppColors.gray900,
-              ),
-            ),
-            const Spacer(),
-            GestureDetector(
-              onTap: () {
-                // TODO: 더보기 이동
-              },
-              child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 6),
-                child: Text(
-                  '더보기 >',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: 'Pretendard',
-                    color: AppColors.gray500,
-                    letterSpacing: -0.12,
-
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
-
-        SizedBox(
-          height: 200,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: 6, // 임시 카드 개수
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              return _PlaceholderCard(
-                width: 150,
-                height: 200,
-                borderRadius: 12,
-              );
-            },
-          ),
-        ),
-
-        const SizedBox(height: 24),
-      ],
-    ),
-  );
-}
 
 /// ✅ 이미지(텍스트 포함된 png)를 그대로 카드로 보여주는 위젯
 class _ImageCard extends StatelessWidget {
@@ -630,184 +681,6 @@ class _PlaceholderCard extends StatelessWidget {
 
 
 
-
-final Map<String, String> stadiumNameToCode = {
-  '잠실야구장': 'JAM',
-  '고척 스카이돔': 'GOC',
-  '랜더스 필드': 'ICN',
-  '위즈 파크': 'SUW',
-  '한화생명 볼파크': 'DJN',
-  '라이온즈 파크': 'DAE',
-  '사직 야구장': 'BUS',
-  'NC 파크장': 'CHW',
-  '챔피언스 필드': 'GWJ',
-};
-
-
-
-final Map<String, Map<String, String>> stadiumZones = {
-  'JAM': {
-    'JAM_PREMIUM': '중앙석 (프리미엄석)',
-    'JAM_TABLE': '테이블석',
-    'JAM_EXCITING': '익사이팅존',
-    'JAM_BLUE': '블루석',
-    'JAM_ORANGE': '오렌지석',
-    'JAM_RED': '레드석',
-    'JAM_NAVY': '네이비석',
-    'JAM_GREEN': '그린석 (좌석)',
-  },
-  'GOC': {
-    'GOC_SKYBOX': '스카이박스',
-    'GOC_RDDUB': 'R.d-dub',
-    'GOC_LEXUS1': 'LEXUS 1층 테이블석',
-    'GOC_LEXUS2': 'LEXUS 2층 테이블석',
-    'GOC_NAVER': 'NAVER 2층 테이블석',
-    'GOC_INFIELD_COUPLE': '내야커플석',
-    'GOC_OUTFIELD_COUPLE': '외야커플석',
-    'GOC_DARK_BURGUNDY': '다크버건디석',
-    'GOC_BURGUNDY': '버건디석',
-    'GOC_3F': '3층 지정석',
-    'GOC_4F': '4층 지정석',
-    'GOC_WHEELCHAIR': '휠체어석',
-    'GOC_OUTFIELD': '외야 지정석',
-    'GOC_OUTFIELD_FAMILY': '외야 패밀리석',
-    'GOC_OUTFIELD_BABY': '외야 유아동반석',
-  },
-  'ICN': {
-    'ICN_SKY_VIEW': '4층 SKY뷰석',
-    'ICN_INFIELD_FIELD': '내야 필드석',
-    'ICN_OUTFIELD_FIELD': '외야 필드석',
-    'ICN_SKY_TABLE': 'SKY탁자석',
-    'ICN_MINI_SKYBOX': '미니스카이박스',
-    'ICN_OUTFIELD_FAMILY': '외야패밀리존',
-    'ICN_EMART_FRIENDLY': '이마트 프렌들리존',
-    'ICN_LANDERS_LIVE': '랜더스 라이브존',
-    'ICN_PEACOCK_1F': '피코크 테이블석(1층)',
-    'ICN_NOBRAND_2F': '노브랜드 테이블석(2층)',
-    'ICN_DUGOUT_UPPER': '덕아웃 상단석',
-    'ICN_MOLLIS_GREEN': '몰리스 그린존',
-    'ICN_EUSSEUK': '으쓱이존',
-    'ICN_AWAY': '원정응원석',
-    'ICN_HOMERUN_COUPLE': '홈런커플존',
-    'ICN_SKYBOX': '스카이박스',
-    'ICN_OPEN_BBQ': '오픈 바비큐존',
-    'ICN_EMART_BBQ': '이마트바비큐존',
-    'ICN_YOGIYO_FAMILY': '요기요 내야패밀리존',
-    'ICN_CHOGA': '초가정자',
-    'ICN_ROCKET_PARTY': '로케트배터리 외야파티덱',
-  },
-  'SUW': {
-    'SUW_CATCHER_TABLE': '포수 뒤 테이블석',
-    'SUW_CENTER_TABLE': '중앙 테이블석',
-    'SUW_BASE_TABLE': '1루/3루 테이블석',
-    'SUW_HIGH_FIVE': '하이파이브존',
-    'SUW_EXCITING': '익사이팅석',
-    'SUW_CENTER': '중앙 지정석',
-    'SUW_CHEER': '응원 지정석',
-    'SUW_INFIELD': '내야 지정석',
-    'SUW_SKY': '스카이존',
-    'SUW_OUTFIELD_TABLE': '외야 테이블석',
-    'SUW_OUTFIELD_GRASS': '외야 잔디자유석',
-  },
-
-  'DJN': {
-    'DJN_CATCHER_BACK': '포수 후면석',
-    'DJN_CENTER': '중앙 지정석',
-    'DJN_CENTER_TABLE': '중앙 탁자석',
-    'DJN_INFIELD_A': '내야 지정석A',
-    'DJN_INFIELD_B': '내야 지정석B',
-    'DJN_INFIELD_BOX': '내야 박스석',
-    'DJN_INFIELD_COUPLE': '내야 커플석',
-    'DJN_INFIELD_TABLE_4F': '내야 탁자석(4층)',
-    'DJN_CASS_CHEER': '카스존(응원단석)',
-    'DJN_INNINGS_VIP': '이닝스 VIP바 & 룸/테라스',
-    'DJN_SKYBOX': '스카이박스',
-    'DJN_OUTFIELD': '외야지정석',
-    'DJN_BAMBKEL_GRASS': '밤켈존(잔디석)',
-    'DJN_OUTFIELD_TABLE': '외야탁자석',
-  },
-
-  'DAE': {
-    'DAE_SKY_YOGIBO': 'SKY 요기보 패밀리존',
-    'DAE_SKY_LOWER': 'SKY 하단 지정석',
-    'DAE_3B_SKY_UPPER': '3루 SKY 상단 지정석',
-    'DAE_CENTER_SKY_UPPER': '중앙 SKY 상단 지정석',
-    'DAE_1B_SKY_UPPER': '1루 SKY 상단 지정석',
-    'DAE_SWEET_BOX': '스윗박스',
-    'DAE_PARTY_LIVE': '파티플로어 라이브석',
-    'DAE_VIP': 'VIP석',
-    'DAE_EUTEUM_CENTER': '으뜸병원 중앙 테이블석',
-    'DAE_ISU_3B': '이수그룹 3루 테이블석',
-    'DAE_ISU_PETASYS_1B': '이수페타시스 1루 테이블석',
-    'DAE_3B_EXCITING': '3루 익사이팅석',
-    'DAE_1B_EXCITING': '1루 익사이팅석',
-    'DAE_BLUE': '블루존',
-    'DAE_AWAY': '원정 응원석',
-    'DAE_1B_INFIELD': '1루 내야지정석',
-    'DAE_WHEELCHAIR': '휠체어 장애인석',
-    'DAE_OUTFIELD_FAMILY': '외야 패밀리석',
-    'DAE_OUTFIELD_TABLE': '외야 테이블석',
-    'DAE_OUTFIELD': '외야 지정석',
-    'DAE_OUTFIELD_COUPLE': '외야 커플 테이블석',
-    'DAE_ROOFTOP': '루프탑 테이블석',
-  },
-  'BUS': {
-    'BUS_GROUND': '그라운드석',
-    'BUS_CENTER_TABLE': '중앙탁자석',
-    'BUS_WIDE_TABLE': '와이드탁자석',
-    'BUS_CHEER_TABLE': '응원탁자석',
-    'BUS_INFIELD_TABLE': '내야탁자석',
-    'BUS_3B_GROUP': '3루 단체석',
-    'BUS_INFIELD_FIELD': '내야필드석',
-    'BUS_INFIELD_UPPER': '내야상단석',
-    'BUS_ROCKET_BATTERY': '로케트 배터리존',
-    'BUS_OUTFIELD': '외야석',
-    'BUS_CENTER_UPPER': '중앙상단석',
-    'BUS_WHEELCHAIR': '휠체어석',
-  },
-
-  'GWJ': {
-    'GWJ_CHAMPION': '챔피언석',
-    'GWJ_CENTER_TABLE': '중앙테이블석',
-    'GWJ_DISABLED': '장애인지정석',
-    'GWJ_K9': 'K9',
-    'GWJ_K8': 'K8',
-    'GWJ_K5': 'K5',
-    'GWJ_SURPRISE': '서프라이즈석',
-    'GWJ_TIGERS_FAMILY': '타이거즈가족석',
-    'GWJ_WHEELCHAIR': '휠체어석',
-    'GWJ_4F_PARTY': '4층파티석',
-    'GWJ_SKYBOX': '스카이박스',
-    'GWJ_SKY_PICNIC': '스카이피크닉석',
-    'GWJ_EV': 'EV',
-    'GWJ_5F_TABLE': '5층 테이블석',
-    'GWJ_OUTFIELD': '외야석',
-    'GWJ_OUTFIELD_TABLE': '외야테이블석',
-  },
-
-  'CHW': {
-    'CHW_INFIELD': '내야석',
-    'CHW_TABLE': '테이블석',
-    'CHW_ROUND_TABLE': '라운드 테이블석',
-    'CHW_OUTFIELD_GRASS': '외야잔디석',
-    'CHW_OUTFIELD': '외야석',
-    'CHW_3_4F_INFIELD': '3·4층 내야석',
-    'CHW_WHEELCHAIR': '휠체어석',
-    'CHW_MINI_TABLE': '미니테이블석',
-    'CHW_FAMILY': '가족석',
-    'CHW_SKYBOX': '스카이박스',
-    'CHW_BULLPEN_FAMILY': '불펜 가족석',
-    'CHW_BULLPEN': '불펜석',
-    'CHW_COUNTER': '카운터석',
-    'CHW_ABL_PREMIUM': 'ABL생명 프리미엄석',
-    'CHW_ABL_PREMIUM_TABLE': 'ABL생명 프리미엄 테이블석',
-    'CHW_BBQ': '바베큐석',
-    'CHW_PICNIC_TABLE': '피크닉테이블석',
-    'CHW_NORTH_PEAK_CAMPING': '노스피크캠핑석',
-  },
-
-};
-
 List<DropdownMenuItem<String>> buildZoneItems(String? stadiumCode) {
   final zones = stadiumZones[stadiumCode] ?? {};
   return zones.entries.map((entry) {
@@ -817,3 +690,11 @@ List<DropdownMenuItem<String>> buildZoneItems(String? stadiumCode) {
     );
   }).toList();
 }
+
+final categories = [
+  {'thumb': 'assets/images/seat_reco_cheer.png', 'banner': 'assets/images/cheer_long.png', 'title': '열정 가득! 응원 명당'},
+  {'thumb': 'assets/images/seat_reco_sun.png',   'banner': 'assets/images/sun_long.png',   'title': '햇빛 피해 즐기는 직관'},
+  {'thumb': 'assets/images/seat_reco_rain.png',  'banner': 'assets/images/rain_long.png',  'title': '비 와도 끝까지 쾌적하게'},
+  {'thumb': 'assets/images/seat_reco_view.png',  'banner': 'assets/images/view_long.png',  'title': '시야 방해 없이!'},
+  {'thumb': 'assets/images/seat_reco_wide.png',  'banner': 'assets/images/wide_long.png',  'title': '두 다리 쭉! 넓은 좌석'},
+];

@@ -12,7 +12,6 @@ import 'package:inninglog/feature/login/models/KakaoLoginWebViewPage.dart';
 import 'package:inninglog/feature/diary/screens/add_diary_page.dart';
 import 'package:inninglog/feature/diary/screens/add_seat_page.dart';
 import 'package:inninglog/shared/service/home_view.dart';
-import 'package:inninglog/feature/community/screens/community_search_page.dart';
 import 'package:inninglog/feature/community/screens/search_page.dart';
 import 'package:inninglog/feature/field/screens/field_hashtag_filter_sheet.dart';
 import 'package:inninglog/feature/community/screens/legacy/market_upload_step1.dart';

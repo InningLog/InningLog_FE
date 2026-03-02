@@ -8,6 +8,7 @@ import '../../../main.dart';
 import '../../../shared/service/home_view.dart';
 import '../../../shared/service/api_service.dart';
 import '../../../shared/widgets/common_header.dart';
+import '../../diary/screens/add_seat_page.dart';
 import '../data/selected_hashtagcodes.dart';
 import '../widgets/jamsil_map.dart';
 import '../widgets/dropdown_pill.dart';
