@@ -64,6 +64,26 @@ class DiaryPage extends StatefulWidget {
   State<DiaryPage> createState() => _DiaryPageState();
 }
 
+class PageResult<T> {
+  final List<T> content;
+  final int pageNumber;
+  final int pageSize;
+  final int totalElements;
+  final int totalPages;
+  final bool last;
+
+  PageResult({
+    required this.content,
+    required this.pageNumber,
+    required this.pageSize,
+    required this.totalElements,
+    required this.totalPages,
+    required this.last,
+  });
+
+  get length => null;
+}
+
 class _DiaryPageState extends State<DiaryPage> {
   int _selectedIndex = 0;
 
@@ -131,7 +151,7 @@ class _DiaryPageState extends State<DiaryPage> {
 
     setState(() {
       if (newList.length < 10) hasMore = false;
-      journalList.addAll(newList);
+      journalList.addAll(newList as Iterable<Journal>);
       page++;
       isLoadingMore = false;
     });
