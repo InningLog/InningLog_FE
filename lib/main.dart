@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
@@ -12,12 +13,10 @@ import 'package:inninglog/feature/diary/screens/add_diary_page.dart';
 import 'package:inninglog/feature/diary/screens/add_seat_page.dart';
 import 'package:inninglog/shared/service/home_view.dart';
 import 'package:inninglog/feature/community/screens/community_search_page.dart';
+import 'package:inninglog/feature/community/screens/search_page.dart';
 import 'package:inninglog/feature/field/screens/field_hashtag_filter_sheet.dart';
-import 'package:inninglog/feature/community/screens/market_upload_step1.dart';
-import 'package:inninglog/feature/community/screens/market_upload_step2.dart';
-import 'package:inninglog/feature/community/screens/market_upload_step3.dart';
+import 'package:inninglog/feature/community/screens/legacy/market_upload_step1.dart';
 import 'package:inninglog/feature/community/screens/writing_post_page.dart';
-import 'package:inninglog/feature/community/screens/post_detail_market.dart';
 import 'package:inninglog/feature/community/screens/post_detail_page.dart';
 import 'package:inninglog/feature/field/screens/seat_detail_page.dart';
 import 'package:inninglog/feature/onboarding/screens/onboarding_page6.dart';
@@ -30,6 +29,7 @@ import 'package:inninglog/feature/community/screens/root_page.dart';
 import 'package:inninglog/feature/mypage/screens/my_page.dart';
 import 'package:inninglog/feature/community/screens/teamboard_page.dart';
 import 'package:inninglog/feature/community/widgets/shared/segmented_tabs.dart';
+import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:inninglog/shared/amplitude/AmplitudeFlutter.dart';
 
@@ -110,7 +110,6 @@ final GoRouter _router = GoRouter(
       },
     ),
 
-
     GoRoute(
       path: '/add-seat',
       name: 'add_seat',
@@ -120,24 +119,23 @@ final GoRouter _router = GoRouter(
         // ✅ stadium만 필수
         final stadium = extra['stadium'] as String?;
         if (stadium == null || stadium.trim().isEmpty) {
-          return const Scaffold(
-            body: Center(child: Text('잘못된 접근입니다')),
-          );
+          return const Scaffold(body: Center(child: Text('잘못된 접근입니다')));
         }
 
         // ✅ journalId는 null 가능 + 타입도 안전하게 변환
         final rawJournalId = extra['journalId'];
-        final int? journalId = rawJournalId is int
-            ? rawJournalId
-            : int.tryParse(rawJournalId?.toString() ?? '');
+        final int? journalId =
+            rawJournalId is int
+                ? rawJournalId
+                : int.tryParse(rawJournalId?.toString() ?? '');
 
         // ✅ gameDateTime도 null 가능
         final gameDateTime = extra['gameDateTime'] as String?;
 
         return AddSeatPage(
           stadium: stadium,
-          journalId: journalId,                 // ✅ nullable
-          gameDateTime: gameDateTime,           // ✅ nullable
+          journalId: journalId, // ✅ nullable
+          gameDateTime: gameDateTime, // ✅ nullable
           initialSection: extra['initialSection'] as String?,
           initialRow: extra['initialRow'] as String?,
           showGameTime: (extra['showGameTime'] as bool?) ?? true,
@@ -145,14 +143,20 @@ final GoRouter _router = GoRouter(
       },
     ),
 
-
-
-
-
     GoRoute(path: '/onboarding6', builder: (_, __) => const OnboardingPage6()),
     GoRoute(
       path: AppRoutePaths.search,
-      builder: (_, __) => const CommunitySearchPage(),
+      builder: (_, state) {
+        final teamCode = state.uri.queryParameters['teamCode'] ?? 'ALL';
+        final tabPath = state.uri.queryParameters['tab'] ?? 'onlywan';
+        final parsedTab = boardTabFromPath(tabPath);
+        final initialTab =
+            parsedTab == BoardTab.free ? BoardTab.free : BoardTab.onlywan;
+        return CommunitySearchPage(
+          initialTeamCode: teamCode,
+          initialTab: initialTab,
+        );
+      },
     ),
 
     GoRoute(
@@ -163,32 +167,6 @@ final GoRouter _router = GoRouter(
         return MarketUploadStep1(teamCode: code);
       },
     ),
-
-    GoRoute(
-      path: '/market/:code/upload/step2',
-      builder:
-          (ctx, state) =>
-              MarketUploadStep2(teamCode: state.pathParameters['code']!),
-    ),
-    GoRoute(
-      path: '/market/:code/upload/step3',
-      builder:
-          (ctx, state) =>
-              MarketUploadStep3(teamCode: state.pathParameters['code']!),
-    ),
-
-    GoRoute(
-      name: 'post_detail_market',
-      path: '/post/market/detail',
-      builder: (context, state) {
-        final args = state.extra as PostDetailMarketArgs;
-        return PostDetailMarketPage(args: args);
-      },
-    ),
-
-
-
-
 
     /// GNB 있는 ShellRoute
     ShellRoute(
@@ -203,10 +181,7 @@ final GoRouter _router = GoRouter(
         GoRoute(
           path: '/seat',
           builder: (_, __) => const SeatPage(),
-          routes: [
-
-
-          ],
+          routes: [],
         ),
 
         GoRoute(path: '/mypage', builder: (_, __) => const MyPage()),
@@ -219,13 +194,33 @@ final GoRouter _router = GoRouter(
             final int seatViewId = extra['seatViewId'];
             final String imageUrl = extra['imageUrl'];
 
-            return SeatDetailPage(seatViewId: seatViewId, imageUrl: imageUrl, stadiumName: '',);
+            return SeatDetailPage(
+              seatViewId: seatViewId,
+              imageUrl: imageUrl,
+              stadiumName: '',
+            );
           },
         ),
         // 커뮤니티
         GoRoute(
           path: '/community',
           builder: (_, __) => const CommunityRootPage(),
+        ),
+        GoRoute(
+          path: AppRoutePaths.communityPopular,
+          builder: (_, __) => const TeamBoardPage(mode: BoardMode.popular),
+        ),
+        GoRoute(
+          path: AppRoutePaths.communityMyPosts,
+          builder: (_, __) => const TeamBoardPage(mode: BoardMode.myPosts),
+        ),
+        GoRoute(
+          path: AppRoutePaths.communityMyComments,
+          builder: (_, __) => const TeamBoardPage(mode: BoardMode.myComments),
+        ),
+        GoRoute(
+          path: AppRoutePaths.communityMyScraps,
+          builder: (_, __) => const TeamBoardPage(mode: BoardMode.scraps),
         ),
 
         GoRoute(
@@ -257,7 +252,6 @@ final GoRouter _router = GoRouter(
               },
             ),
           ],
-
         ),
         GoRoute(
           name: 'field_result',
@@ -270,7 +264,9 @@ final GoRouter _router = GoRouter(
             final stadiumName = extra['stadiumName'] as String;
             final section = extra['section'] as String?;
 
-            debugPrint('[GoRouter] parsed index=$index stadiumName=$stadiumName section=$section');
+            debugPrint(
+              '[GoRouter] parsed index=$index stadiumName=$stadiumName section=$section',
+            );
 
             return FieldHashtagSearchResultPage(
               stadiumName: stadiumName,
@@ -278,7 +274,6 @@ final GoRouter _router = GoRouter(
             );
           },
         ),
-
       ],
     ),
   ],
@@ -289,15 +284,57 @@ class InningLogApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final baseTheme = ThemeData.light();
     return MaterialApp.router(
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
+      theme: baseTheme.copyWith(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.black,
+          brightness: Brightness.light,
+        ),
+        dialogTheme: const DialogThemeData(
+          titleTextStyle: TextStyle(
+            color: AppColors.gray900,
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w700,
+          ),
+          contentTextStyle: TextStyle(
+            color: AppColors.gray800,
+            fontFamily: 'Pretendard',
+          ),
+        ),
+        textTheme: baseTheme.textTheme.apply(
+          bodyColor: AppColors.gray900,
+          displayColor: AppColors.gray900,
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.gray900,
+            surfaceTintColor: AppColors.gray900,
+          ),
+        ),
+        cupertinoOverrideTheme: const NoDefaultCupertinoThemeData(
+          primaryColor: AppColors.gray900,
+          textTheme: CupertinoTextThemeData(
+            textStyle: TextStyle(
+              color: AppColors.gray900,
+              fontFamily: 'Pretendard',
+            ),
+            actionTextStyle: TextStyle(
+              color: AppColors.gray900,
+              fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
       builder: (context, child) {
         final isIOS = defaultTargetPlatform == TargetPlatform.iOS;
         return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.linear(isIOS ? 1.06 : 1.0),
-          ),
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(isIOS ? 1.06 : 1.0)),
           child: LayoutBuilder(
             builder: (context, constraints) {
               const aspectRatio = 9 / 16;

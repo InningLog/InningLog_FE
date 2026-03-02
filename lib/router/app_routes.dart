@@ -17,6 +17,12 @@ final class AppRoutePaths {
   // 커뮤니티 검색
   static const search = '/search';
 
+  // 커뮤니티 하위 활동 페이지
+  static const communityMyPosts = '/community/my/posts';
+  static const communityMyComments = '/community/my/comments';
+  static const communityMyScraps = '/community/my/scraps';
+  static const communityPopular = '/community/popular';
+
   static String boardLocation(String code, {String? tab}) {
     final tabQuery = '?tab=${tab ?? 'onlywan'}';
     return '/boards/$code$tabQuery';
@@ -27,6 +33,17 @@ final class AppRoutePaths {
   // 절대 경로: 팀 게시판 게시글 상세
   static String boardPostDetailLocation(String code, int postId) =>
       '/boards/$code/posts/$postId';
+
+  static String searchLocation({
+    String teamCode = 'ALL',
+    String tab = 'onlywan',
+  }) {
+    final uri = Uri(
+      path: search,
+      queryParameters: {'teamCode': teamCode, 'tab': tab},
+    );
+    return uri.toString();
+  }
 }
 
 @immutable

@@ -19,6 +19,7 @@ List<CommunityTabItem> communityTabsByMode(BoardMode mode) {
     case BoardMode.myPosts:
     case BoardMode.myComments:
     case BoardMode.scraps:
+    case BoardMode.popular:
       return myActivityTabs;
   }
 }

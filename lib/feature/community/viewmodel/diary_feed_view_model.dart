@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:inninglog/feature/community/model/diary_item.dart';
 import 'package:inninglog/feature/community/model/dto/diary_dtos.dart';
 import 'package:inninglog/feature/community/repositories/diary_repository.dart';
+import 'package:inninglog/feature/community/viewmodel/journal_action_view_model.dart';
 
 class DiaryFeedViewModel extends ChangeNotifier {
   final DiaryRepository repo;
   final String teamCode;
   final int pageSize;
+  final JournalActionsViewModel _journalActions;
 
   DiaryFeedViewModel({
     required this.repo,
     required this.teamCode,
+    required JournalActionsViewModel journalActions,
     this.pageSize = 10,
-  });
+  }) : _journalActions = journalActions;
 
   final List<DiaryItemModel> _items = [];
   List<DiaryItemModel> get items => List.unmodifiable(_items);
@@ -28,6 +31,10 @@ class DiaryFeedViewModel extends ChangeNotifier {
   String? get error => _error;
   bool _hasLoadedOnce = false;
   bool get hasLoadedOnce => _hasLoadedOnce;
+  bool isJournalLikePending(String journalId) =>
+      _journalActions.isLikePending(journalId);
+  bool isJournalScrapPending(String journalId) =>
+      _journalActions.isScrapPending(journalId);
 
   Future<void> refresh() => loadInitial();
 
@@ -51,65 +58,34 @@ class DiaryFeedViewModel extends ChangeNotifier {
   }
 
   Future<void> toggleLike({required String journalId}) async {
-    final index = _items.indexWhere((item) => item.journalId == journalId);
-    if (index == -1) return;
-
-    final prev = _items[index];
-    final nextLiked = !prev.likedByMe;
-    final nextCount = prev.likeCount + (nextLiked ? 1 : -1);
-
-    _items[index] = prev.copyWith(
-      likedByMe: nextLiked,
-      likeCount: nextCount < 0 ? 0 : nextCount,
+    await _journalActions.toggleLike(
+      items: _items,
+      journalId: journalId,
+      notifyItems: notifyListeners,
+      onError: (error) {
+        _error = error.toString();
+      },
     );
-    notifyListeners();
-
-    try {
-      if (nextLiked) {
-        await repo.likeJournal(journalId: journalId);
-      } else {
-        await repo.unlikeJournal(journalId: journalId);
-      }
-    } catch (e) {
-      _items[index] = prev;
-      notifyListeners();
-    }
   }
 
   Future<void> toggleScrap({required String journalId}) async {
-    final index = _items.indexWhere((item) => item.journalId == journalId);
-    if (index == -1) return;
-
-    final prev = _items[index];
-    final nextScraped = !prev.scrapedByMe;
-    final nextCount = (prev.scrapCount + (nextScraped ? 1 : -1));
-
-    _items[index] = prev.copyWith(
-      scrapedByMe: nextScraped,
-      scrapCount: nextCount < 0 ? 0 : nextCount,
+    await _journalActions.toggleScrap(
+      items: _items,
+      journalId: journalId,
+      notifyItems: notifyListeners,
+      onError: (error) {
+        _error = error.toString();
+      },
     );
-    notifyListeners();
-
-    try {
-      if (nextScraped) {
-        await repo.scrapJournal(journalId: journalId);
-      } else {
-        await repo.unscrapJournal(journalId: journalId);
-      }
-    } catch (e) {
-      _items[index] = prev;
-      notifyListeners();
-    }
   }
 
-  void updateCommentCount({
-    required String journalId,
-    required int count,
-  }) {
-    final index = _items.indexWhere((item) => item.journalId == journalId);
-    if (index == -1) return;
-    _items[index] = _items[index].copyWith(commentCount: count);
-    notifyListeners();
+  void updateCommentCount({required String journalId, required int count}) {
+    _journalActions.updateCommentCount(
+      items: _items,
+      journalId: journalId,
+      count: count,
+      notifyItems: notifyListeners,
+    );
   }
 
   Future<void> _fetch() async {

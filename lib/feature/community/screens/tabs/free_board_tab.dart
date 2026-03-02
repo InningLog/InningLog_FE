@@ -12,13 +12,14 @@ import 'package:inninglog/shared/widgets/empty_state.dart';
 import 'package:provider/provider.dart';
 
 class FreeBoardTab extends StatefulWidget {
-  final String teamCode;
+  /// normal 모드에서만 필수. 그 외 모드는 null 가능.
+  final String? teamCode;
   final bool isActive;
   final BoardMode mode;
 
   const FreeBoardTab({
     super.key,
-    required this.teamCode,
+    this.teamCode,
     this.isActive = false,
     this.mode = BoardMode.normal,
   });
@@ -65,7 +66,7 @@ class _FreeBoardTabState extends State<FreeBoardTab> with RouteAware {
     switch (widget.mode) {
       case BoardMode.normal:
         fetcher = (page, size) => repo.getPostList(
-              teamCode: widget.teamCode,
+              teamCode: widget.teamCode!,
               page: page,
               size: size,
             );
@@ -77,6 +78,9 @@ class _FreeBoardTabState extends State<FreeBoardTab> with RouteAware {
       case BoardMode.scraps:
         fetcher = (page, size) =>
             repo.getMyScrappedPosts(page: page, size: size);
+      case BoardMode.popular:
+        fetcher = (page, size) =>
+            repo.getPopularPosts(page: page, size: size);
     }
     _vm = PostListViewModel(fetcher: fetcher);
   }
@@ -138,7 +142,9 @@ class _FreeBoardTabState extends State<FreeBoardTab> with RouteAware {
                   onTap:
                       () => context.push(
                         AppRoutePaths.boardPostDetailLocation(
-                          widget.teamCode,
+                          widget.mode == BoardMode.normal
+                              ? widget.teamCode!
+                              : item.teamCode,
                           item.id,
                         ),
                       ),

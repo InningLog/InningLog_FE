@@ -3,6 +3,7 @@ import 'package:inninglog/feature/community/model/community_post.dart';
 import 'package:inninglog/feature/community/widgets/post/post_action_counts.dart';
 import 'package:inninglog/feature/community/widgets/post/post_texts.dart';
 import 'package:inninglog/shared/theme/app_text_styles.dart';
+import 'package:inninglog/shared/utils/image_url_utils.dart';
 
 import 'package:inninglog/shared/utils/date_time_utils.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
@@ -90,9 +91,9 @@ class PostItemCard extends StatelessWidget {
 
               const SizedBox(width: 10),
 
-              if (item.images.isNotEmpty)
+              if (item.thumbImageUrl != null && item.thumbImageUrl!.isNotEmpty)
                 ImageThumbnailWithBadge(
-                  imageUrl: item.images.first.url,
+                  imageUrl: item.thumbImageUrl!,
                   imageCount: item.imageCount ?? 0,
                 ),
             ],
@@ -103,7 +104,7 @@ class PostItemCard extends StatelessWidget {
   }
 }
 
-class ImageThumbnailWithBadge extends StatelessWidget {
+class ImageThumbnailWithBadge extends StatefulWidget {
   final String imageUrl;
   final int imageCount;
 
@@ -112,6 +113,50 @@ class ImageThumbnailWithBadge extends StatelessWidget {
     required this.imageUrl,
     required this.imageCount,
   });
+
+  @override
+  State<ImageThumbnailWithBadge> createState() =>
+      _ImageThumbnailWithBadgeState();
+}
+
+class _ImageThumbnailWithBadgeState extends State<ImageThumbnailWithBadge> {
+  late String _currentImageUrl;
+  bool _triedOriginalFallback = false;
+  bool _fallbackScheduled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentImageUrl = widget.imageUrl;
+  }
+
+  @override
+  void didUpdateWidget(covariant ImageThumbnailWithBadge oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.imageUrl != widget.imageUrl) {
+      _currentImageUrl = widget.imageUrl;
+      _triedOriginalFallback = false;
+      _fallbackScheduled = false;
+    }
+  }
+
+  void _fallbackToOriginalIfNeeded(Object error) {
+    if (_triedOriginalFallback || _fallbackScheduled) return;
+    if (error is! NetworkImageLoadException || error.statusCode != 403) return;
+
+    final originalUrl = originalImageUrlFromThumb(widget.imageUrl);
+    if (originalUrl == null || originalUrl == _currentImageUrl) return;
+
+    _fallbackScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _currentImageUrl = originalUrl;
+        _triedOriginalFallback = true;
+        _fallbackScheduled = false;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -124,12 +169,19 @@ class ImageThumbnailWithBadge extends StatelessWidget {
             height: 85,
             color: const Color(0xFFE5E7EB),
             child:
-                imageUrl.isEmpty
+                _currentImageUrl.isEmpty
                     ? null
-                    : Image.network(imageUrl, fit: BoxFit.cover),
+                    : Image.network(
+                      _currentImageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        _fallbackToOriginalIfNeeded(error);
+                        return const SizedBox.expand();
+                      },
+                    ),
           ),
         ),
-        if (imageCount > 0)
+        if (widget.imageCount > 1)
           Positioned(
             right: 4,
             bottom: 4,
@@ -140,7 +192,7 @@ class ImageThumbnailWithBadge extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                '$imageCount',
+                '${widget.imageCount}',
                 style: AppTextStyles.headHead8Sb.copyWith(
                   color: AppColors.gray300,
                 ),
