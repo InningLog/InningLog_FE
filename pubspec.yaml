@@ -55,6 +55,7 @@ flutter:
   assets:
     - assets/icons/
     - assets/images/
+    - assets/images/team_bg/
     - .env
     - assets/images/onboarding_1.jpg
     - assets/images/onboarding_2.jpg
