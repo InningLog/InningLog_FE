@@ -10,6 +10,7 @@ import 'package:inninglog/shared/widgets/main_navigation.dart';
 import 'package:inninglog/feature/login/models/KakaoLoginWebViewPage.dart';
 import 'package:inninglog/feature/diary/screens/add_diary_page.dart';
 import 'package:inninglog/feature/diary/screens/add_seat_page.dart';
+import 'package:inninglog/shared/service/home_view.dart';
 import 'package:inninglog/feature/community/screens/community_search_page.dart';
 import 'package:inninglog/feature/field/screens/field_hashtag_filter_sheet.dart';
 import 'package:inninglog/feature/community/screens/market_upload_step1.dart';
@@ -92,10 +93,19 @@ final GoRouter _router = GoRouter(
         final extra = state.extra as Map<String, dynamic>;
         print('🟢 받은 extra: $extra');
 
+        GameInfoResponse? gameInfo;
+        final rawGameInfo = extra['gameInfo'];
+        if (rawGameInfo is GameInfoResponse) {
+          gameInfo = rawGameInfo;
+        } else if (rawGameInfo is Map<String, dynamic>) {
+          gameInfo = GameInfoResponse.fromJson(rawGameInfo);
+        }
+
         return AddDiaryPage(
-          initialDate: extra['initialDate'], // 작성 모드라면 무시됨
+          initialDate: extra['initialDate'],
           isEditMode: extra['isEditMode'] ?? false,
-          journalId: extra['journalId'], // 수정 모드일 때만 필요
+          journalId: extra['journalId'],
+          gameInfo: gameInfo,
         );
       },
     ),

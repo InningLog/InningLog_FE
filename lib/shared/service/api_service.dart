@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../feature/diary/screens/add_diary_page.dart';
+import '../../feature/diary/screens/diary_page.dart';
 import 'home_view.dart';
 import '../../feature/home/screens/home_detail.dart';
 import 'package:intl/intl.dart';
@@ -124,8 +126,6 @@ class ApiService {
 
 
   /// 직관 리포트 조회 (/report/main)
-  /// - 파라미터 없음
-  /// - Authorization: Bearer <accessToken>
   static Future<MyReportResponse?> fetchMyReport({String? accessToken}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -215,6 +215,7 @@ class ApiService {
 
   /// 직관 일지 업로드용 Presigned URL 발급
   /// GET /s3/journal/presigned?fileName=...&contentType=...&memberId=...
+  /// GET /s3/journal/presigned?fileName=...&contentType=...&memberId=...
   static Future<String?> getPresignedUrl({
     required String fileName,
     required String contentType,
@@ -229,6 +230,8 @@ class ApiService {
         return null;
       }
 
+      final token = (prefs.getString('accessToken') ?? prefs.getString('access_token'))?.trim();
+
       final uri = Uri.parse(
         '$baseUrl/s3/journal/presigned'
             '?fileName=$fileName'
@@ -238,9 +241,13 @@ class ApiService {
 
       log('→ GET $uri');
 
-      final res = await http
-          .get(uri, headers: {'Accept': 'application/json'})
-          .timeout(const Duration(seconds: 15));
+      final res = await http.get(
+        uri,
+        headers: {
+          'Accept': 'application/json',
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 15));
 
       log('→ status: ${res.statusCode}');
       log('→ body: ${res.body}');
@@ -252,26 +259,30 @@ class ApiService {
           log('⚠️ Presigned URL이 비어있음');
           return null;
         }
-        log('✅ Presigned URL 발급 성공');
         return url;
       }
 
-      if (res.statusCode == 400) {
-        final msg = (jsonDecode(res.body)['message'] ?? '잘못된 요청').toString();
-        throw Exception('잘못된 요청(400): $msg');
-      }
-      if (res.statusCode == 404) {
-        throw Exception('리소스를 찾을 수 없음(404)');
-      }
-      if (res.statusCode >= 500) {
-        throw Exception('서버 오류(${res.statusCode})');
-      }
+      final body = _safeJson(res.body);
+      final msg = (body?['message'] ?? '요청 실패').toString();
 
-      throw Exception('요청 실패(${res.statusCode})');
+      if (res.statusCode == 400) throw Exception('잘못된 요청(400): $msg');
+      if (res.statusCode == 404) throw Exception('리소스를 찾을 수 없음(404): $msg');
+      if (res.statusCode >= 500) throw Exception('서버 오류(${res.statusCode}): $msg');
+
+      throw Exception('요청 실패(${res.statusCode}): $msg');
     } on TimeoutException {
       throw Exception('요청 시간이 초과되었습니다.');
     } catch (e, st) {
       print('[getPresignedUrl] 🚨 $e\n$st');
+      return null;
+    }
+  }
+
+  static Map<String, dynamic>? _safeJson(String s) {
+    try {
+      final d = jsonDecode(s);
+      return d is Map<String, dynamic> ? d : null;
+    } catch (_) {
       return null;
     }
   }
@@ -364,90 +375,83 @@ class ApiService {
   }
 
 
+  /// POST /journals/contents?memberId=...
   static Future<int?> uploadJournal({
     required String gameId,
-    String? fileName, // ✅ 선택
-    required String stadiumShortCode,
-    required String opponentTeamShortCode,
+    required String stadiumSC,
+    required String opponentTeamSC,
     required DateTime gameDateTime, // yyyy-MM-dd HH:mm
     required int ourScore,
     required int theirScore,
-    required String emotion, // 감동/짜릿함/답답함/아쉬움/분노/흡족
-    required String reviewText,
+
+    // ✅ 선택값들
+    String? fileName,
+    String? emotion,
+    String? reviewText,
+    bool? isPublic,
   }) async {
     void log(Object? m) => print('[uploadJournal] $m');
 
-    // ---- 필수값 & 유효성 ----
-    if (gameId
-        .trim()
-        .isEmpty) {
-      log('❌ gameId 없음');
-      return null;
-    }
-    if (stadiumShortCode
-        .trim()
-        .isEmpty) {
-      log('❌ stadiumShortCode 없음');
-      return null;
-    }
-    if (opponentTeamShortCode
-        .trim()
-        .isEmpty) {
-      log('❌ opponentTeamShortCode 없음');
-      return null;
-    }
+    // ---- 필수값 검증 ----
+    if (gameId.trim().isEmpty) throw Exception('gameId가 비어있습니다.');
+    if (stadiumSC.trim().isEmpty) throw Exception('stadiumSC가 비어있습니다.');
+    if (opponentTeamSC.trim().isEmpty) throw Exception('opponentTeamSC가 비어있습니다.');
+    if (ourScore < 0 || theirScore < 0) throw Exception('점수는 0 이상이어야 합니다.');
 
+    // emotion은 선택이지만, 값이 들어오면 허용값만 통과
     const allowedEmotions = ['감동', '짜릿함', '답답함', '아쉬움', '분노', '흡족'];
-    if (!allowedEmotions.contains(emotion)) {
-      log('❌ emotion 값이 허용 목록이 아님: $emotion');
-      return null;
-    }
-    if (ourScore < 0 || theirScore < 0) {
-      log('❌ 점수는 0 이상이어야 함');
-      return null;
+    final cleanedEmotion = emotion?.trim();
+    if (cleanedEmotion != null &&
+        cleanedEmotion.isNotEmpty &&
+        !allowedEmotions.contains(cleanedEmotion)) {
+      throw Exception('emotion 값이 올바르지 않습니다: $cleanedEmotion');
     }
 
     try {
       final prefs = await SharedPreferences.getInstance();
       final memberId = prefs.getInt('memberId') ?? prefs.getInt('member_id');
-      if (memberId == null) {
-        log('❌ memberId 없음');
-        return null;
-      }
+      if (memberId == null) throw Exception('memberId가 없습니다. 다시 로그인 해주세요.');
 
-      final token = prefs.getString('accessToken')?.trim();
+      final token =
+      (prefs.getString('accessToken') ?? prefs.getString('access_token'))?.trim();
 
-      // 날짜 포맷
+      // yyyy-MM-dd HH:mm
       String two(int n) => n.toString().padLeft(2, '0');
       final dt = gameDateTime;
-      final gameDateStr = '${dt.year}-${two(dt.month)}-${two(dt.day)} ${two(
-          dt.hour)}:${two(dt.minute)}';
+      final gameDate = '${dt.year}-${two(dt.month)}-${two(dt.day)} ${two(dt.hour)}:${two(dt.minute)}';
 
-      // 🔐 키 혼재 방어: SC/ShortCode 둘 다 보냄
+      // ✅ 스웨거 키로만 구성
       final bodyData = <String, dynamic>{
         'gameId': gameId,
-        'gameDate': gameDateStr, // 호환용
-        'gameDateTime': gameDateStr, // 요구 스펙
-        'stadiumSC': stadiumShortCode, // 예시 키
-        'stadiumShortCode': stadiumShortCode, // 문서 키
-        'opponentTeamSC': opponentTeamShortCode, // 예시 키
-        'opponentTeamShortCode': opponentTeamShortCode, // 문서 키
+        'gameDate': gameDate,
+        'stadiumSC': stadiumSC,
+        'opponentTeamSC': opponentTeamSC,
         'ourScore': ourScore,
         'theirScore': theirScore,
-        'emotion': emotion,
-        'review_text': reviewText,
       };
 
-      // ✅ fileName은 선택: 값이 있을 때만 포함
+      // ---- 선택 필드: 값 있을 때만 포함 ----
       final cleanedFileName = fileName?.trim();
       if (cleanedFileName != null && cleanedFileName.isNotEmpty) {
         bodyData['fileName'] = cleanedFileName;
       }
 
-      log('📤 body: ${jsonEncode(bodyData)}');
+      if (cleanedEmotion != null && cleanedEmotion.isNotEmpty) {
+        bodyData['emotion'] = cleanedEmotion;
+      }
+
+      final cleanedReview = reviewText?.trim();
+      if (cleanedReview != null && cleanedReview.isNotEmpty) {
+        bodyData['review_text'] = cleanedReview;
+      }
+
+      if (isPublic != null) {
+        bodyData['public'] = isPublic;
+      }
 
       final uri = Uri.parse('$baseUrl/journals/contents?memberId=$memberId');
       log('→ POST $uri');
+      log('📤 body: ${jsonEncode(bodyData)}');
 
       final headers = <String, String>{
         'Accept': 'application/json',
@@ -462,36 +466,54 @@ class ApiService {
       log('📡 status: ${res.statusCode}');
       log('📦 body: ${res.body}');
 
-      // ✅ 성공 코드는 201
+      Map<String, dynamic>? decoded;
+      try {
+        final d = jsonDecode(res.body);
+        decoded = d is Map<String, dynamic> ? d : null;
+      } catch (_) {
+        decoded = null;
+      }
+
       if (res.statusCode == 201) {
-        final decoded = jsonDecode(res.body) as Map<String, dynamic>;
-        final journalId = decoded['data']?['journalId'];
+        final journalId = decoded?['data']?['journalId'];
         if (journalId is int) return journalId;
         if (journalId is String) return int.tryParse(journalId);
         return null;
       }
 
-      Map<String, dynamic>? err;
-      try {
-        err = jsonDecode(res.body) as Map<String, dynamic>;
-      } catch (_) {}
-
-      if (res.statusCode == 400) {
-        throw Exception('잘못된 요청(400): ${err?['message'] ?? '요청값이 올바르지 않습니다.'}');
-      }
-      if (res.statusCode == 404) {
-        throw Exception(
-            '리소스를 찾을 수 없음(404): ${err?['message'] ?? '존재하지 않는 회원입니다.'}');
-      }
-      if (res.statusCode >= 500) {
-        throw Exception('서버 오류(${res.statusCode}).');
-      }
-      throw Exception(
-          '요청 실패(${res.statusCode}): ${err?['message'] ?? '알 수 없는 오류'}');
-    } catch (e, st) {
-      print('[uploadJournal] 🚨 $e\n$st');
-      return null;
+      final msg = (decoded?['message'] ?? '알 수 없는 오류').toString();
+      if (res.statusCode == 400) throw Exception('잘못된 요청(400): $msg');
+      if (res.statusCode == 404) throw Exception('리소스를 찾을 수 없음(404): $msg');
+      if (res.statusCode >= 500) throw Exception('서버 오류(${res.statusCode}): $msg');
+      throw Exception('요청 실패(${res.statusCode}): $msg');
+    } on TimeoutException {
+      throw Exception('요청 시간이 초과되었습니다.');
     }
+  }
+
+
+  Future<JournalPrefillResponse?> fetchJournalPrefill(String gameId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token'); // 네 프로젝트 키에 맞게
+    final uri = Uri.parse('https://api.inninglog.../journals/contents')
+        .replace(queryParameters: {'gameId': gameId});
+
+    final res = await http.get(
+      uri,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (res.statusCode == 200) {
+      final jsonMap = jsonDecode(res.body) as Map<String, dynamic>;
+      return JournalPrefillResponse.fromJson(jsonMap);
+    }
+
+    // 필요하면 여기서 에러 메시지 파싱해서 throw/return 처리
+    return null;
   }
 
 
@@ -596,10 +618,7 @@ class ApiService {
 
   /// 본인 직관 일지 목록 - 모아보기(무한 스크롤)
   /// GET /journals/summary
-  /// - 인증: Authorization: Bearer <accessToken>
-  /// - 필터: resultScore = WIN | LOSE | DRAW (한글 입력도 허용 → 영문으로 변환)
-  /// - 페이징: page, size
-  static Future<List<Journal>> fetchJournalSummary({
+  static Future<PageResult<Journal>> fetchJournalSummary({
     String? resultScore,
     int page = 0,
     int size = 10,
@@ -620,85 +639,102 @@ class ApiService {
         case '무승부':
           return 'DRAW';
         default:
-          return null; // 허용값 아니면 전송하지 않음
+          return null;
       }
     }
 
+    final prefs = await SharedPreferences.getInstance();
+    final token =
+    (prefs.getString('accessToken') ?? prefs.getString('access_token'))?.trim();
+
+    if (token == null || token.isEmpty) {
+      throw Exception('로그인 토큰이 없습니다. 다시 로그인 해주세요.');
+    }
+
+    final normalized = _normalizeResultScoreToEn(resultScore);
+
+    final query = <String, String>{
+      'page': '$page',
+      'size': '$size',
+      if (normalized != null) 'resultScore': normalized,
+    };
+
+    final uri = Uri.https('api.inninglog.shop', '/journals/summary', query);
+    log('→ GET $uri');
+
+    final res = await http
+        .get(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    )
+        .timeout(const Duration(seconds: 15));
+
+    log('→ status: ${res.statusCode}');
+    log('→ body: ${res.body}');
+
+    Map<String, dynamic>? body;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('accessToken')?.trim();
-      if (token == null || token.isEmpty) {
-        throw Exception('로그인 토큰이 없습니다. 다시 로그인 해주세요.');
-      }
-
-      final normalized = _normalizeResultScoreToEn(resultScore);
-
-      final query = <String, String>{
-        'page': '$page',
-        'size': '$size',
-        if (normalized != null) 'resultScore': normalized,
-      };
-
-      final uri = Uri.https('api.inninglog.shop', '/journals/summary', query);
-      log('→ GET $uri');
-
-      final res = await http
-          .get(
-        uri,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      )
-          .timeout(const Duration(seconds: 15));
-
-      log('→ status: ${res.statusCode}');
-      log('→ body: ${res.body}');
-
-      Map<String, dynamic>? body;
-      try {
-        final decoded = jsonDecode(res.body);
-        body = decoded is Map<String, dynamic> ? decoded : null;
-      } catch (_) {
-        body = null;
-      }
-
-      if (res.statusCode == 200) {
-        final data = body?['data'];
-        if (data is Map<String, dynamic>) {
-          final content = data['content'];
-          if (content is List) {
-            // NOTE: 서버 응답 키에 media_url(스네이크) 등이 있을 수 있으니
-            // Journal.fromJson에서 스네이크/카멜 둘 다 처리되도록 해두면 안전.
-            return content
-                .whereType<Map<String, dynamic>>()
-                .map((e) => Journal.fromJson(e))
-                .toList();
-          }
-        }
-        log('⚠️ 200이지만 data.content 없음/형식 불일치 → 빈 리스트');
-        return <Journal>[];
-      }
-
-      if (res.statusCode == 400) {
-        final msg = (body?['message'] ?? '요청값이 올바르지 않습니다.').toString();
-        throw Exception('잘못된 요청(400): $msg');
-      }
-
-      if (res.statusCode == 404) {
-        final msg = (body?['message'] ?? '존재하지 않는 회원입니다.').toString();
-        throw Exception('리소스를 찾을 수 없음(404): $msg');
-      }
-
-      if (res.statusCode >= 500) {
-        throw Exception('서버 오류(${res.statusCode}).');
-      }
-
-      throw Exception(
-          '요청 실패(${res.statusCode}): ${body?['message'] ?? '알 수 없는 오류'}');
-    } on TimeoutException {
-      throw Exception('요청 시간이 초과되었습니다. 네트워크 상태를 확인해주세요.');
+      final decoded = jsonDecode(res.body);
+      body = decoded is Map<String, dynamic> ? decoded : null;
+    } catch (_) {
+      body = null;
     }
+
+    if (res.statusCode == 200) {
+      final data = body?['data'];
+      if (data is! Map<String, dynamic>) {
+        log('⚠️ 200이지만 data 형식 불일치 → 빈 페이지');
+        return PageResult(
+          content: const [],
+          pageNumber: page,
+          pageSize: size,
+          totalElements: 0,
+          totalPages: 0,
+          last: true,
+        );
+      }
+
+      final contentRaw = data['content'];
+      final items = (contentRaw is List)
+          ? contentRaw
+          .whereType<Map<String, dynamic>>()
+          .map((e) => Journal.fromJson(e))
+          .toList()
+          : <Journal>[];
+
+      int _toInt(dynamic v) {
+        if (v is int) return v;
+        if (v is num) return v.toInt();
+        if (v is String) return int.tryParse(v) ?? 0;
+        return 0;
+      }
+
+      bool _toBool(dynamic v) {
+        if (v is bool) return v;
+        if (v is String) return v.toLowerCase() == 'true';
+        return false;
+      }
+
+      return PageResult(
+        content: items,
+        pageNumber: _toInt(data['pageNumber']),
+        pageSize: _toInt(data['pageSize']),
+        totalElements: _toInt(data['totalElements']),
+        totalPages: _toInt(data['totalPages']),
+        last: _toBool(data['last']),
+      );
+    }
+
+    final msg = (body?['message'] ?? '알 수 없는 오류').toString();
+
+    if (res.statusCode == 400) throw Exception('잘못된 요청(400): $msg');
+    if (res.statusCode == 404) throw Exception('리소스를 찾을 수 없음(404): $msg');
+    if (res.statusCode >= 500) throw Exception('서버 오류(${res.statusCode}): $msg');
+
+    throw Exception('요청 실패(${res.statusCode}): $msg');
   }
 
 
@@ -890,8 +926,6 @@ class ApiService {
 
   /// 특정 날짜의 내 응원팀 경기 일정 조회 (팝업)
   /// GET /journals/schedule?gameDate=YYYY-MM-DD
-  /// - 인증: Authorization: Bearer <accessToken>
-  /// - 반환: data(Map) 또는 경기 없으면 null
   static Future<Map<String, dynamic>?> fetchScheduleForDate(
       DateTime date) async {
     void log(Object? m) => print('[fetchScheduleForDate] $m');
