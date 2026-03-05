@@ -9,10 +9,6 @@ class CommentViewModel extends ChangeNotifier {
   final CommentDomainType domainType;
   final String domainId;
   final CommentRepository repo;
-  final TextEditingController commentController = TextEditingController();
-  final TextEditingController replyController = TextEditingController();
-  final FocusNode replyFocusNode = FocusNode();
-  final FocusNode commentFocusNode = FocusNode();
 
   final List<Comment> _comments = [];
   final Map<int, List<Comment>> _replies = {};
@@ -70,51 +66,33 @@ class CommentViewModel extends ChangeNotifier {
     }
   }
 
-  void startReply(
-    int index, {
-    bool requestFocus = true,
-    bool clearController = true,
-  }) {
+  void startReply(int index) {
     if (index < 0 || index >= _comments.length) return;
     _activeReplyIndex = index;
-    if (clearController) {
-      replyController.clear();
-    }
-    if (requestFocus) {
-      replyFocusNode.requestFocus();
-    }
     notifyListeners();
   }
 
-  void cancelReply({bool clearController = true}) {
+  void cancelReply() {
     if (_activeReplyIndex == null) return;
     _activeReplyIndex = null;
-    if (clearController) {
-      replyController.clear();
-    }
     notifyListeners();
   }
 
-  Future<void> submitComment({String? text}) async {
-    final content = (text ?? commentController.text).trim();
+  Future<void> submitComment(String content) async {
     if (content.isEmpty) return;
     try {
       await _createCommentByDomain(
         request: CreateCommentRequest(content: content, rootCommentId: null),
       );
-      if (text == null) {
-        commentController.clear();
-      }
       await fetchComments();
     } catch (e) {
       debugPrint('[Comment] submit comment error: $e');
     }
   }
 
-  Future<void> submitReply({String? text}) async {
+  Future<void> submitReply(String content) async {
     final index = _activeReplyIndex;
     if (index == null || index < 0 || index >= _comments.length) return;
-    final content = (text ?? replyController.text).trim();
     if (content.isEmpty) return;
 
     try {
@@ -126,9 +104,6 @@ class CommentViewModel extends ChangeNotifier {
         ),
       );
       _activeReplyIndex = null;
-      if (text == null) {
-        replyController.clear();
-      }
       await fetchComments();
     } catch (e) {
       debugPrint('[Comment] submit reply error: $e');
@@ -245,14 +220,5 @@ class CommentViewModel extends ChangeNotifier {
         _replies[i] = replies;
       }
     }
-  }
-
-  @override
-  void dispose() {
-    commentController.dispose();
-    replyController.dispose();
-    replyFocusNode.dispose();
-    commentFocusNode.dispose();
-    super.dispose();
   }
 }

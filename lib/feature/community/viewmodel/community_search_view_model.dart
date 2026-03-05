@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:inninglog/feature/community/model/board_tab.dart';
 import 'package:inninglog/feature/community/model/community_post.dart';
 import 'package:inninglog/feature/community/model/diary_item.dart';
 import 'package:inninglog/feature/community/repositories/diary_repository.dart';
 import 'package:inninglog/feature/community/repositories/post_repository.dart';
+import 'package:inninglog/feature/community/repositories/search_history_repository.dart';
 import 'package:inninglog/feature/community/viewmodel/journal_action_view_model.dart';
-import 'package:inninglog/feature/community/widgets/shared/segmented_tabs.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class CommunitySearchViewModel extends ChangeNotifier {
-  static const _prefsKey = 'community_search_history';
-  static const _maxHistory = 15;
-
   final String teamCode;
   final DiaryRepository diaryRepository;
   final CommunityPostRepository postRepository;
+  final SearchHistoryRepository _searchHistoryRepository;
   final JournalActionsViewModel _journalActions;
   final int pageSize;
   BoardTab _selectedTab;
@@ -23,9 +21,11 @@ class CommunitySearchViewModel extends ChangeNotifier {
     required BoardTab initialTab,
     required this.diaryRepository,
     required this.postRepository,
+    required SearchHistoryRepository searchHistoryRepository,
     required JournalActionsViewModel journalActions,
     this.pageSize = 10,
   }) : _selectedTab = _normalizeTab(initialTab),
+       _searchHistoryRepository = searchHistoryRepository,
        _journalActions = journalActions;
 
   String _query = '';
@@ -127,20 +127,36 @@ class CommunitySearchViewModel extends ChangeNotifier {
   }
 
   Future<void> toggleJournalLike(String journalId) async {
+    final index = _onlywanResults.indexWhere((i) => i.journalId == journalId);
+    if (index < 0) return;
     await _journalActions.toggleLike(
-      items: _onlywanResults,
       journalId: journalId,
-      notifyItems: notifyListeners,
-      onError: (error) => _error = error.toString(),
+      currentItem: _onlywanResults[index],
+      onUpdate: (updated) {
+        _onlywanResults[index] = updated;
+        notifyListeners();
+      },
+      onError: (e) {
+        _error = e.toString();
+        notifyListeners();
+      },
     );
   }
 
   Future<void> toggleJournalScrap(String journalId) async {
+    final index = _onlywanResults.indexWhere((i) => i.journalId == journalId);
+    if (index < 0) return;
     await _journalActions.toggleScrap(
-      items: _onlywanResults,
       journalId: journalId,
-      notifyItems: notifyListeners,
-      onError: (error) => _error = error.toString(),
+      currentItem: _onlywanResults[index],
+      onUpdate: (updated) {
+        _onlywanResults[index] = updated;
+        notifyListeners();
+      },
+      onError: (e) {
+        _error = e.toString();
+        notifyListeners();
+      },
     );
   }
 
@@ -148,25 +164,29 @@ class CommunitySearchViewModel extends ChangeNotifier {
     required String journalId,
     required int count,
   }) {
+    final index = _onlywanResults.indexWhere((i) => i.journalId == journalId);
+    if (index < 0) return;
     _journalActions.updateCommentCount(
-      items: _onlywanResults,
       journalId: journalId,
       count: count,
-      notifyItems: notifyListeners,
+      currentItem: _onlywanResults[index],
+      onUpdate: (updated) {
+        _onlywanResults[index] = updated;
+        notifyListeners();
+      },
     );
   }
 
   Future<void> removeHistoryTerm(String term) async {
     _history.remove(term);
     notifyListeners();
-    await _saveHistory();
+    await _searchHistoryRepository.save(_history);
   }
 
   Future<void> clearHistory() async {
     _history = [];
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_prefsKey);
+    await _searchHistoryRepository.clear();
   }
 
   Future<void> _loadCurrentTab({required bool reset}) async {
@@ -260,21 +280,15 @@ class CommunitySearchViewModel extends ChangeNotifier {
   Future<void> _addHistory(String term) async {
     _history.remove(term);
     _history.insert(0, term);
-    if (_history.length > _maxHistory) {
-      _history = _history.sublist(0, _maxHistory);
+    if (_history.length > SearchHistoryRepository.maxHistory) {
+      _history = _history.sublist(0, SearchHistoryRepository.maxHistory);
     }
     notifyListeners();
-    await _saveHistory();
+    await _searchHistoryRepository.save(_history);
   }
 
   Future<void> _loadHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    _history = prefs.getStringList(_prefsKey) ?? [];
+    _history = await _searchHistoryRepository.load();
     notifyListeners();
-  }
-
-  Future<void> _saveHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_prefsKey, _history);
   }
 }

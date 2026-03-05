@@ -197,7 +197,7 @@ class CommunityPostRepository {
       throw const FormatException('Unexpected post detail response');
     }
 
-    return CommunityPostItem.fromJson(json);
+    return CommunityPostItemDto.fromJson(json).toModel();
   }
 
   //게시글 삭제

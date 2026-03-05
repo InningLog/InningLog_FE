@@ -23,7 +23,8 @@ class CommunityRootViewModel extends ChangeNotifier {
   String? _error;
   String? get error => _error;
 
-  String? myTeamCode;
+  String? _myTeamCode;
+  String? get myTeamCode => _myTeamCode;
 
   List<PostBase> _popularPosts = [];
   List<PostBase> get popularPosts => _popularPosts;
@@ -39,7 +40,7 @@ class CommunityRootViewModel extends ChangeNotifier {
     try {
       final res = await userRepository.getTeam();
       final teamCode = res.data['teamShortCode'];
-      myTeamCode = teamCode;
+      _myTeamCode = teamCode;
       _error = null;
     } catch (e) {
       _error = e.toString();
@@ -66,11 +67,11 @@ class CommunityRootViewModel extends ChangeNotifier {
   }
 
   void _rebuildTeamGridItems() {
-    if (myTeamCode == null) {
+    if (_myTeamCode == null) {
       _teamGridItems = kboTeams;
       return;
     }
 
-    _teamGridItems = [...kboTeams.where((t) => t.code != myTeamCode)];
+    _teamGridItems = [...kboTeams.where((t) => t.code != _myTeamCode)];
   }
 }

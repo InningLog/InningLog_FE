@@ -79,6 +79,7 @@ class _CommunitySearchPageState extends State<CommunitySearchPage>
       initialTab: initialTab,
       diaryRepository: appScope.diaryRepository,
       postRepository: appScope.communityPostRepository,
+      searchHistoryRepository: appScope.searchHistoryRepository,
       journalActions: _journalActionsVm!,
     )..init();
   }

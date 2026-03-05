@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:inninglog/feature/community/model/diary_item.dart';
 import 'package:inninglog/feature/community/model/dto/diary_dtos.dart';
-import 'package:inninglog/feature/community/repositories/diary_repository.dart';
 import 'package:inninglog/feature/community/viewmodel/journal_action_view_model.dart';
 
+typedef DiaryFetcher = Future<DiaryFeedResponse> Function(int page, int size);
+
 class DiaryFeedViewModel extends ChangeNotifier {
-  final DiaryRepository repo;
-  final String teamCode;
+  final DiaryFetcher _fetcher;
   final int pageSize;
   final JournalActionsViewModel _journalActions;
 
   DiaryFeedViewModel({
-    required this.repo,
-    required this.teamCode,
+    required DiaryFetcher fetcher,
     required JournalActionsViewModel journalActions,
     this.pageSize = 10,
-  }) : _journalActions = journalActions;
+  }) : _fetcher = fetcher,
+       _journalActions = journalActions;
 
   final List<DiaryItemModel> _items = [];
   List<DiaryItemModel> get items => List.unmodifiable(_items);
@@ -58,33 +58,50 @@ class DiaryFeedViewModel extends ChangeNotifier {
   }
 
   Future<void> toggleLike({required String journalId}) async {
+    final index = _items.indexWhere((i) => i.journalId == journalId);
+    if (index < 0) return;
     await _journalActions.toggleLike(
-      items: _items,
       journalId: journalId,
-      notifyItems: notifyListeners,
-      onError: (error) {
-        _error = error.toString();
+      currentItem: _items[index],
+      onUpdate: (updated) {
+        _items[index] = updated;
+        notifyListeners();
+      },
+      onError: (e) {
+        _error = e.toString();
+        notifyListeners();
       },
     );
   }
 
   Future<void> toggleScrap({required String journalId}) async {
+    final index = _items.indexWhere((i) => i.journalId == journalId);
+    if (index < 0) return;
     await _journalActions.toggleScrap(
-      items: _items,
       journalId: journalId,
-      notifyItems: notifyListeners,
-      onError: (error) {
-        _error = error.toString();
+      currentItem: _items[index],
+      onUpdate: (updated) {
+        _items[index] = updated;
+        notifyListeners();
+      },
+      onError: (e) {
+        _error = e.toString();
+        notifyListeners();
       },
     );
   }
 
   void updateCommentCount({required String journalId, required int count}) {
+    final index = _items.indexWhere((i) => i.journalId == journalId);
+    if (index < 0) return;
     _journalActions.updateCommentCount(
-      items: _items,
       journalId: journalId,
       count: count,
-      notifyItems: notifyListeners,
+      currentItem: _items[index],
+      onUpdate: (updated) {
+        _items[index] = updated;
+        notifyListeners();
+      },
     );
   }
 
@@ -92,11 +109,7 @@ class DiaryFeedViewModel extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final DiaryFeedResponse res = await repo.getDiaryFeed(
-        teamCode: teamCode,
-        page: _page,
-        size: pageSize,
-      );
+      final DiaryFeedResponse res = await _fetcher(_page, pageSize);
 
       final mapped = res.content.map((e) => e.toModel()).toList();
       if (_page == 0) {

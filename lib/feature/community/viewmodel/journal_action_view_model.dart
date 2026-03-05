@@ -22,25 +22,21 @@ class JournalActionsViewModel extends ChangeNotifier {
   }
 
   Future<void> toggleLike({
-    required List<DiaryItemModel> items,
     required String journalId,
-    required VoidCallback notifyItems,
+    required DiaryItemModel currentItem,
+    required void Function(DiaryItemModel updated) onUpdate,
     void Function(Object error)? onError,
   }) async {
     if (_likePendingJournalIds.contains(journalId)) return;
-    final index = items.indexWhere((item) => item.journalId == journalId);
-    if (index < 0) return;
 
-    final before = items[index];
-    final nextLiked = !before.likedByMe;
-    final nextLikeCount = _safeCount(before.likeCount + (nextLiked ? 1 : -1));
+    final nextLiked = !currentItem.likedByMe;
+    final optimistic = currentItem.copyWith(
+      likedByMe: nextLiked,
+      likeCount: _safeCount(currentItem.likeCount + (nextLiked ? 1 : -1)),
+    );
 
     _likePendingJournalIds.add(journalId);
-    items[index] = before.copyWith(
-      likedByMe: nextLiked,
-      likeCount: nextLikeCount,
-    );
-    notifyItems();
+    onUpdate(optimistic);
     notifyListeners();
 
     try {
@@ -50,38 +46,30 @@ class JournalActionsViewModel extends ChangeNotifier {
         await _repo.unlikeJournal(journalId: journalId);
       }
     } catch (e) {
-      items[index] = before;
-      notifyItems();
+      onUpdate(currentItem);
       onError?.call(e);
     } finally {
       _likePendingJournalIds.remove(journalId);
-      notifyItems();
       notifyListeners();
     }
   }
 
   Future<void> toggleScrap({
-    required List<DiaryItemModel> items,
     required String journalId,
-    required VoidCallback notifyItems,
+    required DiaryItemModel currentItem,
+    required void Function(DiaryItemModel updated) onUpdate,
     void Function(Object error)? onError,
   }) async {
     if (_scrapPendingJournalIds.contains(journalId)) return;
-    final index = items.indexWhere((item) => item.journalId == journalId);
-    if (index < 0) return;
 
-    final before = items[index];
-    final nextScraped = !before.scrapedByMe;
-    final nextScrapCount = _safeCount(
-      before.scrapCount + (nextScraped ? 1 : -1),
+    final nextScraped = !currentItem.scrapedByMe;
+    final optimistic = currentItem.copyWith(
+      scrapedByMe: nextScraped,
+      scrapCount: _safeCount(currentItem.scrapCount + (nextScraped ? 1 : -1)),
     );
 
     _scrapPendingJournalIds.add(journalId);
-    items[index] = before.copyWith(
-      scrapedByMe: nextScraped,
-      scrapCount: nextScrapCount,
-    );
-    notifyItems();
+    onUpdate(optimistic);
     notifyListeners();
 
     try {
@@ -91,26 +79,21 @@ class JournalActionsViewModel extends ChangeNotifier {
         await _repo.unscrapJournal(journalId: journalId);
       }
     } catch (e) {
-      items[index] = before;
-      notifyItems();
+      onUpdate(currentItem);
       onError?.call(e);
     } finally {
       _scrapPendingJournalIds.remove(journalId);
-      notifyItems();
       notifyListeners();
     }
   }
 
   void updateCommentCount({
-    required List<DiaryItemModel> items,
     required String journalId,
     required int count,
-    required VoidCallback notifyItems,
+    required DiaryItemModel currentItem,
+    required void Function(DiaryItemModel updated) onUpdate,
   }) {
-    final index = items.indexWhere((item) => item.journalId == journalId);
-    if (index < 0) return;
-    items[index] = items[index].copyWith(commentCount: count);
-    notifyItems();
+    onUpdate(currentItem.copyWith(commentCount: count));
   }
 
   int _safeCount(int value) => value < 0 ? 0 : value;

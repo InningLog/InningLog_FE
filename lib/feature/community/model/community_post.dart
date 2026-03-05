@@ -60,54 +60,43 @@ class CommunityPostItem {
     this.thumbImageUrl,
   });
 
-  factory CommunityPostItem.fromJson(Map<String, dynamic> json) {
-    final data = (json['data'] as Map<String, dynamic>?) ?? json;
-    final member = data['member'] as Map<String, dynamic>?;
-
-    int asInt(dynamic v) => v is int ? v : int.tryParse('$v') ?? 0;
-    String? asStringOpt(dynamic v) {
-      if (v == null) return null;
-      final s = v.toString();
-      return s.isEmpty ? null : s;
-    }
-
-    bool asBool(dynamic v) {
-      if (v is bool) return v;
-      if (v is num) return v != 0;
-      final s = v?.toString().toLowerCase();
-      if (s == 'true') return true;
-      if (s == 'false') return false;
-      return false;
-    }
-
-    final images =
-        ((data['imageListResDto'] as Map<String, dynamic>?)?['imageResDtos']
-            as List<dynamic>?) ??
-        const [];
-
+  CommunityPostItem copyWith({
+    int? id,
+    String? teamCode,
+    String? title,
+    String? content,
+    String? nickName,
+    String? profileUrl,
+    bool? writeByMe,
+    int? likeCount,
+    bool? likedByMe,
+    int? scrapCount,
+    bool? scrapedByMe,
+    int? commentCount,
+    String? createdAt,
+    bool? isEdit,
+    List<ImageItem>? images,
+    int? imageCount,
+    String? thumbImageUrl,
+  }) {
     return CommunityPostItem(
-      id: asInt(data['postId']),
-      teamCode: asStringOpt(data['teamShortCode'] ?? data['teamCode']) ?? 'ALL',
-      title: asStringOpt(data['title']) ?? '',
-      content: asStringOpt(data['content']) ?? '',
-      nickName: asStringOpt(member?['nickName']),
-      profileUrl: asStringOpt(member?['profile_url']),
-      writeByMe: asBool(data['writedByMe'] ?? data['writeByMe']),
-      likeCount: asInt(data['likeCount']),
-      likedByMe: asBool(data['likedByMe']),
-      scrapCount: asInt(data['scrapCount']),
-      scrapedByMe: asBool(data['scrapedByMe']),
-      commentCount: asInt(data['commentCount']),
-      createdAt: asStringOpt(data['postAt']),
-      isEdit: asBool(data['isEdit']),
-      thumbImageUrl: asStringOpt(data['thumbImageUrl']),
-
-      images:
-          images
-              .whereType<Map<String, dynamic>>()
-              .map(ImageItem.fromJson)
-              .toList(),
-      imageCount: asInt(data['imageCount']),
+      id: id ?? this.id,
+      teamCode: teamCode ?? this.teamCode,
+      title: title ?? this.title,
+      content: content ?? this.content,
+      nickName: nickName ?? this.nickName,
+      profileUrl: profileUrl ?? this.profileUrl,
+      writeByMe: writeByMe ?? this.writeByMe,
+      likeCount: likeCount ?? this.likeCount,
+      likedByMe: likedByMe ?? this.likedByMe,
+      scrapCount: scrapCount ?? this.scrapCount,
+      scrapedByMe: scrapedByMe ?? this.scrapedByMe,
+      commentCount: commentCount ?? this.commentCount,
+      createdAt: createdAt ?? this.createdAt,
+      isEdit: isEdit ?? this.isEdit,
+      images: images ?? this.images,
+      imageCount: imageCount ?? this.imageCount,
+      thumbImageUrl: thumbImageUrl ?? this.thumbImageUrl,
     );
   }
 }

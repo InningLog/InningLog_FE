@@ -161,7 +161,7 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
                             behavior: HitTestBehavior.translucent,
                             onTap: () {
                               FocusScope.of(context).unfocus();
-                              vm.cancelReply(clearController: false);
+                              vm.cancelReply();
                             },
                             child: ListView(
                               padding: EdgeInsets.zero,
@@ -174,11 +174,7 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
                                   repliesFor: vm.repliesFor,
                                   onTapReply: (index) {
                                     widget.onTapReply?.call(index);
-                                    vm.startReply(
-                                      index,
-                                      requestFocus: false,
-                                      clearController: false,
-                                    );
+                                    vm.startReply(index);
                                     _replyCtrl.clear();
                                     _replyFocusNode.requestFocus();
                                   },
@@ -228,11 +224,11 @@ class _CommentBottomSheetState extends State<CommentBottomSheet> {
                                 );
                               }
                               _replyCtrl.clear();
-                              vm.submitReply(text: text);
+                              vm.submitReply(text);
                             } else {
                               widget.onSubmitComment?.call(text);
                               _commentCtrl.clear();
-                              vm.submitComment(text: text);
+                              vm.submitComment(text);
                             }
                           },
                         ),
