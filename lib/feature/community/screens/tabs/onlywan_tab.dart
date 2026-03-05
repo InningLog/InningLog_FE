@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:inninglog/app_scope.dart';
 import 'package:inninglog/feature/community/model/diary_item.dart';
 import 'package:inninglog/feature/community/model/comment_domain_type.dart';
+import 'package:inninglog/feature/community/screens/teamboard_page.dart';
 import 'package:inninglog/feature/community/viewmodel/comment_view_model.dart';
 import 'package:inninglog/feature/community/viewmodel/diary_feed_view_model.dart';
 import 'package:inninglog/feature/community/viewmodel/journal_action_view_model.dart';
@@ -17,8 +18,14 @@ import 'package:provider/provider.dart';
 class OnlyWanTab extends StatefulWidget {
   final String teamCode;
   final bool isActive;
+  final BoardMode mode;
 
-  const OnlyWanTab({super.key, required this.teamCode, this.isActive = false});
+  const OnlyWanTab({
+    super.key,
+    required this.teamCode,
+    this.isActive = false,
+    this.mode = BoardMode.normal,
+  });
 
   @override
   State<OnlyWanTab> createState() => _OnlyWanTabState();
@@ -33,10 +40,30 @@ class _OnlyWanTabState extends State<OnlyWanTab> {
   void initState() {
     super.initState();
     final repo = context.read<AppScope>().diaryRepository;
+    final DiaryFetcher fetcher;
+    switch (widget.mode) {
+      case BoardMode.normal:
+        fetcher =
+            (page, size) => repo.getDiaryFeed(
+              teamCode: widget.teamCode,
+              page: page,
+              size: size,
+            );
+      case BoardMode.myPosts:
+        fetcher = (page, size) => repo.getMyJournals(page: page, size: size);
+      case BoardMode.myComments:
+        fetcher =
+            (page, size) => repo.getMyCommentedJournals(page: page, size: size);
+      case BoardMode.scraps:
+        fetcher =
+            (page, size) => repo.getMyScrappedJournals(page: page, size: size);
+      case BoardMode.popular:
+        fetcher =
+            (page, size) => repo.getPopularJournals(page: page, size: size);
+    }
     _journalActionsVm = JournalActionsViewModel(repo: repo);
     _vm = DiaryFeedViewModel(
-      repo: repo,
-      teamCode: widget.teamCode,
+      fetcher: fetcher,
       journalActions: _journalActionsVm,
     );
   }

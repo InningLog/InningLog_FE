@@ -19,13 +19,128 @@ class PostListResponse {
     final content =
         (body['content'] as List<dynamic>? ?? const [])
             .whereType<Map<String, dynamic>>()
-            .map(CommunityPostItem.fromJson)
+            .map((e) => CommunityPostItemDto.fromJson(e).toModel())
             .toList();
     return PostListResponse(
       content: content,
       hasNext: body['hasNext'] == true,
       page: (body['page'] ?? 0) as int,
       size: (body['size'] ?? content.length) as int,
+    );
+  }
+}
+
+/// API 응답 → CommunityPostItem 변환을 담당하는 DTO.
+/// JSON 파싱 복잡도(필드명 이중화, data 언래핑, member 중첩)를 모델에서 분리.
+class CommunityPostItemDto {
+  factory CommunityPostItemDto.fromJson(Map<String, dynamic> json) {
+    final data = (json['data'] as Map<String, dynamic>?) ?? json;
+    final member = data['member'] as Map<String, dynamic>?;
+
+    int asInt(dynamic v) => v is int ? v : int.tryParse('$v') ?? 0;
+
+    String? asStringOpt(dynamic v) {
+      if (v == null) return null;
+      final s = v.toString();
+      return s.isEmpty ? null : s;
+    }
+
+    bool asBool(dynamic v) {
+      if (v is bool) return v;
+      if (v is num) return v != 0;
+      final s = v?.toString().toLowerCase();
+      if (s == 'true') return true;
+      if (s == 'false') return false;
+      return false;
+    }
+
+    final images =
+        ((data['imageListResDto'] as Map<String, dynamic>?)?['imageResDtos']
+            as List<dynamic>?) ??
+        const [];
+
+    return CommunityPostItemDto._(
+      id: asInt(data['postId']),
+      teamCode: asStringOpt(data['teamShortCode'] ?? data['teamCode']) ?? 'ALL',
+      title: asStringOpt(data['title']) ?? '',
+      content: asStringOpt(data['content']) ?? '',
+      nickName: asStringOpt(member?['nickName']),
+      profileUrl: asStringOpt(member?['profile_url']),
+      writeByMe: asBool(data['writedByMe'] ?? data['writeByMe']),
+      likeCount: asInt(data['likeCount']),
+      likedByMe: asBool(data['likedByMe']),
+      scrapCount: asInt(data['scrapCount']),
+      scrapedByMe: asBool(data['scrapedByMe']),
+      commentCount: asInt(data['commentCount']),
+      createdAt: asStringOpt(data['postAt']),
+      isEdit: asBool(data['isEdit']),
+      thumbImageUrl: asStringOpt(data['thumbImageUrl']),
+      images:
+          images
+              .whereType<Map<String, dynamic>>()
+              .map(ImageItem.fromJson)
+              .toList(),
+      imageCount: asInt(data['imageCount']),
+    );
+  }
+
+  const CommunityPostItemDto._({
+    required this.id,
+    required this.teamCode,
+    required this.title,
+    required this.content,
+    required this.nickName,
+    required this.profileUrl,
+    required this.writeByMe,
+    required this.likeCount,
+    required this.likedByMe,
+    required this.scrapCount,
+    required this.scrapedByMe,
+    required this.commentCount,
+    required this.createdAt,
+    required this.isEdit,
+    required this.thumbImageUrl,
+    required this.images,
+    required this.imageCount,
+  });
+
+  final int id;
+  final String teamCode;
+  final String title;
+  final String content;
+  final String? nickName;
+  final String? profileUrl;
+  final bool writeByMe;
+  final int likeCount;
+  final bool likedByMe;
+  final int scrapCount;
+  final bool scrapedByMe;
+  final int commentCount;
+  final String? createdAt;
+  final bool isEdit;
+  final String? thumbImageUrl;
+  final List<ImageItem> images;
+  final int imageCount;
+
+  CommunityPostItem toModel() {
+    return CommunityPostItem(
+      id: id,
+      teamCode: teamCode,
+      title: title,
+      content: content,
+      nickName: nickName,
+      profileUrl: profileUrl,
+      writeByMe: writeByMe,
+      likeCount: likeCount,
+      likedByMe: likedByMe,
+      scrapCount: scrapCount,
+      scrapedByMe: scrapedByMe,
+      commentCount: commentCount,
+      createdAt: createdAt,
+      isEdit: isEdit,
+      thumbImageUrl: thumbImageUrl,
+      images: images,
+      imageCount: imageCount,
     );
   }
 }

@@ -38,26 +38,93 @@ class WritingPostPage extends StatelessWidget {
   }
 }
 
-class _WritingPostView extends StatelessWidget {
+class _WritingPostView extends StatefulWidget {
   final String teamCode;
   final CommunityPostItem? initialPost;
 
   const _WritingPostView({required this.teamCode, this.initialPost});
 
-  Future<void> _submit(BuildContext context, WritingPostViewModel vm) async {
-    // Save messenger early to avoid ancestor lookup after widget deactivates.
+  @override
+  State<_WritingPostView> createState() => _WritingPostViewState();
+}
+
+class _WritingPostViewState extends State<_WritingPostView> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _bodyController;
+  late final FocusNode _titleFocusNode;
+  late final FocusNode _bodyFocusNode;
+  bool _isTitleFocused = false;
+  bool _isFormFilled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialPost;
+    _titleController = TextEditingController(text: initial?.title ?? '');
+    _bodyController = TextEditingController(text: initial?.content ?? '');
+    _titleFocusNode = FocusNode()..addListener(_handleTitleFocusChanged);
+    _bodyFocusNode = FocusNode();
+    _titleController.addListener(_handleTextChanged);
+    _bodyController.addListener(_handleTextChanged);
+    _isFormFilled = _computeFormFilled();
+  }
+
+  @override
+  void dispose() {
+    _titleController
+      ..removeListener(_handleTextChanged)
+      ..dispose();
+    _bodyController
+      ..removeListener(_handleTextChanged)
+      ..dispose();
+    _titleFocusNode
+      ..removeListener(_handleTitleFocusChanged)
+      ..dispose();
+    _bodyFocusNode.dispose();
+    super.dispose();
+  }
+
+  bool _computeFormFilled() {
+    return _titleController.text.trim().isNotEmpty &&
+        _bodyController.text.trim().isNotEmpty;
+  }
+
+  void _handleTextChanged() {
+    final filled = _computeFormFilled();
+    if (_isFormFilled == filled) return;
+    setState(() => _isFormFilled = filled);
+  }
+
+  void _handleTitleFocusChanged() {
+    final hasFocus = _titleFocusNode.hasFocus;
+    if (_isTitleFocused == hasFocus) return;
+    setState(() => _isTitleFocused = hasFocus);
+  }
+
+  Future<void> _submit(WritingPostViewModel vm) async {
     final messenger = ScaffoldMessenger.maybeOf(context);
-    final isEditMode = initialPost != null;
+    final isEditMode = widget.initialPost != null;
+    final title = _titleController.text.trim();
+    final content = _bodyController.text.trim();
+
     final success =
         isEditMode
-            ? await vm.update(postId: initialPost!.id)
-            : await vm.submit(teamCode: teamCode);
-    if (!context.mounted) return;
+            ? await vm.update(
+              postId: widget.initialPost!.id,
+              title: title,
+              content: content,
+            )
+            : await vm.submit(
+              teamCode: widget.teamCode,
+              title: title,
+              content: content,
+            );
+
+    if (!mounted) return;
     if (success) {
       Navigator.of(context).pop(true);
     } else {
-      if (messenger == null) return;
-      messenger.showSnackBar(
+      messenger?.showSnackBar(
         SnackBar(
           content: Text(
             isEditMode
@@ -74,7 +141,10 @@ class _WritingPostView extends StatelessWidget {
     final vm = context.watch<WritingPostViewModel>();
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final teamLabel =
-        teamCode == 'ALL' ? 'KBO 전체게시판' : kboTeamLabelOf(teamCode);
+        widget.teamCode == 'ALL'
+            ? 'KBO 전체게시판'
+            : kboTeamLabelOf(widget.teamCode);
+    final canSubmit = _isFormFilled && !vm.isSubmitting;
 
     return Stack(
       children: [
@@ -91,8 +161,8 @@ class _WritingPostView extends StatelessWidget {
                   WritingPostAppBar(
                     teamLabel: teamLabel,
                     onClose: () => Navigator.of(context).pop(),
-                    onSubmit: () => _submit(context, vm),
-                    isSubmitEnabled: vm.canSubmit,
+                    onSubmit: () => _submit(vm),
+                    isSubmitEnabled: canSubmit,
                   ),
                   const SizedBox(height: 12),
                   AnimatedContainer(
@@ -103,7 +173,7 @@ class _WritingPostView extends StatelessWidget {
                       border: Border(
                         bottom: BorderSide(
                           color:
-                              vm.isTitleFocused
+                              _isTitleFocused
                                   ? AppColors.gray400
                                   : Colors.transparent,
                           width: 1,
@@ -111,8 +181,8 @@ class _WritingPostView extends StatelessWidget {
                       ),
                     ),
                     child: TextField(
-                      controller: vm.titleController,
-                      focusNode: vm.titleFocusNode,
+                      controller: _titleController,
+                      focusNode: _titleFocusNode,
                       textInputAction: TextInputAction.next,
                       onTapOutside:
                           (_) => FocusManager.instance.primaryFocus?.unfocus(),
@@ -142,10 +212,10 @@ class _WritingPostView extends StatelessWidget {
                   Expanded(
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => vm.bodyFocusNode.requestFocus(),
+                      onTap: () => _bodyFocusNode.requestFocus(),
                       child: TextField(
-                        controller: vm.bodyController,
-                        focusNode: vm.bodyFocusNode,
+                        controller: _bodyController,
+                        focusNode: _bodyFocusNode,
                         onTapOutside:
                             (_) =>
                                 FocusManager.instance.primaryFocus?.unfocus(),

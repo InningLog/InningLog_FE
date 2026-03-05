@@ -9,11 +9,7 @@ import 'package:inninglog/shared/service/image_pick_service.dart';
 class WritingPostViewModel extends ChangeNotifier {
   final int maxImages;
   final ImagePickService imagePickService;
-
-  final TextEditingController titleController = TextEditingController();
-  final TextEditingController bodyController = TextEditingController();
-  final FocusNode titleFocusNode = FocusNode();
-  final FocusNode bodyFocusNode = FocusNode();
+  final CommunityPostRepository repo;
 
   final List<_EditableImage> _images = [];
   List<ImageProvider> get images =>
@@ -22,19 +18,10 @@ class WritingPostViewModel extends ChangeNotifier {
   bool _isDisposed = false;
   bool _isSubmitting = false;
 
-  final CommunityPostRepository repo;
-
   bool _isPicking = false;
   bool get isPicking => _isPicking;
 
-  bool _isTitleFocused = false;
-  bool get isTitleFocused => _isTitleFocused;
-
-  bool _isFormFilled = false;
-  bool get isFormFilled => _isFormFilled;
-
   bool get canPickMore => _images.length < maxImages;
-  bool get canSubmit => _isFormFilled && !_isSubmitting;
   bool get isSubmitting => _isSubmitting;
 
   WritingPostViewModel({
@@ -43,9 +30,6 @@ class WritingPostViewModel extends ChangeNotifier {
     required this.repo,
     CommunityPostItem? initialPost,
   }) {
-    titleController.addListener(_handleTextChanged);
-    bodyController.addListener(_handleTextChanged);
-    titleFocusNode.addListener(_handleTitleFocusChanged);
     if (initialPost != null) {
       _applyInitialPost(initialPost);
     }
@@ -82,19 +66,22 @@ class WritingPostViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> submit({required String teamCode}) async {
+  Future<bool> submit({
+    required String teamCode,
+    required String title,
+    required String content,
+  }) async {
     if (_isDisposed || _isSubmitting) return false;
 
     _isSubmitting = true;
     _safeNotify();
-    final title = titleController.text.trim();
-    final content = bodyController.text.trim();
     var success = false;
 
     try {
       debugPrint(
         '[WritingPost] submit team=$teamCode titleLen=${title.length} images=${_images.length}',
       );
+
       final pendingBySequence = <int, _EditableImage>{};
       final uploadImages = <ImageUploadReqDto>[];
       for (var i = 0; i < _images.length; i++) {
@@ -111,47 +98,11 @@ class WritingPostViewModel extends ChangeNotifier {
         );
       }
 
-      List<ImageCreateReqDto> imageKeys = [];
-
-      if (uploadImages.isNotEmpty) {
-        final presignedList = await repo.requestImagePresignedUrls(
-          images: uploadImages,
-        );
-        final presignedMap = {
-          for (final item in presignedList) item.sequence: item,
-        };
-
-        final uploadFutures = uploadImages.map((image) async {
-          final presigned = presignedMap[image.sequence];
-          if (presigned == null) {
-            throw StateError(
-              'Presigned URL missing for sequence ${image.sequence}',
-            );
-          }
-          final pending = pendingBySequence[image.sequence];
-          if (pending == null || pending.bytes == null) {
-            throw StateError(
-              'Pending image missing for sequence ${image.sequence}',
-            );
-          }
-
-          debugPrint(
-            '[WritingPost] upload seq=${image.sequence} url=${presigned.presignedUrl}',
-          );
-          await repo.uploadToS3(
-            target: presigned,
-            contentType: image.contentType,
-            bytes: pending.bytes!,
-          );
-          return ImageCreateReqDto(
-            sequence: presigned.sequence,
-            key: presigned.key,
-          );
-        }).toList();
-
-        imageKeys = await Future.wait(uploadFutures);
-        imageKeys.sort((a, b) => a.sequence.compareTo(b.sequence));
-      }
+      final uploaded = await _uploadNewImages(uploadImages, pendingBySequence);
+      final imageKeys =
+          uploaded
+              .map((e) => ImageCreateReqDto(sequence: e.sequence, key: e.key))
+              .toList();
 
       debugPrint('[WritingPost] createPost keys=${imageKeys.length}');
       await repo.createPost(
@@ -166,7 +117,6 @@ class WritingPostViewModel extends ChangeNotifier {
       success = true;
     } catch (e) {
       debugPrint(e.toString());
-      // error = e.toString();
     } finally {
       _isSubmitting = false;
       _safeNotify();
@@ -174,13 +124,15 @@ class WritingPostViewModel extends ChangeNotifier {
     return success;
   }
 
-  Future<bool> update({required int postId}) async {
+  Future<bool> update({
+    required int postId,
+    required String title,
+    required String content,
+  }) async {
     if (_isDisposed || _isSubmitting) return false;
 
     _isSubmitting = true;
     _safeNotify();
-    final title = titleController.text.trim();
-    final content = bodyController.text.trim();
     var success = false;
 
     try {
@@ -214,46 +166,11 @@ class WritingPostViewModel extends ChangeNotifier {
         }
       }
 
-      List<NewImageReqDto> newImages = [];
-      if (uploadImages.isNotEmpty) {
-        final presignedList = await repo.requestImagePresignedUrls(
-          images: uploadImages,
-        );
-        final presignedMap = {
-          for (final item in presignedList) item.sequence: item,
-        };
-
-        final uploadFutures = uploadImages.map((image) async {
-          final presigned = presignedMap[image.sequence];
-          if (presigned == null) {
-            throw StateError(
-              'Presigned URL missing for sequence ${image.sequence}',
-            );
-          }
-          final pending = pendingBySequence[image.sequence];
-          if (pending == null || pending.bytes == null) {
-            throw StateError(
-              'Pending image missing for sequence ${image.sequence}',
-            );
-          }
-
-          debugPrint(
-            '[WritingPost] upload seq=${image.sequence} url=${presigned.presignedUrl}',
-          );
-          await repo.uploadToS3(
-            target: presigned,
-            contentType: image.contentType,
-            bytes: pending.bytes!,
-          );
-          return NewImageReqDto(
-            sequence: presigned.sequence,
-            key: presigned.key,
-          );
-        }).toList();
-
-        newImages = await Future.wait(uploadFutures);
-        newImages.sort((a, b) => a.sequence.compareTo(b.sequence));
-      }
+      final uploaded = await _uploadNewImages(uploadImages, pendingBySequence);
+      final newImages =
+          uploaded
+              .map((e) => NewImageReqDto(sequence: e.sequence, key: e.key))
+              .toList();
 
       await repo.updatePost(
         postId: postId,
@@ -282,26 +199,7 @@ class WritingPostViewModel extends ChangeNotifier {
     _safeNotify();
   }
 
-  void _handleTitleFocusChanged() {
-    final hasFocus = titleFocusNode.hasFocus;
-    if (_isTitleFocused == hasFocus) return;
-    _isTitleFocused = hasFocus;
-    notifyListeners();
-  }
-
-  void _handleTextChanged() {
-    final hasTitle = titleController.text.trim().isNotEmpty;
-    final hasBody = bodyController.text.trim().isNotEmpty;
-    final filled = hasTitle && hasBody;
-    if (_isFormFilled == filled) return;
-    _isFormFilled = filled;
-    notifyListeners();
-  }
-
   void _applyInitialPost(CommunityPostItem post) {
-    titleController.text = post.title;
-    bodyController.text = post.content;
-
     final sortedImages = [...post.images]
       ..sort((a, b) => a.sequence.compareTo(b.sequence));
     for (final image in sortedImages) {
@@ -313,21 +211,53 @@ class WritingPostViewModel extends ChangeNotifier {
         ),
       );
     }
-    _safeNotify();
+  }
+
+  /// Presigned URL 발급 → S3 업로드 → (sequence, key) 목록 반환
+  Future<List<({int sequence, String key})>> _uploadNewImages(
+    List<ImageUploadReqDto> uploadImages,
+    Map<int, _EditableImage> pendingBySequence,
+  ) async {
+    if (uploadImages.isEmpty) return const [];
+
+    final presignedList = await repo.requestImagePresignedUrls(
+      images: uploadImages,
+    );
+    final presignedMap = {
+      for (final item in presignedList) item.sequence: item,
+    };
+
+    final futures = uploadImages.map((image) async {
+      final presigned = presignedMap[image.sequence];
+      if (presigned == null) {
+        throw StateError(
+          'Presigned URL missing for sequence ${image.sequence}',
+        );
+      }
+      final pending = pendingBySequence[image.sequence];
+      if (pending == null || pending.bytes == null) {
+        throw StateError(
+          'Pending image missing for sequence ${image.sequence}',
+        );
+      }
+
+      debugPrint(
+        '[WritingPost] upload seq=${image.sequence} url=${presigned.presignedUrl}',
+      );
+      await repo.uploadToS3(
+        target: presigned,
+        contentType: image.contentType,
+        bytes: pending.bytes!,
+      );
+      return (sequence: presigned.sequence, key: presigned.key);
+    }).toList();
+
+    final result = await Future.wait(futures);
+    return result..sort((a, b) => a.sequence.compareTo(b.sequence));
   }
 
   @override
   void dispose() {
-    titleController
-      ..removeListener(_handleTextChanged)
-      ..dispose();
-    bodyController
-      ..removeListener(_handleTextChanged)
-      ..dispose();
-    titleFocusNode
-      ..removeListener(_handleTitleFocusChanged)
-      ..dispose();
-    bodyFocusNode.dispose();
     _isDisposed = true;
     super.dispose();
   }

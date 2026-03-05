@@ -14,7 +14,6 @@ import 'package:inninglog/feature/diary/screens/add_seat_page.dart';
 import 'package:inninglog/shared/service/home_view.dart';
 import 'package:inninglog/feature/community/screens/search_page.dart';
 import 'package:inninglog/feature/field/screens/field_hashtag_filter_sheet.dart';
-import 'package:inninglog/feature/community/screens/legacy/market_upload_step1.dart';
 import 'package:inninglog/feature/community/screens/writing_post_page.dart';
 import 'package:inninglog/feature/community/screens/post_detail_page.dart';
 import 'package:inninglog/feature/field/screens/seat_detail_page.dart';
@@ -27,7 +26,7 @@ import 'package:inninglog/feature/field/screens/seat_page.dart';
 import 'package:inninglog/feature/community/screens/root_page.dart';
 import 'package:inninglog/feature/mypage/screens/my_page.dart';
 import 'package:inninglog/feature/community/screens/teamboard_page.dart';
-import 'package:inninglog/feature/community/widgets/shared/segmented_tabs.dart';
+import 'package:inninglog/feature/community/model/board_tab.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:inninglog/shared/amplitude/AmplitudeFlutter.dart';
@@ -158,14 +157,6 @@ final GoRouter _router = GoRouter(
       },
     ),
 
-    GoRoute(
-      path: '/market/:code/upload',
-      name: 'market_upload',
-      builder: (ctx, state) {
-        final code = state.pathParameters['code']!;
-        return MarketUploadStep1(teamCode: code);
-      },
-    ),
 
     /// GNB 있는 ShellRoute
     ShellRoute(

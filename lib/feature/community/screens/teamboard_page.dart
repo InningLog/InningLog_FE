@@ -176,6 +176,7 @@ class _TeamBoardPageState extends State<TeamBoardPage>
                       return OnlyWanTab(
                         isActive: isActive,
                         teamCode: widget.teamCode ?? '',
+                        mode: widget.mode,
                       );
                     case BoardTab.free:
                       return FreeBoardTab(

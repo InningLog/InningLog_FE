@@ -37,8 +37,15 @@ class _PostDetailPageState extends State<PostDetailPage>
   late final PostDetailViewModel _vm;
   late final CommunityPostRepository _repo;
   late final CommentRepository _commentRepo;
+  late final CommentViewModel _commentVm;
   final ScrollController _scrollController = ScrollController();
   double _lastKeyboardInset = 0;
+
+  // 댓글/대댓글 입력 UI 상태 (View 계층 소유)
+  final TextEditingController _commentController = TextEditingController();
+  final TextEditingController _replyController = TextEditingController();
+  final FocusNode _commentFocusNode = FocusNode();
+  final FocusNode _replyFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -48,12 +55,22 @@ class _PostDetailPageState extends State<PostDetailPage>
     _repo = scope.communityPostRepository;
     _commentRepo = scope.commentRepository;
     _vm = PostDetailViewModel(repo: _repo, postId: widget.postId)..fetch();
+    _commentVm = CommentViewModel(
+      domainType: CommentDomainType.post,
+      domainId: widget.postId.toString(),
+      repo: _commentRepo,
+    )..fetchComments();
   }
 
   @override
   void dispose() {
     _vm.dispose();
+    _commentVm.dispose();
     _scrollController.dispose();
+    _commentController.dispose();
+    _replyController.dispose();
+    _commentFocusNode.dispose();
+    _replyFocusNode.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -98,10 +115,7 @@ class _PostDetailPageState extends State<PostDetailPage>
     }
   }
 
-  Future<void> _confirmDeleteComment(
-    CommentViewModel commentVm,
-    Comment target,
-  ) async {
+  Future<void> _confirmDeleteComment(Comment target) async {
     final result = await showOkCancelAlertDialog(
       context: context,
       title: '댓글 삭제',
@@ -113,7 +127,7 @@ class _PostDetailPageState extends State<PostDetailPage>
 
     if (result != OkCancelResult.ok || !mounted) return;
 
-    final success = await commentVm.deleteComment(target);
+    final success = await _commentVm.deleteComment(target);
     if (!mounted) return;
 
     if (success) {
@@ -128,7 +142,7 @@ class _PostDetailPageState extends State<PostDetailPage>
     }
   }
 
-  void _showCommentActions(CommentViewModel commentVm, Comment target) {
+  void _showCommentActions(Comment target) {
     if (!target.writeByMe) return;
     showBottomActionSheet(
       context,
@@ -136,7 +150,7 @@ class _PostDetailPageState extends State<PostDetailPage>
         BottomActionSheetAction(
           label: '삭제',
           isDestructive: true,
-          onTap: () => _confirmDeleteComment(commentVm, target),
+          onTap: () => _confirmDeleteComment(target),
         ),
       ],
     );
@@ -147,16 +161,7 @@ class _PostDetailPageState extends State<PostDetailPage>
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<PostDetailViewModel>.value(value: _vm),
-        ChangeNotifierProvider<CommentViewModel>(
-          create:
-              (_) =>
-                  CommentViewModel(
-                    domainType: CommentDomainType.post,
-                    domainId: widget.postId.toString(),
-                    repo: _commentRepo,
-                  )
-                    ..fetchComments(),
-        ),
+        ChangeNotifierProvider<CommentViewModel>.value(value: _commentVm),
       ],
       child: Consumer2<PostDetailViewModel, CommentViewModel>(
         builder: (context, vm, commentVm, _) {
@@ -166,6 +171,7 @@ class _PostDetailPageState extends State<PostDetailPage>
               teamCode == 'ALL' ? 'KBO 전체게시판' : kboTeamLabelOf(teamCode);
           final commentCount =
               vm.commentCount > 0 ? vm.commentCount : commentVm.comments.length;
+          final isReplyMode = commentVm.isReplyMode;
 
           return Scaffold(
             backgroundColor: AppColors.primary50,
@@ -202,9 +208,7 @@ class _PostDetailPageState extends State<PostDetailPage>
                       BottomActionSheetAction(
                         label: '삭제',
                         isDestructive: true,
-                        onTap: () {
-                          _confirmDelete(vm);
-                        },
+                        onTap: () => _confirmDelete(vm),
                       ),
                     ],
                   );
@@ -222,7 +226,10 @@ class _PostDetailPageState extends State<PostDetailPage>
                       behavior: HitTestBehavior.translucent,
                       onTap: () {
                         FocusScope.of(context).unfocus();
-                        commentVm.cancelReply();
+                        if (isReplyMode) {
+                          _replyController.clear();
+                          commentVm.cancelReply();
+                        }
                       },
                       child: ListView(
                         controller: _scrollController,
@@ -254,17 +261,17 @@ class _PostDetailPageState extends State<PostDetailPage>
                             comments: commentVm.comments,
                             activeReplyIndex: commentVm.activeReplyIndex,
                             repliesFor: commentVm.repliesFor,
-                            onTapReply: commentVm.startReply,
+                            onTapReply: (index) {
+                              commentVm.startReply(index);
+                              _replyController.clear();
+                              _replyFocusNode.requestFocus();
+                            },
                             onToggleLike: commentVm.toggleCommentLike,
                             onToggleReplyLike:
                                 (reply, index) =>
                                     commentVm.toggleReplyLike(index, reply),
-                            onTapMore:
-                                (comment) =>
-                                    _showCommentActions(commentVm, comment),
-                            onTapReplyMore:
-                                (reply) =>
-                                    _showCommentActions(commentVm, reply),
+                            onTapMore: _showCommentActions,
+                            onTapReplyMore: _showCommentActions,
                           ),
                           const SizedBox(height: 6),
                         ],
@@ -275,19 +282,23 @@ class _PostDetailPageState extends State<PostDetailPage>
                     top: false,
                     child: CommentInputBar(
                       controller:
-                          commentVm.isReplyMode
-                              ? commentVm.replyController
-                              : commentVm.commentController,
+                          isReplyMode ? _replyController : _commentController,
                       focusNode:
-                          commentVm.isReplyMode
-                              ? commentVm.replyFocusNode
-                              : commentVm.commentFocusNode,
-                      isReplyMode: commentVm.isReplyMode,
+                          isReplyMode ? _replyFocusNode : _commentFocusNode,
+                      isReplyMode: isReplyMode,
                       replyNickname: commentVm.activeReplyNickname,
-                      onPressed:
-                          commentVm.isReplyMode
-                              ? commentVm.submitReply
-                              : commentVm.submitComment,
+                      onPressed: () {
+                        final controller =
+                            isReplyMode ? _replyController : _commentController;
+                        final text = controller.text.trim();
+                        if (text.isEmpty) return;
+                        controller.clear();
+                        if (isReplyMode) {
+                          commentVm.submitReply(text);
+                        } else {
+                          commentVm.submitComment(text);
+                        }
+                      },
                     ),
                   ),
                 ],
