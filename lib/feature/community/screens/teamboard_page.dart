@@ -7,6 +7,7 @@ import 'package:inninglog/router/app_routes.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
 import 'package:inninglog/shared/widgets/common_header.dart';
 import 'tabs/free_board_tab.dart';
+import 'tabs/news_tab.dart';
 import 'tabs/onlywan_tab.dart';
 
 enum BoardMode { normal, myPosts, myComments, scraps, popular }
@@ -185,7 +186,7 @@ class _TeamBoardPageState extends State<TeamBoardPage>
                         mode: widget.mode,
                       );
                     case BoardTab.news:
-                      return const Center(child: Text('오늘의 뉴스'));
+                      return NewsTab(teamCode: widget.teamCode ?? 'ALL');
                   }
                 }),
               ),
