@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:inninglog/feature/community/data/team_catalog.dart';
+import 'package:inninglog/feature/community/widgets/news/news_ai_summary_bottom_sheet.dart';
 import 'package:inninglog/feature/community/widgets/news/news_card.dart';
 import 'package:inninglog/feature/community/widgets/news/news_section.dart';
 import 'package:inninglog/shared/theme/app_colors.dart';
@@ -62,6 +63,7 @@ class _TeamNewsSection extends StatelessWidget {
       highlightText: highlightText,
       showInfoIcon: true,
       items: _items,
+      onTapInfo: () => showNewsAiSummaryBottomSheet(context),
     );
   }
 }
@@ -90,6 +92,10 @@ class _KboNewsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const NewsSection(highlightText: 'KBO', items: _items);
+    return NewsSection(
+      highlightText: 'KBO',
+      items: _items,
+      onTapMore: () => showNewsAiSummaryBottomSheet(context),
+    );
   }
 }
