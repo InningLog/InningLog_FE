@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:inninglog/app_scope.dart';
 import 'package:inninglog/feature/mypage/viewmodel/my_page_view_model.dart';
@@ -130,6 +132,7 @@ class _MyPageState extends State<MyPage> {
                       totalGameCount: profile?.totalGameCount ?? 0,
                       winCount: profile?.winCount ?? 0,
                       winRate: profile?.winRate ?? 0.0,
+                      teamShortCode: profile?.teamShortCode ?? 'OB',
                     );
                   },
                 ),
@@ -201,7 +204,7 @@ class _MyHeader extends StatelessWidget {
       decoration: BoxDecoration(
         image: DecorationImage(
           image: AssetImage(backgroundAsset),
-          fit: BoxFit.cover,
+          fit: BoxFit.fitWidth,
           alignment: Alignment.topCenter,
         ),
       ),
@@ -216,22 +219,30 @@ class _MyHeader extends StatelessWidget {
               children: [
                 // 프로필
                 Container(
-                  width: 84.2,
-                  height: 84.2,
+                  width: 100,
+                  height: 100,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 1.44),
-                    color: hasProfileUrl ? null : AppColors.gray500,
-                    image: hasProfileUrl
-                        ? DecorationImage(
-                            image: NetworkImage(profileUrl!),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
                   ),
-                  child: hasProfileUrl
-                      ? null
-                      : const Icon(Icons.person, color: Colors.white, size: 40),
+                  child: Padding(
+                    padding: const EdgeInsets.all(7.91),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: hasProfileUrl ? null : AppColors.gray500,
+                        image: hasProfileUrl
+                            ? DecorationImage(
+                                image: NetworkImage(profileUrl!),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                      ),
+                      child: hasProfileUrl
+                          ? null
+                          : const Icon(Icons.person, color: Colors.white, size: 40),
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 19),
 
@@ -240,26 +251,39 @@ class _MyHeader extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 팀 알약
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Text(
-                          teamLabel,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.gray900,
-                            letterSpacing: -0.12,
-                            fontFamily: 'Pretendard',
+                      // 팀 알약 + 편집 버튼
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: AppColors.gray400, width: 0.7),
+                            ),
+                            child: Text(
+                              teamLabel,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.gray900,
+                                letterSpacing: -0.12,
+                                fontFamily: 'Pretendard',
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 88),
+                          GestureDetector(
+                            onTap: () {},
+                            child: CustomPaint(
+                              size: const Size(28, 28),
+                              painter: _CutoutEditPainter(),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 11),
+                      const SizedBox(height: 8),
                       Text(
                         nickname,
                         maxLines: 1,
@@ -272,7 +296,7 @@ class _MyHeader extends StatelessWidget {
                           fontFamily: 'Pretendard',
                         ),
                       ),
-                      const SizedBox(height: 11),
+                      const SizedBox(height: 8),
                       Text(
                         levelText,
                         style: const TextStyle(
@@ -284,21 +308,6 @@ class _MyHeader extends StatelessWidget {
                         ),
                       ),
                     ],
-                  ),
-                ),
-
-                // 편집 버튼
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFCCCCD7),
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    padding: EdgeInsets.zero,
-                    icon: const Icon(Icons.edit, size: 18, color: Colors.white),
-                    onPressed: () {},
                   ),
                 ),
               ],
@@ -318,12 +327,14 @@ class _MySheet extends StatelessWidget {
   final int totalGameCount;
   final int winCount;
   final double winRate;
+  final String teamShortCode;
 
   const _MySheet({
     required this.scrollController,
     required this.totalGameCount,
     required this.winCount,
     required this.winRate,
+    required this.teamShortCode,
   });
 
   @override
@@ -337,14 +348,20 @@ class _MySheet extends StatelessWidget {
         children: [
           const SizedBox(height: 10),
           Container(
-            width: 40,
-            height: 4,
-            decoration: const BoxDecoration(
-              color: AppColors.primary50,
-              borderRadius: BorderRadius.all(Radius.circular(999)),
+            width: 36,
+            height: 2,
+            decoration: BoxDecoration(
+              color: AppColors.gray700,
+              borderRadius: BorderRadius.circular(999),
             ),
           ),
           const SizedBox(height: 16),
+          Divider(
+              height: 1,
+              thickness: 0.5,
+              color: AppColors.gray200),
+
+          const SizedBox(height: 12),
 
           Expanded(
             child: SingleChildScrollView(
@@ -368,7 +385,7 @@ class _MySheet extends StatelessWidget {
                       ),
                       const Spacer(),
                       InkWell(
-                        onTap: () {},
+                        onTap: () => context.go('/home_detail', extra: {'teamShortCode': teamShortCode}),
                         borderRadius: BorderRadius.circular(8),
                         child: const Padding(
                           padding: EdgeInsets.symmetric(
@@ -387,6 +404,8 @@ class _MySheet extends StatelessWidget {
                       ),
                     ],
                   ),
+
+
                   const SizedBox(height: 8),
 
                   Row(
@@ -417,37 +436,35 @@ class _MySheet extends StatelessWidget {
                       letterSpacing: -0.18,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 15),
 
                   Container(
                     decoration: BoxDecoration(
                       color: AppColors.primary50,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.gray400),
-
+                      border: Border.all(color: AppColors.gray400,width: 0.6),
                     ),
                     child: const Column(
                       children: [
                         _SettingTile(
-                          icon: Icons.description_outlined,
+                          iconAsset: 'assets/images/mypage_document.svg',
                           title: '서비스 이용 약관',
                         ),
                         Divider(
                             height: 1,
-                            thickness: 1,
-                            color: Color(0xFFF3F4F6)),
+                            thickness: 0.5,
+                            color: AppColors.gray200),
                         _SettingTile(
-                          icon: Icons.info_outline_rounded,
+                          iconAsset: 'assets/images/mypage_version.svg',
                           title: '앱 버전',
                         ),
                         Divider(
                             height: 1,
-                            thickness: 1,
-                            color: Color(0xFFF3F4F6)),
+                            thickness: 0.5,
+                            color: AppColors.gray200),
                         _SettingTile(
-                          icon: Icons.person_off_outlined,
+                          iconAsset: 'assets/images/mypage_account.svg',
                           title: '회원 탈퇴',
-
                         ),
                       ],
                     ),
@@ -540,11 +557,11 @@ class _StatCard extends StatelessWidget {
 }
 
 class _SettingTile extends StatelessWidget {
-  final IconData icon;
+  final String iconAsset;
   final String title;
 
   const _SettingTile({
-    required this.icon,
+    required this.iconAsset,
     required this.title,
   });
 
@@ -553,25 +570,20 @@ class _SettingTile extends StatelessWidget {
     return InkWell(
       onTap: () {},
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         child: Row(
           children: [
-            Container(
-              height: 56,
-              decoration: BoxDecoration(
-                color: AppColors.primary50,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Icon(icon, size: 16, color: const Color(0xFF6B6F76)),
-            ),
-            const SizedBox(width: 12),
+            SvgPicture.asset(iconAsset, width: 24, height: 24),
+            const SizedBox(width:8),
             Expanded(
               child: Text(
                 title,
                 style: const TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1C1C1C),
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.gray800,
+                  fontFamily: 'Pretendard',
+                  letterSpacing: -0.14,
                 ),
               ),
             ),
@@ -605,4 +617,49 @@ class _VersionBadge extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 연필 아이콘을 cutout으로 뚫어 뒤 배경이 보이는 원형 버튼 Painter
+class _CutoutEditPainter extends CustomPainter {
+  const _CutoutEditPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.saveLayer(Offset.zero & size, Paint());
+
+    // 회색 원 그리기
+    canvas.drawCircle(
+      Offset(size.width / 2, size.height / 2),
+      size.width / 2,
+      Paint()..color = const Color(0xFFCCCCD7),
+    );
+
+    // 연필 글리프 모양만 cutout (dstOut: 아이콘 불투명 픽셀만 지움)
+    final tp = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(Icons.edit.codePoint),
+        style: TextStyle(
+          fontSize: 16,
+          fontFamily: Icons.edit.fontFamily,
+          package: Icons.edit.fontPackage,
+          color: Colors.black,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final offset = Offset(
+      (size.width - tp.width) / 2,
+      (size.height - tp.height) / 2,
+    );
+
+    canvas.saveLayer(Offset.zero & size, Paint()..blendMode = BlendMode.dstOut);
+    tp.paint(canvas, offset);
+    canvas.restore();
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_CutoutEditPainter oldDelegate) => false;
 }
