@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:inninglog/feature/mypage/screens/withdrawal_flow.dart';
 import 'package:provider/provider.dart';
 import 'package:inninglog/app_scope.dart';
 import 'package:inninglog/feature/mypage/viewmodel/my_page_view_model.dart';
@@ -283,7 +284,7 @@ class _MyHeader extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Text(
                         nickname,
                         maxLines: 1,
@@ -296,7 +297,7 @@ class _MyHeader extends StatelessWidget {
                           fontFamily: 'Pretendard',
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Text(
                         levelText,
                         style: const TextStyle(
@@ -368,6 +369,7 @@ class _MySheet extends StatelessWidget {
               controller: scrollController,
               padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 이번 시즌 기록
@@ -444,7 +446,7 @@ class _MySheet extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.gray400,width: 0.6),
                     ),
-                    child: const Column(
+                    child: Column(
                       children: [
                         _SettingTile(
                           iconAsset: 'assets/images/mypage_document.svg',
@@ -465,6 +467,7 @@ class _MySheet extends StatelessWidget {
                         _SettingTile(
                           iconAsset: 'assets/images/mypage_account.svg',
                           title: '회원 탈퇴',
+                          onTap: () => WithdrawalFlow.start(context),
                         ),
                       ],
                     ),
@@ -559,31 +562,36 @@ class _StatCard extends StatelessWidget {
 class _SettingTile extends StatelessWidget {
   final String iconAsset;
   final String title;
+  final VoidCallback? onTap;
 
   const _SettingTile({
     required this.iconAsset,
     required this.title,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () {},
+      onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
           children: [
             SvgPicture.asset(iconAsset, width: 24, height: 24),
             const SizedBox(width:8),
             Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.gray800,
-                  fontFamily: 'Pretendard',
-                  letterSpacing: -0.14,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.gray800,
+                    fontFamily: 'Pretendard',
+                    letterSpacing: -0.14,
+                  ),
                 ),
               ),
             ),

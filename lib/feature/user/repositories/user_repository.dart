@@ -55,4 +55,8 @@ class UserRepository {
     final data = json['data'] as Map<String, dynamic>;
     return MemberProfileResponse.fromJson(data);
   }
+
+  Future<void> deleteAccount() async {
+    await _dio.delete('/member');
+  }
 }
