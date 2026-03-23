@@ -21,6 +21,7 @@ import 'package:inninglog/feature/onboarding/screens/onboarding_page6.dart';
 import 'package:inninglog/feature/onboarding/screens/splash_screen.dart';
 import 'package:inninglog/feature/onboarding/screens/onboarding_screen.dart';
 import 'package:inninglog/feature/home/screens/home_page.dart';
+import 'package:inninglog/feature/home/screens/home_detail.dart';
 import 'package:inninglog/feature/diary/screens/diary_page.dart';
 import 'package:inninglog/feature/field/screens/seat_page.dart';
 import 'package:inninglog/feature/community/screens/root_page.dart';
@@ -167,6 +168,13 @@ final GoRouter _router = GoRouter(
       },
       routes: [
         GoRoute(path: '/home', builder: (_, __) => const HomePage()),
+        GoRoute(
+          path: '/home_detail',
+          builder: (_, state) {
+            final extra = state.extra as Map<String, dynamic>;
+            return HomeDetailPage(teamShortCode: extra['teamShortCode'] as String);
+          },
+        ),
         GoRoute(path: '/diary', builder: (_, __) => const DiaryPage()),
         GoRoute(
           path: '/seat',
