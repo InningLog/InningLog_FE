@@ -741,16 +741,17 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                       String? uploadedFileName;
 
                                       if (_pickedImage != null && _imageBytes != null) {
-                                        uploadedFileName = 'journal_${DateTime.now().millisecondsSinceEpoch}.jpeg';
-                                        final presignedUrl = await ApiService.getPresignedUrl(
-                                            fileName: uploadedFileName, contentType: 'image/jpeg');
-                                        print('✅ presigned URL 결과: $presignedUrl');
-                                        if (presignedUrl == null) return;
+                                        final fileName = 'journal_${DateTime.now().millisecondsSinceEpoch}.jpeg';
+                                        final result = await _repo.requestJournalImagePresignedUrl(
+                                            fileName: fileName, contentType: 'image/jpeg');
+                                        print('✅ presigned URL 결과: ${result.presignedUrl}');
 
                                         final uploaded = await _repo.uploadToS3(
-                                            presignedUrl: presignedUrl, bytes: _imageBytes!, contentType: 'image/jpeg');
+                                            presignedUrl: result.presignedUrl, bytes: _imageBytes!, contentType: 'image/jpeg');
                                         print('📤 S3 업로드 결과: $uploaded');
                                         if (!uploaded) return;
+
+                                        uploadedFileName = fileName; // 서버는 파일명만 필요
                                       }
 
 // 업로드 API 호출 (gameId는 API에서 받아온 값 사용)
@@ -762,7 +763,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                         ourScore: int.parse(ourScore),
                                         theirScore: int.parse(opponentScore),
 
-                                        fileName: uploadedFileName,
+                                        imageKey: uploadedFileName,
                                         emotion: selectedEmotionIndex == -1 ? null : getEmotionKor(selectedEmotionIndex),
                                         reviewText: reviewController.text.trim().isEmpty ? null : reviewController.text.trim(),
                                         isPublic: true,
@@ -867,16 +868,20 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                     String? uploadedFileName;
 
                                     if (_pickedImage != null && _imageBytes != null) {
-                                      uploadedFileName = 'journal_${DateTime.now().millisecondsSinceEpoch}.jpeg';
-                                      final presignedUrl = await ApiService.getPresignedUrl(
-                                          fileName: uploadedFileName, contentType: 'image/jpeg');
-                                      print('📫 presignedUrl: $presignedUrl');
-                                      if (presignedUrl == null) return;
+                                      final fileName = 'journal_${DateTime.now().millisecondsSinceEpoch}.jpeg';
+                                      final result = await _repo.requestJournalImagePresignedUrl(
+                                          fileName: fileName, contentType: 'image/jpeg');
+                                      print('✅ presigned URL 획득, key: ${result.key}');
 
                                       final uploaded = await _repo.uploadToS3(
-                                          presignedUrl: presignedUrl, bytes: _imageBytes!, contentType: 'image/jpeg');
-                                      print('📤 이미지 업로드 결과: $uploaded');
-                                      if (!uploaded) return;
+                                          presignedUrl: result.presignedUrl, bytes: _imageBytes!, contentType: 'image/jpeg');
+                                      print('📤 S3 업로드 결과: $uploaded');
+                                      if (!uploaded) {
+                                        print('❌ S3 업로드 실패');
+                                        return;
+                                      }
+
+                                      uploadedFileName = fileName; // 서버는 파일명만 필요
                                     }
 
 // 업로드 API 호출 (gameId는 API에서 받아온 값 사용)
@@ -888,13 +893,13 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                       ourScore: int.parse(ourScore),
                                       theirScore: int.parse(opponentScore),
 
-                                      fileName: uploadedFileName,
+                                      imageKey: uploadedFileName,
                                       emotion: selectedEmotionIndex == -1 ? null : getEmotionKor(selectedEmotionIndex),
                                       reviewText: reviewController.text.trim().isEmpty ? null : reviewController.text.trim(),
                                       isPublic: true,
                                     );
 
-                                    print('📦 journalId 응답: $journalId');
+                                    print('📦 [3단계] journalId 응답: $journalId');
 
                                     if (journalId == null) {
                                       print('❌ 업로드 실패로 journalId가 null입니다.');
@@ -906,7 +911,7 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                                       context.go('/diary');
                                     }
                                   } catch (e) {
-                                    print('❌ 작성 완료 오류: $e');
+                                    print('❌ 작성 완료 오류 (어느 단계인지 위 로그 확인): $e');
                                     if (context.mounted) {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         const SnackBar(content: Text('저장 중 오류가 발생했습니다. 다시 시도해주세요.')),
