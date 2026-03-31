@@ -170,22 +170,23 @@ class AddDiaryViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1) 이미지 있으면 presigned + 업로드
+      // 1) 이미지 있으면 presigned + S3 업로드
       String? uploadedFileName;
       if (pickedImageBytes != null) {
-        uploadedFileName = 'journal_${DateTime.now().millisecondsSinceEpoch}.jpeg';
-        final presignedUrl = await ApiService.getPresignedUrl(
-          fileName: uploadedFileName,
+        final fileName = 'journal_${DateTime.now().millisecondsSinceEpoch}.jpeg';
+        final result = await repo.requestJournalImagePresignedUrl(
+          fileName: fileName,
           contentType: 'image/jpeg',
         );
-        if (presignedUrl == null) return null;
 
         final ok = await repo.uploadToS3(
-          presignedUrl: presignedUrl,
+          presignedUrl: result.presignedUrl,
           bytes: pickedImageBytes!,
           contentType: 'image/jpeg',
         );
         if (!ok) return null;
+
+        uploadedFileName = fileName; // 서버는 파일명만 필요
       }
 
       // 2) 업로드 API (gameId는 API에서 받아온 값 사용)
@@ -196,7 +197,7 @@ class AddDiaryViewModel extends ChangeNotifier {
         gameDateTime: DateTime.parse(gameInfo.gameDate),
         ourScore: int.parse(ourScore),
         theirScore: int.parse(opponentScore),
-        fileName: uploadedFileName,
+        imageKey: uploadedFileName,
         emotion: selectedEmotionIndex == -1 ? null : getEmotionKor(selectedEmotionIndex),
         reviewText: reviewText.trim().isEmpty ? null : reviewText.trim(),
         isPublic: true,

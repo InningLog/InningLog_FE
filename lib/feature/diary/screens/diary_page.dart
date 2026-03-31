@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:month_picker_dialog/month_picker_dialog.dart';
+import '../widgets/month_selection_modal.dart';
 import '../../../shared/amplitude/AmplitudeFlutter.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/service/home_view.dart';
@@ -94,9 +94,8 @@ class _DiaryPageState extends State<DiaryPage> {
 
   String baseImageUrl = 'https://inninglog-bucket.s3.ap-northeast-2.amazonaws.com/';
 
-  List<Journal> journalList = [];
-
-
+  List<Journal> journalList = [];   // 캘린더 탭용
+  List<Journal> summaryList = [];   // 모아보기 탭용
 
   bool isLoading = true;
 
@@ -134,6 +133,7 @@ class _DiaryPageState extends State<DiaryPage> {
   }
 
   Future<void> loadMoreSummary() async {
+    if (isLoadingMore || !hasMore) return;
     setState(() => isLoadingMore = true);
 
     final scoreParam = selectedFilterCollection == '승리'
@@ -144,21 +144,23 @@ class _DiaryPageState extends State<DiaryPage> {
         ? '무승부'
         : null;
 
-    final newList = await ApiService.fetchJournalSummary(
-      page: page,
-      resultScore: scoreParam,
-    );
+    try {
+      final newPage = await ApiService.fetchJournalSummary(
+        page: page,
+        resultScore: scoreParam,
+      );
 
-    setState(() {
-      if (newList.length < 10) hasMore = false;
-      journalList.addAll(newList as Iterable<Journal>);
-      page++;
-      isLoadingMore = false;
-    });
+      setState(() {
+        summaryList.addAll(newPage.content);
+        if (newPage.last) hasMore = false;
+        page++;
+        isLoadingMore = false;
+      });
 
-    print('📋 현재 일지 개수: ${journalList.length}');
-    for (var j in journalList) {
-      print('📝 ${j.journalId} | ${j.gameDate} | ${j.stadiumSC}');
+      print('📋 모아보기 일지 개수: ${summaryList.length}');
+    } catch (e) {
+      print('❌ 모아보기 로딩 실패: $e');
+      setState(() => isLoadingMore = false);
     }
   }
 
@@ -187,7 +189,7 @@ class _DiaryPageState extends State<DiaryPage> {
   Widget build(BuildContext context) {
     final Map<String, Journal> gameMap = {};
 
-    for (var game in journalList) {
+    for (var game in summaryList) {
       final key = '${game.gameDate}_${game.stadiumSC}';
 
       final isImageAvailable = game.mediaUrl != null && game.mediaUrl!.isNotEmpty;
@@ -327,24 +329,24 @@ class _DiaryPageState extends State<DiaryPage> {
                                   children: [
                                     const SizedBox(height: 0),
                                     GestureDetector(
-                                      onTap: () async {
-                                        final newDate = await showMonthPicker(
+                                      onTap: () {
+                                        showDialog(
                                           context: context,
-                                          initialDate: focusedDay,
-                                          firstDate: DateTime(2020),
-                                          lastDate: DateTime(2030),
+                                          builder: (context) => MonthSelectionModal(
+                                            initialYear: focusedDay.year,
+                                            initialMonth: focusedDay.month,
+                                            onConfirm: (year, month) {
+                                              setState(() {
+                                                focusedDay = DateTime(year, month);
+                                              });
+                                              AmplitudeFlutter.getInstance().logEvent('change_diary_calendar_month', eventProperties: {
+                                                'event_type': 'Custom',
+                                                'component': 'event',
+                                                'month': month,
+                                              });
+                                            },
+                                          ),
                                         );
-                                        if (newDate != null) {
-                                          setState(() {
-                                            focusedDay = newDate;
-                                          });
-                                          // ✅ Amplitude 이벤트 로깅
-                                          AmplitudeFlutter.getInstance().logEvent('change_diary_calendar_month', eventProperties: {
-                                            'event_type': 'Custom',
-                                            'component': 'event',
-                                            'month': newDate.month,
-                                          });
-                                        }
                                       },
                                       child: _buildMonthHeader(),
                                     ),
@@ -554,11 +556,16 @@ class _DiaryPageState extends State<DiaryPage> {
                                           children: [
                                             Text(
                                               '${game.gameDate.month}월 ${game.gameDate.day}일 (${_getWeekday(game.gameDate)})',
-                                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Pretendard-Black'),
+                                              style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontFamily: 'Pretendard',
+                                              height: 1.14286,
+                                              letterSpacing: -0.14,),
                                             ),
                                             const SizedBox(height: 4),
                                             Text('@${stadiumNameMap[game.stadiumSC] ?? game.stadiumSC}',
-                                                style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w500, fontFamily: 'Pretendard-Black')),
+                                                style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w500, fontFamily: 'Pretendard',height: 2,letterSpacing: -0.89)),
 
                                             const SizedBox(height: 8),
                                             Row(
@@ -679,7 +686,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                 setState(() {
                                   selectedFilterCollection = value;
                                   page = 0;
-                                  journalList.clear();
+                                  summaryList.clear();
                                   hasMore = true;
                                 });
                                 loadMoreSummary();
@@ -693,7 +700,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                 setState(() {
                                   selectedFilterCollection = value;
                                   page = 0;
-                                  journalList.clear();
+                                  summaryList.clear();
                                   hasMore = true;
                                 });
                                 loadMoreSummary();
@@ -707,7 +714,7 @@ class _DiaryPageState extends State<DiaryPage> {
                                 setState(() {
                                   selectedFilterCollection = value;
                                   page = 0;
-                                  journalList.clear();
+                                  summaryList.clear();
                                   hasMore = true;
                                 });
                                 loadMoreSummary();

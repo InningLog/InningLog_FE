@@ -385,7 +385,7 @@ class ApiService {
     required int theirScore,
 
     // ✅ 선택값들
-    String? fileName,
+    String? imageKey,
     String? emotion,
     String? reviewText,
     bool? isPublic,
@@ -431,9 +431,9 @@ class ApiService {
       };
 
       // ---- 선택 필드: 값 있을 때만 포함 ----
-      final cleanedFileName = fileName?.trim();
-      if (cleanedFileName != null && cleanedFileName.isNotEmpty) {
-        bodyData['fileName'] = cleanedFileName;
+      final cleanedImageKey = imageKey?.trim();
+      if (cleanedImageKey != null && cleanedImageKey.isNotEmpty) {
+        bodyData['fileName'] = cleanedImageKey;
       }
 
       if (cleanedEmotion != null && cleanedEmotion.isNotEmpty) {
@@ -474,7 +474,7 @@ class ApiService {
         decoded = null;
       }
 
-      if (res.statusCode == 201) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
         final journalId = decoded?['data']?['journalId'];
         if (journalId is int) return journalId;
         if (journalId is String) return int.tryParse(journalId);

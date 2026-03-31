@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AddDiaryRepository {
   final String baseUrl;
@@ -34,20 +35,34 @@ class AddDiaryRepository {
     return body['data'] as Map<String, dynamic>?;
   }
 
-  Future<String> getPresignedUrl({
+  /// POST /images/upload/journal → { presignedUrl, key } 반환
+  Future<({String presignedUrl, String key})> requestJournalImagePresignedUrl({
     required String fileName,
     required String contentType,
-    required int memberId,
   }) async {
-    final res = await http.get(Uri.parse(
-      '$baseUrl/s3/journal/presigned?fileName=$fileName&contentType=$contentType&memberId=$memberId',
-    ));
+    final prefs = await SharedPreferences.getInstance();
+    final token = (prefs.getString('accessToken') ?? prefs.getString('access_token'))?.trim();
+
+    final res = await http.post(
+      Uri.parse('$baseUrl/images/upload/journal'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'imageUploadReqDto': [
+          {'sequence': 1, 'fileName': fileName, 'contentType': contentType},
+        ],
+      }),
+    );
 
     if (res.statusCode != 200) {
-      throw Exception('presigned failed: ${res.statusCode} ${res.body}');
+      throw Exception('[1단계 presigned 실패] status=${res.statusCode} body=${res.body}');
     }
     final decoded = jsonDecode(res.body) as Map<String, dynamic>;
-    return decoded['data'] as String;
+    final dto = ((decoded['data']?['imageUploadResDtos'] as List?)?.first) as Map<String, dynamic>;
+    return (presignedUrl: dto['presignedUrl'] as String, key: dto['key'] as String);
   }
 
   Future<bool> uploadToS3({
