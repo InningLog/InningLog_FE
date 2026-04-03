@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:inninglog/feature/mypage/screens/profile_edit_screen.dart';
 import 'package:inninglog/feature/mypage/screens/withdrawal_flow.dart';
 import 'package:provider/provider.dart';
 import 'package:inninglog/app_scope.dart';
@@ -122,6 +123,15 @@ class _MyPageState extends State<MyPage> {
                   nickname: nickname,
                   levelText: levelText,
                   profileUrl: profile?.profileUrl,
+                  onEditTap: profile == null
+                      ? null
+                      : () async {
+                          final updated = await ProfileEditFlow.start(
+                            context,
+                            profile: profile,
+                          );
+                          if (updated) vm.refresh();
+                        },
                 ),
                 DraggableScrollableSheet(
                   initialChildSize: 0.63,
@@ -186,6 +196,7 @@ class _MyHeader extends StatelessWidget {
   final String nickname;
   final String levelText;
   final String? profileUrl;
+  final VoidCallback? onEditTap;
 
   const _MyHeader({
     required this.backgroundAsset,
@@ -193,6 +204,7 @@ class _MyHeader extends StatelessWidget {
     required this.nickname,
     required this.levelText,
     this.profileUrl,
+    this.onEditTap,
   });
 
   @override
@@ -276,7 +288,7 @@ class _MyHeader extends StatelessWidget {
                           ),
                           const SizedBox(width: 88),
                           GestureDetector(
-                            onTap: () {},
+                            onTap: onEditTap,
                             child: CustomPaint(
                               size: const Size(28, 28),
                               painter: _CutoutEditPainter(),

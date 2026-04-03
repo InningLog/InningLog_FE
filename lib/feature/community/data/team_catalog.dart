@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:inninglog/feature/community/model/team_item.dart';
 
 const kboTeams = <TeamItem>[
@@ -73,3 +74,19 @@ final Map<String, String> kboTeamBannerCatalog = {
 TeamItem? kboTeamOf(String code) => kboTeamCatalog[code];
 
 String kboTeamLabelOf(String code) => kboTeamCatalog[code]?.label ?? code;
+
+const Map<String, Color> kboTeamColors = {
+  'WO': Color(0xFF7E0022), // 키움
+  'HT': Color(0xFFE10822), // 기아
+  'LG': Color(0xFFC30136), // LG
+  'LT': Color(0xFFD10F31), // 롯데
+  'SK': Color(0xFFC81431), // SSG
+  'SS': Color(0xFF0064B2), // 삼성
+  'OB': Color(0xFF010039), // 두산
+  'NC': Color(0xFF1F477A), // NC
+  'HH': Color(0xFFFC4E00), // 한화
+  'KT': Color(0xFF000000), // KT
+};
+
+Color kboTeamColorOf(String code) =>
+    kboTeamColors[code] ?? const Color(0xFF1A1A1A);
