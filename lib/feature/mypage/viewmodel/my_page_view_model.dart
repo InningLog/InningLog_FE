@@ -15,6 +15,8 @@ class MyPageViewModel extends ChangeNotifier {
 
   MyPageViewModel(this._repo);
 
+  Future<void> refresh() => fetch();
+
   Future<void> fetch() async {
     _isLoading = true;
     _error = null;

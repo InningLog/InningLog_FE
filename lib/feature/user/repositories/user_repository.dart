@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import '../../../shared/network/api_envelope.dart';
 
@@ -54,6 +55,22 @@ class UserRepository {
     }
     final data = json['data'] as Map<String, dynamic>;
     return MemberProfileResponse.fromJson(data);
+  }
+
+  Future<void> patchNickname(String nickname) async {
+    await _dio.patch('/member/nickname', data: {'nickname': nickname});
+  }
+
+  /// 프로필 이미지 업로드 (multipart)
+  /// 반환값: 서버에서 내려준 새 profileUrl
+  Future<String> uploadProfileImage(Uint8List bytes, String filename) async {
+    final formData = FormData.fromMap({
+      'image': MultipartFile.fromBytes(bytes, filename: filename),
+    });
+    final res = await _dio.post('/member/profile-image', data: formData);
+    final json = res.data as Map<String, dynamic>;
+    final data = json['data'] as Map<String, dynamic>;
+    return data['profileUrl'] as String;
   }
 
   Future<void> deleteAccount() async {
