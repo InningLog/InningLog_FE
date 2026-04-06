@@ -839,13 +839,12 @@ class ApiService {
   /// - JWT 인증 필요 (Authorization 헤더)
   /// - 성공: 201, data.seatViewId 반환
   static Future<int?> uploadSeatView({
-    required int journalId,
+    int? journalId,
     required String stadiumShortCode,
-    required String zoneShortCode,
     required String section,
     required String seatRow,
-    required List<String> emotionTagCodes,
-    required String fileName,
+    List<String> emotionTagCodes = const [],
+    List<String> fileNames = const [],
   }) async {
     void log(Object? m) => print('[uploadSeatView] $m');
 
@@ -860,13 +859,12 @@ class ApiService {
       final uri = Uri.parse('$baseUrl/seatViews/contents');
 
       final body = {
-        "journalId": journalId,
+        if (journalId != null) "journalId": journalId,
         "stadiumShortCode": stadiumShortCode,
-        "zoneShortCode": zoneShortCode,
         "section": section,
         "seatRow": seatRow,
-        "emotionTagCodes": emotionTagCodes,
-        "fileName": fileName, // Presigned URL에서 사용한 파일명만!
+        if (emotionTagCodes.isNotEmpty) "emotionTagCodes": emotionTagCodes,
+        if (fileNames.isNotEmpty) "fileNames": fileNames,
       };
 
       log('📤 좌석 시야 업로드 요청');
