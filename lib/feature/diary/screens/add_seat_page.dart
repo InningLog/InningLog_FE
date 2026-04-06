@@ -20,34 +20,43 @@ import 'package:flutter/foundation.dart';
 
 
 
-Future<String?> getPresignedUrlSeat(String fileName, String contentType) async {
+/// POST /images/upload/seatView
+/// 반환: (presignedUrl, key) — key를 seatViews/contents의 fileNames에 사용
+Future<({String presignedUrl, String key})?> getPresignedUrlSeat(
+    String fileName, String contentType) async {
   final prefs = await SharedPreferences.getInstance();
-  final memberId = prefs.getInt('member_id'); // ✅ 추가
+  final token = prefs.getString('accessToken')?.trim();
 
-  if (memberId == null) {
-    print('❌ SharedPreferences에서 member_id를 찾을 수 없습니다.');
+  if (token == null || token.isEmpty) {
+    print('❌ accessToken 없음');
     return null;
   }
 
-  final url = Uri.parse(
-    'https://api.inninglog.shop/s3/seatView/presigned?fileName=$fileName&contentType=$contentType&memberId=$memberId',
-  );
+  const url = 'https://api.inninglog.shop/images/upload/seatView';
 
-  final res = await http.get(
-    url,
+  final res = await http.post(
+    Uri.parse(url),
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
     },
+    body: jsonEncode({
+      'imageUploadReqDto': [
+        {'sequence': 1, 'fileName': fileName, 'contentType': contentType},
+      ],
+    }),
   );
 
-  print('📡 Presigned 요청 URL: $url');
+  print('📡 Presigned 요청: $url');
+  print('📡 응답(${res.statusCode}): ${res.body}');
 
   if (res.statusCode == 200) {
-    final body = jsonDecode(res.body);
-    return body['data'];
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    final dto = (body['data']?['imageUploadResDtos'] as List?)?.firstOrNull;
+    if (dto == null) return null;
+    return (presignedUrl: dto['presignedUrl'] as String, key: dto['key'] as String);
   } else {
     print('❌ Presigned URL 발급 실패: ${res.statusCode}');
-    print('❌ 응답 내용: ${res.body}');
     return null;
   }
 }
@@ -848,12 +857,6 @@ class _AddSeatPageState extends State<AddSeatPage> {
                         ? () async {
 
                           final jid = widget.journalId;
-                          if (jid == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('일기 정보가 없어서 저장할 수 없어요.')),
-                            );
-                            return;
-                          }
 
                           setState(() => isSaving = true); // 저장 시작
 
@@ -917,24 +920,21 @@ class _AddSeatPageState extends State<AddSeatPage> {
 
 
 
-                          final fileName = 'journal_${widget.journalId}_${DateTime.now().millisecondsSinceEpoch}.png';
-                          final presignedUrl = await getPresignedUrlSeat(fileName, 'image/png');
-                          print('📡 Presigned 요청 URL: $presignedUrl');
+                          final fileName = 'seat_${DateTime.now().millisecondsSinceEpoch}.png';
+                          final presigned = await getPresignedUrlSeat(fileName, 'image/png');
 
-
-                          if (presignedUrl == null) return;
+                          if (presigned == null) return;
 
                           final success = await uploadToS3(
-                            presignedUrl,
+                            presigned.presignedUrl,
                             file: kIsWeb ? null : seatImage,
                             bytes: kIsWeb ? seatImageBytes : null,
                           );
-                          print('✅ 업로드 성공 여부: $success');
+                          print('✅ S3 업로드 성공 여부: $success');
 
                           if (!success) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('사진 업로드 실패')),
-
+                              const SnackBar(content: Text('사진 업로드 실패')),
                             );
                             return;
                           }
@@ -947,28 +947,20 @@ class _AddSeatPageState extends State<AddSeatPage> {
                           await ApiService.uploadSeatView(
                             journalId: jid,
                             stadiumShortCode: widget.stadium,
-                            zoneShortCode: selectedZone ?? '',
                             section: sectionController.text.trim(),
                             seatRow: rowController.text.trim(),
                             emotionTagCodes: tagCodes,
-                            fileName: fileName,
+                            fileNames: [presigned.key],
                           );
 
-
-                          if (success) {
-                            print('🎉 좌석 시야 등록 성공!');
-                          }
-
-
-
+                          print('🎉 좌석 시야 등록 성공!');
                           print('📦 uploadSeatView 호출 인자:');
-                          print('  journalId: ${widget.journalId}');
-                          print('  stadiumSC: ${ widget.stadium}');
-                          print('  zoneSC: ${selectedZone!}');
+                          print('  journalId: $jid');
+                          print('  stadiumSC: ${widget.stadium}');
                           print('  section: ${sectionController.text.trim()}');
                           print('  row: ${rowController.text.trim()}');
                           print('  tagCodes: $tagCodes');
-                          print('  fileName: $fileName');
+                          print('  fileNames: [${presigned.key}]');
 
 
                           if (context.mounted) {
