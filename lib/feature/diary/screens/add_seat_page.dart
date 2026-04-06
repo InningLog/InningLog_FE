@@ -303,12 +303,11 @@ class _AddSeatPageState extends State<AddSeatPage> {
 
   //버튼 활성화 조건
   bool get isFormValid {
-    final hasZone = selectedZone != null && selectedZone!.isNotEmpty;
     final hasSection = sectionController.text.trim().isNotEmpty;
     final hasRow = rowController.text.trim().isNotEmpty;
-    final hasImage = seatImage != null || seatImageBytes != null; // ✅ 여기 수정됨!
+    final hasImage = seatImage != null || seatImageBytes != null;
 
-    return hasZone && hasSection && hasRow && hasImage;
+    return hasSection && hasRow && hasImage;
   }
 
 
@@ -940,9 +939,6 @@ class _AddSeatPageState extends State<AddSeatPage> {
                             return;
                           }
 
-                          final zoneCode = (selectedZone!);
-                          if (zoneCode == null) return;
-
                           final tagCodes = selectedTags.values
                               .map((tag) => tagCodeMap[tag])
                               .whereType<String>()
@@ -951,7 +947,7 @@ class _AddSeatPageState extends State<AddSeatPage> {
                           await ApiService.uploadSeatView(
                             journalId: jid,
                             stadiumShortCode: widget.stadium,
-                            zoneShortCode: selectedZone!,
+                            zoneShortCode: selectedZone ?? '',
                             section: sectionController.text.trim(),
                             seatRow: rowController.text.trim(),
                             emotionTagCodes: tagCodes,
@@ -1140,7 +1136,7 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
 
 
   final Map<String, String> stadiumNameToCode = {
-    '잠실 종합 운동장 잠실 야구장': 'JAM',
+    '잠실 야구장': 'JAM',
     '고척 스카이돔': 'GOC',
     '랜더스 필드': 'ICN',
     '위즈 파크': 'SUW',
@@ -1148,7 +1144,7 @@ class _DiaryImagePickerState extends State<DiaryImagePicker> {
     '라이온즈 파크': 'DAE',
     '사직 야구장': 'BUS',
     'NC 파크장': 'CHW',
-    '챔피언스 월드': 'GWJ',
+    '챔피언스 필드': 'GWJ',
   };
 
 

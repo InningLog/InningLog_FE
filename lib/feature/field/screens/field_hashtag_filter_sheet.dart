@@ -70,7 +70,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
 
   String _normalizeStadiumName(String s) => s.replaceAll(' ', '').trim();
   String? get selectedStadiumCode =>
-      stadiumNameToCode[widget.stadiumName.replaceAll(' ', '').trim()];
+      stadiumNameToCode[widget.stadiumName.trim()];
 
 
 
@@ -254,7 +254,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
 
 
     final stadiumCode =
-    stadiumNameToCode[widget.stadiumName.replaceAll(' ', '').trim()];
+    stadiumNameToCode[widget.stadiumName.trim()];
 
     debugPrint('stadiumName="${widget.stadiumName}" -> stadiumCode=$stadiumCode');
 
@@ -585,6 +585,7 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
                                     ? rowController.text.trim().replaceAll('열', '').trim()
                                     : null;
 
+                                debugPrint('🔍 stadiumName="${widget.stadiumName}" → selectedStadiumCode=$selectedStadiumCode');
                                 context.pushNamed(
                                   'add_seat',
                                   extra: {
