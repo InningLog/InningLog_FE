@@ -288,7 +288,6 @@ class _FieldHashtagSearchResultPageState extends State<FieldHashtagSearchResultP
     try {
       final results = await ApiService.fetchSeatViews(
         stadiumShortCode: stadiumCode,
-        zoneShortCode: zoneShortCode,
         section: section,
         seatRow: row,
       );

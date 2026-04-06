@@ -18,14 +18,13 @@ class SeatViewGalleryVM extends ChangeNotifier {
 
   Future<void> loadFirst({
     required String stadiumShortCode,
-    String? zoneShortCode,
     String? section,
     String? seatRow,
     int size = 10,
   }) async {
-    // ✅ 열 단독 금지(최소 존 필요)
-    if ((seatRow?.isNotEmpty ?? false) && (zoneShortCode?.isNotEmpty != true)) {
-      errorMessage = '열 정보만으로는 검색할 수 없습니다. 최소 존 정보가 필요합니다.';
+    // 열 단독 금지(최소 구역 필요)
+    if ((seatRow?.isNotEmpty ?? false) && (section?.isNotEmpty != true)) {
+      errorMessage = '열 정보만으로는 검색할 수 없습니다. 구역 정보가 필요합니다.';
       notifyListeners();
       return;
     }
@@ -40,7 +39,6 @@ class SeatViewGalleryVM extends ChangeNotifier {
     try {
       final dto = await repo.fetchNormalGallery(
         stadiumShortCode: stadiumShortCode,
-        zoneShortCode: zoneShortCode,
         section: section,
         seatRow: seatRow,
         page: 0,
@@ -60,7 +58,6 @@ class SeatViewGalleryVM extends ChangeNotifier {
 
   Future<void> loadMore({
     required String stadiumShortCode,
-    String? zoneShortCode,
     String? section,
     String? seatRow,
     int size = 10,
@@ -74,7 +71,6 @@ class SeatViewGalleryVM extends ChangeNotifier {
       final nextPage = page + 1;
       final dto = await repo.fetchNormalGallery(
         stadiumShortCode: stadiumShortCode,
-        zoneShortCode: zoneShortCode,
         section: section,
         seatRow: seatRow,
         page: nextPage,

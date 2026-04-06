@@ -1029,7 +1029,6 @@ class ApiService {
   /// 좌석 시야 갤러리 조회 (최신순)
   static Future<List<SeatView>> fetchSeatViews({
     required String stadiumShortCode,
-    String? zoneShortCode,
     String? section,
     String? seatRow,
     int page = 0,
@@ -1039,34 +1038,21 @@ class ApiService {
 
     // 파라미터 정리
     final cleanedStadium = stadiumShortCode.trim();
-    final cleanedZone =
-    (zoneShortCode
-        ?.trim()
-        .isNotEmpty ?? false) ? zoneShortCode!.trim() : null;
     final cleanedSection =
-    (section
-        ?.trim()
-        .isNotEmpty ?? false) ? section!.trim() : null;
+    (section?.trim().isNotEmpty ?? false) ? section!.trim() : null;
     final cleanedRow =
-    (seatRow
-        ?.trim()
-        .isNotEmpty ?? false) ? seatRow!.trim() : null;
+    (seatRow?.trim().isNotEmpty ?? false) ? seatRow!.trim() : null;
 
     if (cleanedStadium.isEmpty) {
       throw ArgumentError('stadiumShortCode는 필수입니다.');
     }
-    final hasZone = cleanedZone != null;
-    final hasSection = cleanedSection != null;
 
-    if (cleanedRow != null && !hasZone && !hasSection) {
-      throw ArgumentError(
-          'seatRow는 단독 사용 불가입니다. 최소 zoneShortCode 또는 section을 함께 전달하세요.');
+    if (cleanedRow != null && cleanedSection == null) {
+      throw ArgumentError('seatRow는 단독 사용 불가입니다. section을 함께 전달하세요.');
     }
-
 
     final query = <String, String>{
       'stadiumShortCode': cleanedStadium,
-      if (cleanedZone != null) 'zoneShortCode': cleanedZone,
       if (cleanedSection != null) 'section': cleanedSection,
       if (cleanedRow != null) 'seatRow': cleanedRow,
       'page': '$page',
